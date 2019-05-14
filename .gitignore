@@ -1,0 +1,12 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+# Distribution / packaging
+.Python
+venv/
+.vscode
+settings.json
+# SQLite3
+db.sqlite3
+# python_ dotenv
+.env
+
