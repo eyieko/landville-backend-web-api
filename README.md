@@ -1,2 +1,2 @@
 # landville-backend-web-api
-Backend Repository for LanVille Project
+Backend Repository for LandVille Project
