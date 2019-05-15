@@ -28,9 +28,9 @@ Backend Repository for LandVille Project
 * create a virtual environment and activate your virtual environment using `source (virtualenv name) /bin/activate`
 * create a new branch from the develop branch using the command `git checkout -b your branch_name`
 * Install project requirements using `pip install -r requirements.txt`
-* To create a dot_env file, populate .env_sample and then run the command `cp .env_sample .env && source .env` so that the .env_sample file can be     copied to .env.  
+* To create a dot_env file, populate .env_sample and then run the command `cp .env_sample .env && source .env` so that the .env_sample file can be copied to .env.  
 * Create a Postgres database as described in the sample.env file
-* Run command `python manage.py runserver` to start the project
+* Run command `python manage.py runserver --settings=landville.settings.prod` to start the project on a production server
 
 
 ### Run The Service
@@ -42,8 +42,9 @@ Backend Repository for LandVille Project
 * List out the microservices if any that this repo uses(This will include the payment service we shall be using)
 
 ## Testing
-* To run tests without coverage run `python manage.py test`
-* To run tests with coverage run `coverage run manage.py test && coverage report`
+* Remember to run `cp .env_sample .env && source .env`
+* To run tests without coverage run `python manage.py test --settings=landville.settings.test`
+* To run tests with coverage run `coverage run manage.py test --settings=landville.settings.test && coverage report`
 
 ## Contribute
 
