@@ -1,0 +1,16 @@
+{
+  "addons": [
+
+  ],
+  "buildpacks": [
+
+  ],
+  "env": {
+  },
+  "formation": {
+  },
+  "name": "landville-backend-web-api",
+  "scripts": {
+  },
+  "stack": "heroku-18"
+}
