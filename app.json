@@ -1,0 +1,22 @@
+{
+  "addons": [
+
+  ],
+  "buildpacks": [
+
+  ],
+  "env": {
+    "DISABLE_COLLECTSTATIC": {
+      "required": true
+    },
+    "SECRET_KEY": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "name": "landville-backend-web-api",
+  "scripts": {
+  },
+  "stack": "heroku-18"
+}
