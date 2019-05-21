@@ -14,7 +14,10 @@ class UserManagerTest(TransactionTestCase):
 
     def test_that_the_string_representation_is_correct(self):
         self.assertEqual(str(self.user1), 'User One')
-
+    
+    def test_email_representation(self):
+        self.assertIn('user', self.user1.get_email)
+        self.assertIn('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9', self.user1.token)
     def test_that_user_cannot_be_created_without_password(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
