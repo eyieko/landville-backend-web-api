@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/landvilleng/landville-backend-web-api.svg?style=svg&circle-token=0b67e7bdea3b38a5b4be3154613c500fb0ba12db)](https://circleci.com/gh/landvilleng/landville-backend-web-api)
+[![CircleCI](https://circleci.com/gh/landvilleng/landville-backend-web-api.svg?style=svg&circle-token=0b67e7bdea3b38a5b4be3154613c500fb0ba12db)](https://circleci.com/gh/landvilleng/landville-backend-web-api) [![Coverage Status](https://coveralls.io/repos/github/landvilleng/landville-backend-web-api/badge.svg?branch=develop&t=8IKdIj)](https://coveralls.io/github/landvilleng/landville-backend-web-api?branch=develop)
 
 # landville-backend-web-api
 
@@ -25,8 +25,8 @@ Backend Repository for LandVille Project
 ### Getting Started
 
 * first clone the project to your local machine using  `git clone https://github.com/landvilleng/landville-backend-web-api.git`
-* create a virtual environment and activate your virtual environment using `source (virtualenv name) /bin/activate`
-* create a new branch from the develop branch using the command `git checkout -b your branch_name`
+* create a virtual environment and activate your virtual environment using `source (virtualenv name)/bin/activate`
+* create a new branch from the develop branch using the command `git checkout -b your_branch_name`
 * Install project requirements using `pip install -r requirements.txt`
 * To create a dot_env file, populate .env_sample and then run the command `cp .env_sample .env && source .env` so that the .env_sample file can be     copied to .env.  
 * Create a Postgres database as described in the sample.env file
@@ -43,7 +43,7 @@ Backend Repository for LandVille Project
 
 ## Testing
 * To run tests without coverage run `python manage.py test`
-* To run tests with coverage run `coverage run manage.py test && coverage report`
+* To run tests with coverage run `coverage run --source='landville/' manage.py test && coverage report`
 
 ## Contribute
 
