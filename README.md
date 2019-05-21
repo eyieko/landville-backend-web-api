@@ -12,6 +12,12 @@ Backend Repository for LandVille Project
 
 * List of endpoints exposed by the service
 
+
+## API Documentation
+https://landville-backend-web-api.herokuapp.com/ 
+
+The heroku link redirects direclty to our documentation With these documentation, One can be able to test all endpoint as mentioned above in a browser
+
 ## Setup
 
 * Step by step instructions on how to get the code setup locally. This may include:
@@ -53,3 +59,4 @@ Backend Repository for LandVille Project
 
 * This project has been depolyed on heroku:
 link(https://landville-backend-web-api.herokuapp.com/)
+

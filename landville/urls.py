@@ -15,7 +15,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework.permissions import AllowAny
+from django.views.generic.base import RedirectView
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Landville",
+      default_version='v1',
+      description="landVille is a simple mobile-enabled solution that helps \
+      people access real estate investing with ease and convenience.\
+      landVille provides users and investors with an intelligent and \
+      most predictive search tool for properties in Nigeria, access to \
+      saving models and financing, smart contract and documentation \
+      and Our technology has four basic value proposition: search \
+      capability for safe and most trusted trending properties, \
+      saving and access to financing, smart contract and \
+      documentation, credit rating tool",
+      terms_of_service="https://www.google.com/policies/terms/",
+      contact=openapi.Contact(email="thelandville@gmail.com"),
+   ),
+   permission_classes=(AllowAny,),
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/documentation/', schema_view.with_ui('swagger', cache_timeout=0),
+         name='api_documentation'),
+    path('', RedirectView.as_view(url='api/documentation/', permanent=False),
+         name='api_documentation'),
 ]
