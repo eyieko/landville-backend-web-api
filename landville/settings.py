@@ -39,9 +39,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # third party django extensions
     'rest_framework',
     'drf_yasg',
+    'django_extensions',
 
+    # Landville apps
+    'authentication.apps.AuthenticationConfig',
+    'property.apps.PropertyConfig',
+    'transactions.apps.TransactionsConfig',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +60,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+AUTH_USER_MODEL = 'authentication.User'
 
 ROOT_URLCONF = 'landville.urls'
 
@@ -85,7 +94,10 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432')
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'TEST': {
+            'NAME': 'test_landville'
+        }
     },
 }
 
