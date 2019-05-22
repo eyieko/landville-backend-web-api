@@ -2,9 +2,13 @@ from django.db import models
 from django.contrib.auth.models import (AbstractUser, BaseUserManager)
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
+from datetime import datetime, timedelta
+from django.conf import settings
 
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet
+
+import jwt
 
 
 class UserManager(BaseUserManager):
@@ -85,6 +89,15 @@ class User(AbstractUser, BaseAbstractModel):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+    @property
+    def token(self):
+        exp = datetime.now() - timedelta(days=1)
+        token = jwt.encode({
+            'id': self.pk,
+            'exp': int(exp.strftime('%s'))
+        }, settings.SECRET_KEY, algorithm='HS256')
+        return token.decode('utf-8')
 
 
 class UserProfile(BaseAbstractModel):
