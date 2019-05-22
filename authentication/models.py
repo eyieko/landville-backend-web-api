@@ -1,10 +1,6 @@
 from django.db import models
-<<<<<<< HEAD
 from django.contrib.auth.models import (
     AbstractUser, BaseUserManager, PermissionsMixin)
-=======
-from django.contrib.auth.models import (AbstractUser, BaseUserManager)
->>>>>>> ft(models): Set up and configure models and their associated apps
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -19,11 +15,7 @@ class UserManager(BaseUserManager):
     """
 
     def create_user(self, first_name=None, last_name=None, email=None, password=None):
-<<<<<<< HEAD
         """Create and return a `User` with an email, first name, last name and password."""
-=======
-        """Create and return a `User` with an email, username and password."""
->>>>>>> ft(models): Set up and configure models and their associated apps
 
         if not first_name:
             raise TypeError('Users must have a first name.')
@@ -38,11 +30,7 @@ class UserManager(BaseUserManager):
             raise TypeError('Users must have a password.')
 
         user = self.model(first_name=first_name, last_name=last_name, email=self.normalize_email(
-<<<<<<< HEAD
             email), username=self.normalize_email(email))
-=======
-            email))
->>>>>>> ft(models): Set up and configure models and their associated apps
         user.set_password(password)
         user.is_active = False
         user.save()
@@ -50,11 +38,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, first_name=None, last_name=None, email=None, password=None):
-<<<<<<< HEAD
         """Create a `User` who is also a superuser"""
-=======
-        """Create and return a `User` who is also a superuser"""
->>>>>>> ft(models): Set up and configure models and their associated apps
         if not first_name:
             raise TypeError('Superusers must have a first name.')
 
@@ -86,12 +70,8 @@ class User(AbstractUser, BaseAbstractModel):
         ('BY', 'BUYER'),
     )
 
-<<<<<<< HEAD
     username = models.CharField(
         null=True, blank=True, max_length=100, unique=True)
-=======
-    username = models.CharField(null=True, blank=True, max_length=100)
->>>>>>> ft(models): Set up and configure models and their associated apps
     email = models.EmailField(unique=True)
     role = models.CharField(
         verbose_name='user role', max_length=2, choices=USER_ROLES, default='BY'
@@ -135,11 +115,7 @@ class UserProfile(BaseAbstractModel):
     active_objects = CustomQuerySet.as_manager()
 
     def __str__(self):
-<<<<<<< HEAD
         return f'{self.user}\'s Profile'
-=======
-        return f"{self.user}'s Profile"
->>>>>>> ft(models): Set up and configure models and their associated apps
 
 
 class Client(BaseAbstractModel):
