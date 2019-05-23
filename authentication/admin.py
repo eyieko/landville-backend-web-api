@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -93,8 +92,3 @@ admin.site.register(User, UserAdmin)
 
 admin.site.register(Client)
 admin.site.register(UserProfile)
-=======
-from django.contrib import admin
-
-# Register your models here.
->>>>>>> d6926f4271361939b19b535f07e0fd9833001f20
