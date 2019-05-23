@@ -42,6 +42,7 @@ class UserManagerTest(TransactionTestCase):
     def test_that_we_can_successfully_create_user(self):
         self.assertFalse(self.user2.is_active)
         self.assertIsInstance(self.user2, User)
+        self.assertIsInstance(self.user1, User)
 
     def test_that_superuser_cannot_be_created_without_email_address(self):
         with self.assertRaises(TypeError) as e:
