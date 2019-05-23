@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-<<<<<<< HEAD
     # third party django extensions
     'rest_framework',
     'drf_yasg',
@@ -50,13 +49,6 @@ INSTALLED_APPS = [
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
     'transactions.apps.TransactionsConfig',
-=======
-    'django_extensions',
-
-    'authentication',
-    'property',
-    'transactions',
->>>>>>> ft(models): Set up and configure models and their associated apps
 ]
 
 MIDDLEWARE = [
