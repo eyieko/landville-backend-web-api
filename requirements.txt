@@ -21,6 +21,9 @@ entrypoints==0.3
 facebook-sdk==3.1.0
 factory-boy==2.12.0
 Faker==1.0.7
+django-extensions==2.1.7
+entrypoints==0.3
+factory-boy==2.12.0
 flake8==3.7.7
 google-auth==1.6.3
 gunicorn==19.9.0
