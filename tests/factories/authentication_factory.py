@@ -18,7 +18,7 @@ class UserFactory(factory.DjangoModelFactory):
     first_name = fake.first_name()
     last_name = fake.last_name()
     password = fake.password()
-    is_verified = True  # verify users so they can easily log in when testing
+    is_verified = False
     email = factory.sequence(lambda n: f'user_{n}@email.com')
 
 
