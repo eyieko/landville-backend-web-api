@@ -100,3 +100,17 @@ class UserRegistrationTest(BaseTest):
             self.registration_url, self.empty_firstname_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIsNotNone(response.data["first_name"])
+
+    def test_user_should_not_register_with_an_empty_role(self):
+        """Create an account with an empty role."""
+        response = self.client.post(
+            self.registration_url, self.invalid_role_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIsNotNone(response.data["role"])
+
+    def test_user_should_not_register_with_no_role_field(self):
+        """Create an account with no firstname field."""
+        response = self.client.post(
+            self.registration_url, self.no_role_field_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Role is required'", str(response.data))

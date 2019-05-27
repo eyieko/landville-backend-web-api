@@ -8,16 +8,15 @@ class UserManagerTest(TransactionTestCase):
     """This class will contain all tests on the custom User manager"""
 
     def setUp(self):
-        self.user1 = UserFactory.create(first_name='User', last_name='One')
+        self.user1 = UserFactory.create(email='user@email.com')
         self.user2 = User.objects.create_user(
-            first_name='Test', last_name='User', email='test@mail.com', password='password', role="CA")
+            first_name='Test', last_name='User', email='test@mail.com', password='password', role='CA')
 
     def test_that_the_string_representation_is_correct(self):
-        self.assertEqual(str(self.user1), 'User One')
+        self.assertEqual(str(self.user1), 'user@email.com')
 
     def test_client_admin_is_created(self):
-
-        self.assertAlmostEqual(self.user2.is_active, False)
+        self.assertEqual(self.user2.is_active, True)
 
     def test_email_representation(self):
         self.assertIn('user', self.user1.get_email)
@@ -89,7 +88,7 @@ class UserManagerTest(TransactionTestCase):
         User.objects.create_superuser(
             'Super', 'User', 'superuser@mail.com', 'password')
         superuser = User.objects.filter(is_superuser=True).first()
-        self.assertEqual('Super User', str(superuser))
+        self.assertEqual('superuser@mail.com', str(superuser))
         self.assertTrue(superuser.is_superuser)
         self.assertIsInstance(superuser, User)
 
@@ -98,11 +97,11 @@ class UserProfileModelTest(TestCase):
     """Test the UserProfile model"""
 
     def setUp(self):
-        self.user1 = UserFactory.create(first_name='User', last_name='One')
+        self.user1 = UserFactory.create(email='user@email.com')
         self.profile1 = UserProfileFactory.create(user=self.user1)
 
     def test_that_the_string_representation_is_correct_for_a_profile_model(self):
-        self.assertEqual(str(self.profile1), "User One's Profile")
+        self.assertEqual(str(self.profile1), "user@email.com's Profile")
 
     def test_that_user_profile_relationship_is_accurate(self):
         self.assertEquals(self.user1.userprofile, self.profile1)

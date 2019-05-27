@@ -17,8 +17,9 @@ Backend Repository for LandVille Project
 * GET  /api/v1/auth/verify/ activates a users account
 * POST /api/v1/auth/login/ logs in a user by email
 * POST /api/v1/auth/google/ user signs in through google
-* POST /api/v1/api/v1/auth/twitter/ user signs in through twitter
+* POST /api/v1/auth/twitter/ user signs in through twitter
 * POST /api/v1/auth/facebook/ user signs in through facebook
+* POST /api/v1/auth/client/ application for client company
 
 ## API Documentation
 

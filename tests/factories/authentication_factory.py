@@ -6,6 +6,7 @@ from authentication.models import User, UserProfile, Client
 
 fake = Faker()
 address = {'City': 'Nairobi', 'Street': 'Valley Road', 'State': 'Nairobi'}
+role = "CA"
 
 
 class UserFactory(factory.DjangoModelFactory):
@@ -20,6 +21,7 @@ class UserFactory(factory.DjangoModelFactory):
     password = fake.password()
     is_verified = False
     email = factory.sequence(lambda n: f'user_{n}@email.com')
+    role = role
 
 
 class ClientFactory(factory.DjangoModelFactory):
