@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, PasswordResetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from .renderer import UserJSONRenderer
@@ -60,3 +60,25 @@ class EmailVerificationView(generics.GenericAPIView):
 
     def sendResponse(self, message, status=status.HTTP_400_BAD_REQUEST):
         return Response({"message": message}, status)
+
+
+class SetNewPasswordAPIView(generics.GenericAPIView):
+    serializer_class = PasswordResetSerializer
+    renderer_classes = (UserJSONRenderer,)
+
+    def patch(self, request):
+        # todo get token and decode it here
+        payload = {"email": "crycetruly@gmail.com"}
+        request_data = {
+            "email": payload.get("email"),
+            "password": request.data.get("password", None),
+            "confirmed_password": request.data.get("confirmed_password", None)
+        }
+        serializer = self.serializer_class(data=request_data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            "message": "you have reset your password successfully."},
+            status.HTTP_200_OK
+        )
