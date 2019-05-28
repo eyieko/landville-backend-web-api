@@ -1,5 +1,5 @@
 asn1crypto==0.24.0
-astroid==2.0.4
+astroid==2.2.5
 autopep8==1.4.4
 cachetools==3.1.0
 certifi==2019.3.9
@@ -42,7 +42,7 @@ psycopg2==2.7.7
 psycopg2-binary==2.8.2
 pyasn1==0.4.5
 pyasn1-modules==0.2.5
-pycodestyle==2.4.0
+pycodestyle==2.5.0
 pycparser==2.19
 pydocstyle==3.0.0
 pyflakes==1.6.0

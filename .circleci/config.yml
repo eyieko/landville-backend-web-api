@@ -42,7 +42,7 @@ jobs:
           command: |
             . venv/bin/activate
             pip install -r requirements.txt
-            coverage run --source='authentication/,property/,transactions/' manage.py test && coverage report
+            coverage run --source='authentication/,property/,transactions/,utils/' manage.py test && coverage report
             COVERALLS_REPO_TOKEN=${REPO_TOKEN} coveralls
 
       - store_artifacts:
