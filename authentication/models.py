@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import jwt
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -20,7 +21,7 @@ class UserManager(BaseUserManager):
     when all non-nullable fields are populated.
     """
 
-    def create_user(self, first_name=None, last_name=None, email=None, password=None):
+    def create_user(self, first_name=None, last_name=None, email=None, password=None, role="BY"):
         """Create and return a `User` with an email, first name, last name and password."""
 
         if not first_name:
@@ -38,9 +39,10 @@ class UserManager(BaseUserManager):
         user = self.model(first_name=first_name, last_name=last_name, email=self.normalize_email(
             email), username=self.normalize_email(email))
         user.set_password(password)
-        user.is_active = False
+        user.role = role
+        if user.role == "CA":
+            user.is_active = False
         user.save()
-
         return user
 
     def create_superuser(self, first_name=None, last_name=None, email=None, password=None):
@@ -93,7 +95,7 @@ class User(AbstractUser, BaseAbstractModel):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
-    
+
     @property
     def get_email(self):
         """
@@ -149,7 +151,8 @@ class UserProfile(BaseAbstractModel):
     )
     image = models.URLField(null=True, blank=True)
     security_question = models.TextField(null=True, blank=True)
-    security_answer = models.CharField(max_length=100, null=True, blank=True)
+    security_answer = models.CharField(
+        max_length=100, null=True, blank=True)
 
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()

@@ -2,8 +2,10 @@ from .models import User
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from rest_framework.exceptions import NotAuthenticated
 from .socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
+from django.contrib.auth import authenticate
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -64,7 +66,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
         if not self.do_passwords_match(data["password"], confirmed_password):
             raise serializers.ValidationError({
-                "passwords": ("Passwords donot match")
+                "passwords": ("Passwords do not match")
             })
 
         if self.has_numbers(first_name):
@@ -275,3 +277,29 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Error While creating User.')
 
         return {"token": new_user.token}
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        max_length=128, min_length=6, write_only=True,)
+    token = serializers.CharField(read_only=True)
+
+    def validate(self, data):
+        email = data.get("email", None)
+        password = data.get("password", None)
+        user = authenticate(username=email, password=password)
+
+        if user is None:
+            raise NotAuthenticated({
+                "invalid": "invalid email and password combination"
+            })
+        if not user.is_verified:
+            raise NotAuthenticated({
+                "user": "Your email is not verified,please vist your mail box"
+            })
+        user = {
+            "email": user.email,
+            "token": user.token
+        }
+        return user

@@ -3,7 +3,7 @@ from .serializers import GoogleAuthSerializer, FacebookAuthAPISerializer, Twitte
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, LoginSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from .email_helper import EmailHelper
@@ -37,6 +37,25 @@ class RegistrationAPIView(generics.GenericAPIView):
             }
         }
         return Response(response, status=status.HTTP_201_CREATED)
+
+
+class LoginAPIView(generics.GenericAPIView):
+    """login a user via email"""
+    serializer_class = LoginSerializer
+    renderer_classes = (UserJSONRenderer,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_data = serializer.data
+        response = {
+            "data": {
+                "user": dict(user_data),
+                "message": "You have successfully logged in",
+                "status": "success"
+            }
+        }
+        return Response(response, status=status.HTTP_200_OK)
 
 
 class EmailVerificationView(generics.GenericAPIView):
