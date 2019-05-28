@@ -1,0 +1,113 @@
+#header{
+    background-color:#171039;
+}
+.module caption,.module caption, .inline-group h2{
+    font-size: 20px;
+    background:#f0a311
+    
+}
+.module h2 {
+    background: #f0a311;
+}
+input[type="submit"], button {
+   background: #171039 !important;
+   color: white !important;
+   padding: 10px 10px;
+   margin-top: 15px;
+}
+
+h1 {
+    font-size:32px;
+    text-align: left;
+}
+.login .submit-row {
+    margin: 0;
+    padding: 0px !important;
+    border: none;
+    background: none;
+    text-align: left;
+}
+body.login {
+    background: rgb(207, 26, 26);
+}
+#footer {
+    margin-right: 20px;
+    padding-left: 90%;
+}
+.remember{
+    overflow: auto;
+    width: 100%;
+}
+.remember span{
+    float: left;
+}
+.remember a{
+    float: right;
+}
+div.breadcrumbs {
+    background: #f0a311;
+}
+.form-group{
+    padding: 15px;
+    width: 30%;
+    margin-left: 30%;
+    border: 1px solid #ccc;
+}
+fieldset{
+    border: 1px solid;
+} 
+
+.content-information{
+    width: 394px;
+    margin: auto;
+    border-radius: 4px;
+    border: 1px solid #eaeaea;
+}
+.content-information h3{
+    background-color: #171039;
+    color: #f0a311;
+    font-size: 18px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    display: flex;
+    justify-content: center;
+    padding: 15px 20px;
+    margin-top: 0px;
+}
+.content-information h3 img{
+    margin-right: 8px;
+}
+form label{
+    display: block;
+    margin: 15px 15px;
+   
+}
+
+.login .form-row label{
+    padding-right: 0.5em;
+    line-height: 2em;
+    font-size: 1em;
+    clear: both;
+    color: #333;
+    margin-left: 0px;
+
+}
+
+.login .form-row #id_username{
+    clear: both;
+    padding: 8px;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+} 
+.content-information form input[type='email'] {
+    width: 87%;
+    margin: 0px 0px 15px 15px;
+    padding: 9px;
+}
+.content-information form .btn.btn-outline-info{
+    border: none !important;
+    margin: 0px 0px 15px 15px;
+    border-radius: 4px;
+}
