@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     # Landville apps
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
-    'transactions.apps.TransactionsConfig',
+    'transactions.apps.TransactionsConfig',  
 ]
 
 
@@ -65,6 +65,11 @@ MIDDLEWARE = [
 AUTH_USER_MODEL = 'authentication.User'
 
 ROOT_URLCONF = 'landville.urls'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'authentication.backends.JWTAuthentication',),
+}
 
 TEMPLATES = [
     {

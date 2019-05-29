@@ -7,7 +7,9 @@ from django.contrib.auth.models import (
     AbstractUser, BaseUserManager, PermissionsMixin)
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
-
+from django.conf import settings
+from datetime import datetime, timedelta
+import jwt
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet
 
@@ -91,14 +93,39 @@ class User(AbstractUser, BaseAbstractModel):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+    
+    @property
+    def get_email(self):
+        """
+        This method is required by Django for things like handling emails.
+        Typically, this would be the user's first and last name. Since we do
+        not store the user's real name, we return their emails instead.
+        """
+        return self.email
 
     @property
     def token(self):
-        exp = datetime.now() + timedelta(days=1)
+        """
+        We need to make the method for creating our token private. At the
+        same time, it's more convenient for us to access our token with
+        `user.token` and so we make the token a dynamic property by wrapping
+        in in the `@property` decorator.
+        """
+        return self._generate_jwt_token()
+
+    def _generate_jwt_token(self):
+        """
+        We generate JWT token and add the user id, username and expiration
+        as an integer.
+        """
+        token_expiry = datetime.now() + timedelta(hours=24)
+
         token = jwt.encode({
             'id': self.pk,
-            'exp': int(exp.strftime('%s'))
+            'email': self.get_email,
+            'exp': int(token_expiry.strftime('%s'))
         }, settings.SECRET_KEY, algorithm='HS256')
+
         return token.decode('utf-8')
 
 
