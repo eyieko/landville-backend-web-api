@@ -41,3 +41,15 @@ class PropertyQuery(CustomQuerySet):
     def all_published_and_all_by_client(self, client):
         """Return all property that are published and also all property owned by the client"""
         return self._active().filter(Q(is_published=True)) | self._active().filter(Q(client=client))
+
+
+class ClientAccountQuery(CustomQuerySet):
+    """ Queryset that will be used for ClientAccount model"""
+
+    def not_deleted(self, owner):
+        """ return client details that are not deleted """
+        return self._active().filter(owner=owner)
+
+    def client_admin_has_client(self, client_admin_id):
+        """check if client Admin has an Client Account if not do not enable him/her to submit account details"""
+        return self._active().filter(client_admin_id=id)

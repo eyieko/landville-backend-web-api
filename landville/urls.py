@@ -68,4 +68,6 @@ urlpatterns = [
                                  namespace="auth")),
     path('api/v1/property/',
          include(('property.urls', 'property'), namespace='property')),
+    path('api/v1/transactions/',
+         include('transactions.urls', namespace='transactions'))
 ]
