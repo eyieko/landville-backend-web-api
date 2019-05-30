@@ -14,8 +14,6 @@ from .models import User
 
 class RegistrationAPIView(generics.GenericAPIView):
     """Register new users."""
-
-    permission_classes = (AllowAny,)
     serializer_class = RegistrationSerializer
     renderer_classes = (UserJSONRenderer,)
 
@@ -62,24 +60,26 @@ class EmailVerificationView(generics.GenericAPIView):
     """Verify the users email."""
 
     def get(self, request):
-        token, user = request.GET.get("token").split("~")
+        token, user_id = request.GET.get("token").split("~")
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
         except jwt.exceptions.DecodeError:
-            return self.sendResponse("verification link is invalid")
+            return self.sendResponse("verification link is invalid",
+                                     status.HTTP_400_BAD_REQUEST)
 
         except jwt.ExpiredSignatureError:
-            EmailHelper.send_verification_email([request], user_id=user)
+            EmailHelper.send_verification_email([request], user_id=user_id)
             message = "verification link is expired, we have sent you a new one."
-            return self.sendResponse(message, 200)
+            return self.sendResponse(message, status.HTTP_400_BAD_REQUEST)
+
         user = User.objects.filter(email=payload.get("email")).first()
         if user.is_verified:
-            return self.sendResponse("Account is already activated", 200)
+            return self.sendResponse("Account is already activated")
         user.is_verified = True
         user.save()
-        return self.sendResponse("Email has been verified", status.HTTP_200_OK)
+        return self.sendResponse("Email has been verified")
 
-    def sendResponse(self, message, status=status.HTTP_400_BAD_REQUEST):
+    def sendResponse(self, message, status=status.HTTP_200_OK):
         return Response({"message": message}, status)
 
 
