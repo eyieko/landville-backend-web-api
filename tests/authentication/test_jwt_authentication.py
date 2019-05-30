@@ -25,14 +25,11 @@ class JWTAuthenticationTest(TestCase):
         self.factory = APIRequestFactory()
         self.token_expiry = datetime.now() - timedelta(hours=1)
 
- 
         self.expired_token = jwt.encode({
             'id': self.user.id,
             'email': self.user.email,
             'exp': int(self.token_expiry.strftime('%s'))
         }, settings.SECRET_KEY, algorithm='HS256')
-
-
 
     def test_authentication_failure_because_header_is_None(self):
         """Test if authentication fails when a request has authorization
@@ -62,7 +59,8 @@ class JWTAuthenticationTest(TestCase):
         """We unit test our authentication method to see if the method
         returns `None` when the prefixes match"""
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(self.user_token)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
+            self.user_token)
         res = self.jwt_auth.authenticate(request)
         self.assertEqual(res, None)
 
@@ -70,7 +68,8 @@ class JWTAuthenticationTest(TestCase):
         """We unit test our authentication method to see if the method
         returns `None` when the prefixes mismatch"""
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'dgdggdg, {}'.format(self.user_token)
+        request.META['HTTP_AUTHORIZATION'] = 'dgdggdg, {}'.format(
+            self.user_token)
         res = self.jwt_auth.authenticate(request)
         self.assertEqual(res, None)
 
@@ -78,7 +77,8 @@ class JWTAuthenticationTest(TestCase):
         """We unit test our authentication method to see if the method
         success if coreect token provided"""
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(self.user_token)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
+            self.user_token)
         res = self.jwt_auth._authenticate_credentials(request, self.user_token)
         self.assertEqual(res, (self.user, self.user_token))
 
@@ -86,10 +86,13 @@ class JWTAuthenticationTest(TestCase):
         """We unit test our authentication method to see if the method
         returns expired token error message when supplied with invalid token"""
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(self.expired_token)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
+            self.expired_token)
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
-            res = self.jwt_auth._authenticate_credentials(request, self.expired_token)
-        self.assertEqual(str(e.exception), 'Your token has expired, please log in again.')
+            res = self.jwt_auth._authenticate_credentials(
+                request, self.expired_token)
+        self.assertEqual(str(e.exception),
+                         'Your token has expired, please log in again.')
 
     def test_authentication_failure_incase_of_decoding_error(self):
         """We unit test our authentication method to see if the method
@@ -97,26 +100,37 @@ class JWTAuthenticationTest(TestCase):
         request = self.factory.get('/')
         request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format('fake-token')
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
-            res = self.jwt_auth._authenticate_credentials(request, 'fake-token')
+            res = self.jwt_auth._authenticate_credentials(
+                request, 'fake-token')
         self.assertEqual(str(e.exception), 'Not enough segments')
 
     def test_authentication_failure_if_user_non_existent(self):
         """We unit test our authentication method to see if the method
         returns error message when supplied with a non existent user"""
-        non_existing = User.objects.create_user(first_name='trial', last_name='trial2', email='trial@trial.com', password='triall')
+        non_existing = User.objects.create_user(
+            first_name='trial', last_name='trial2', email='trial@trial.com', password='triall')
         non_existing.delete()
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(non_existing.token)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
+            non_existing.token)
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
-            res = self.jwt_auth._authenticate_credentials(request, non_existing.token)
-        self.assertEqual(str(e.exception), 'User matching this token was not found.')
+            res = self.jwt_auth._authenticate_credentials(
+                request, non_existing.token)
+        self.assertEqual(str(e.exception),
+                         'User matching this token was not found.')
 
     def test_authentication_failure_if_user_not_active(self):
         """We unit test our authentication method to see if the method
         returns error message when supplied with an inactive user"""
-        non_existing = User.objects.create_user(first_name='trial', last_name='trial2', email='trial@trial.com', password='triall')
+        non_existing = User.objects.create_user(
+            first_name='trial', last_name='trial2', email='trial@trial.com', password='triall')
+        non_existing.is_active = False
+        non_existing.save()
         request = self.factory.get('/')
-        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(non_existing.token)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
+            non_existing.token)
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
-            res = self.jwt_auth._authenticate_credentials(request, non_existing.token)
-        self.assertEqual(str(e.exception), 'Forbidden! This user has been deactivated.')
+            res = self.jwt_auth._authenticate_credentials(
+                request, non_existing.token)
+        self.assertEqual(str(e.exception),
+                         'Forbidden! This user has been deactivated.')

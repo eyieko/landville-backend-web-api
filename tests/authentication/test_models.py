@@ -10,14 +10,22 @@ class UserManagerTest(TransactionTestCase):
     def setUp(self):
         self.user1 = UserFactory.create(first_name='User', last_name='One')
         self.user2 = User.objects.create_user(
-            first_name='Test', last_name='User', email='test@mail.com', password='password')
+            first_name='Test', last_name='User', email='test@mail.com', password='password', role="CA")
 
     def test_that_the_string_representation_is_correct(self):
         self.assertEqual(str(self.user1), 'User One')
-    
+
+    def test_client_admin_is_created(self):
+
+        self.assertAlmostEqual(self.user2.is_active, False)
+
     def test_email_representation(self):
         self.assertIn('user', self.user1.get_email)
         self.assertIn('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9', self.user1.token)
+
+    def test_that_user_token_is_created(self):
+        self.assertIsNotNone(self.user2.token)
+
     def test_that_user_cannot_be_created_without_password(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
@@ -43,7 +51,9 @@ class UserManagerTest(TransactionTestCase):
         self.assertEqual(str(e.exception), 'Users must have an email address.')
 
     def test_that_we_can_successfully_create_user(self):
-        self.assertFalse(self.user2.is_active)
+        user = User.objects.create_user(
+            first_name='Test', last_name='User', email='test5@mail.com', password='password', role="BY")
+        self.assertTrue(user.is_active)
         self.assertIsInstance(self.user2, User)
         self.assertIsInstance(self.user1, User)
 
