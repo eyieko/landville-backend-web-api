@@ -12,6 +12,7 @@ Backend Repository for LandVille Project
 
 - List of endpoints exposed by the service
 
+* POST /landville/adm/ accessing admin route
 * POST /auth/register/ registers new users by email
 * GET /auth/verify/ activates a users account
 * POST /auth/login/ logs in a user by email
