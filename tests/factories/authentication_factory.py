@@ -37,7 +37,7 @@ class ClientFactory(factory.DjangoModelFactory):
     # phone number shouldn't be longer than 17 digits
     phone = factory.LazyAttribute(lambda _: fake.phone_number()[:17])
     address = address
-    email = factory.LazyAttribute(lambda _: fake.email())
+    email = factory.sequence(lambda n: f'user_{n}@email.com')
 
 
 class UserProfileFactory(factory.DjangoModelFactory):

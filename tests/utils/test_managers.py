@@ -1,7 +1,8 @@
+
 from django.test import TestCase
 
-from ..factories.authentication_factory import UserFactory, ClientFactory
-from ..factories.property_factory import PropertyFactory
+from tests.factories.authentication_factory import UserFactory, ClientFactory
+from tests.factories.property_factory import PropertyFactory
 from authentication.models import User
 from property.models import Property
 
@@ -12,8 +13,10 @@ class CustomManagerTest(TestCase):
     def setUp(self):
         self.user1 = UserFactory.create()
         self.user2 = UserFactory.create()
-        self.client1 = ClientFactory.create(client_admin=self.user1)
-        self.client2 = ClientFactory.create(client_admin=self.user2)
+        self.client1 = ClientFactory.create(
+            client_admin=self.user1, approval_status="approved")
+        self.client2 = ClientFactory.create(
+            client_name='Hank Green And CO', phone='3452435423523', client_admin=self.user2, approval_status="approved")
         self.property1 = PropertyFactory.create(client=self.client1)
         self.property2 = PropertyFactory.create(client=self.client2)
 

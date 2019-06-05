@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %} {% load static %} {% block title %}{{ title }} |
+Landville{% endblock %}
+{% block extrastyle %}
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="{% static '/assets/style.css' %}"
+/>
+{% endblock %}
+{% block branding %}
+<h1 id="site-name">
+  <img src="{% static '/assets/logo.png' %}" width="20" height="20" /> LandVille
+</h1>
+
+{% endblock %}
+{% block content %}
+<div class="content-information">
+  <h3>Add Notes</h3>
+  <form action="{% url 'auth:add-notes'%}" method="POST">
+    {%csrf_token%}
+    <input type="hidden" name="client" value="{{ client }}" />
+    <input type="hidden" name="status" value="{{ status }}" />
+
+    <div class="form-text-item">
+      <textarea
+        required
+        minlength="5"
+        name="notes"
+        id="notes"
+        cols="54"
+        rows="10"
+      ></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-outline-info">Continue</button>
+  </form>
+</div>
+{% endblock content%}

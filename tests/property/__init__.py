@@ -22,7 +22,7 @@ class BaseTest(TestCase):
         self.admin.save()
 
         self.client1 = ClientFactory.create(
-            client_admin=self.user1, is_approved=True)
+            client_admin=self.user1, approval_status='approved')
         self.client2 = ClientFactory.create(client_admin=self.user2)
 
         self.property1 = PropertyFactory.create(client=self.client1)

@@ -30,5 +30,4 @@ class IsClientAdmin(BasePermission):
         user = request.user if request.user.is_authenticated else None
         if user:
             client = user.employer.first()
-            return bool(
-                client and user.role == 'CA' and client.is_approved)
+            return client and user.role == 'CA' and client.approval_status=='approved'
