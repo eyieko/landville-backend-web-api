@@ -20,6 +20,8 @@ Backend Repository for LandVille Project
 * POST /api/v1/auth/twitter/ user signs in through twitter
 * POST /api/v1/auth/facebook/ user signs in through facebook
 * POST /api/v1/auth/client/ application for client company
+* POST /api/v1/auth/password-reset/ user gets a reset password link
+* PATCH /api/v1/auth/password-reset/ user resets password
 
 ## API Documentation
 

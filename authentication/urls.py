@@ -1,7 +1,7 @@
 from django.urls import path
 from authentication.views import (RegistrationAPIView, EmailVerificationView,
                     ClientCreateView, GoogleAuthAPIView, FacebookAuthAPIView,
-                    TwitterAuthAPIView, LoginAPIView)
+                    TwitterAuthAPIView, LoginAPIView, PasswordResetView)
 
 app_name = 'authentication'
 
@@ -13,4 +13,5 @@ urlpatterns = [
     path('facebook/', FacebookAuthAPIView.as_view(), name='facebook'),
     path('twitter/', TwitterAuthAPIView.as_view(), name='twitter'),
     path("client/", ClientCreateView.as_view(), name="client"),
+    path("password-reset/", PasswordResetView.as_view(), name="password-reset"),
 ]
