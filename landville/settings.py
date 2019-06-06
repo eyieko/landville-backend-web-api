@@ -71,7 +71,10 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'authentication.auth_exception_handler.custom_exception_handler',
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
-    )
+    ),
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'ALLOWED_VERSIONS': ('v1',)
 }
 
 TEMPLATES = [

@@ -15,7 +15,7 @@
 
 
 {% block sidebar %}
-{% if '/admin/login/' in request.path %}
+{% if '/landville/adm/login/' in request.path %}
 <p class="remember"><a href="{% url 'password_reset' %}">Forgot password? </a> </p>
 {% endif %}
 {% endblock %} 
