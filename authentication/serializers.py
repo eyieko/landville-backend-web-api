@@ -1,11 +1,13 @@
-from .models import User
+import re
+from authentication.models import User, Client
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.exceptions import NotAuthenticated
-from .socialvalidators import SocialValidation
+from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
 from django.contrib.auth import authenticate
+from utils import BaseUtils
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -31,13 +33,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["email", "first_name", "last_name",
-                  "password", "confirmed_password"]
+                  "password", "confirmed_password", "role"]
         validators = []
 
     def validate(self, data):
         """Validate data before it gets saved."""
-        first_name = data.get("first_name", None)
-        last_name = data.get("last_name", None)
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        role = data.get("role")
 
         if first_name is None:
             raise serializers.ValidationError({
@@ -55,6 +58,11 @@ class RegistrationSerializer(serializers.ModelSerializer):
         if last_name == "":
             raise serializers.ValidationError({
                 "last_name": ("Lastname may not be blank")
+            })
+
+        if role is None:
+            raise serializers.ValidationError({
+                "role": ("Role is required")
             })
 
         confirmed_password = data.get("confirmed_password", None)
@@ -303,3 +311,41 @@ class LoginSerializer(serializers.Serializer):
             "token": user.token
         }
         return user
+
+
+class ClientSerializer(serializers.ModelSerializer, BaseUtils):
+    class Meta:
+        model = Client
+        fields = ['client_name', 'phone', 'email', 'address', 'client_admin']
+        read_only_fields = ('is_deleted', 'is_published')
+
+    def validate(self, data):
+        """Validate data before it gets saved."""
+        phone = data.get("phone")
+        address = data.get("address")
+        p = re.compile(r'\+?\d{3}\s?\d{3}\s?\d{7}')
+        q = re.compile(r'^.{10,16}$')
+
+        if not (p.match(phone) and q.match(phone)):
+            raise serializers.ValidationError({
+                "phone": "Phone number must be of the format +234 123 4567890"
+            })
+
+        #Validate the type of address
+        self.validate_data_instance(address, dict, {"address": "Company address should contain State, City and Street details"})
+
+        keys = ["State", "Street", "City"]
+        for key in keys:
+
+            self.validate_dictionary_keys(key, address, {
+                "address": "{} is required in address".format(key)
+                })
+                
+            self.validate_data_instance(address[key], str, {
+                "address": "{} must be a string".format(key)
+                })
+            self.validate_empty_input(key, address, {
+                "address":"{} value can not be empty".format(key)
+                })
+
+        return data

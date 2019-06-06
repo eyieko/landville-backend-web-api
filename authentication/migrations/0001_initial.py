@@ -72,6 +72,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('client_name', models.CharField(max_length=100, unique=True)),
+                ('is_approved', models.BooleanField(default=False)),
                 ('phone', models.CharField(max_length=17, unique=True)),
                 ('email', models.EmailField(max_length=254)),
                 ('address', django.contrib.postgres.fields.jsonb.JSONField(encoder=django.core.serializers.json.DjangoJSONEncoder, verbose_name='physical address')),
