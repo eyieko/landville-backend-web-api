@@ -3,6 +3,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 venv/
+ENV/
 .vscode
 settings.json
 # SQLite3
