@@ -183,3 +183,10 @@ class Client(BaseAbstractModel):
 
     def __str__(self):
         return self.client_name
+
+class PasswordResetToken(models.Model):
+    """This class creates a Password Reset Token model."""
+
+    token = models.CharField(max_length=400)
+    created = models.DateTimeField(auto_now=True)
+    is_valid = models.BooleanField(default=True)

@@ -3,11 +3,14 @@ import os
 import re
 from utils import BaseUtils
 from authentication.renderer import UserJSONRenderer
-from authentication.serializers import GoogleAuthSerializer, FacebookAuthAPISerializer, TwitterAuthAPISerializer
+from rest_framework.views import APIView
+from authentication.serializers import (
+    GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
+    TwitterAuthAPISerializer, RegistrationSerializer, LoginSerializer,
+    ClientSerializer, ChangePasswordSerializer)
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from authentication.serializers import RegistrationSerializer, LoginSerializer, ClientSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from authentication.email_helper import EmailHelper
@@ -230,3 +233,35 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         Checks if client admin admin already has a company
         """
         return bool(Client.active_objects.filter(client_admin_id=id_value))
+
+
+class PasswordResetView(APIView):
+    """Handle resetting a forgotten password."""
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = PasswordResetSerializer
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(
+            data=data)
+        serializer.is_valid(raise_exception=True)
+        response = {
+            "data": serializer.validated_data
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        """
+         patch:
+             Update a user's password with a new password.
+         """
+        data = request.data
+        token = request.query_params['token']
+        data['token'] = token
+        serializer = ChangePasswordSerializer(
+            data=data)
+        serializer.is_valid(raise_exception=True)
+        response = {
+            "data": serializer.validated_data
+        }
+        return Response(response, status=status.HTTP_200_OK)

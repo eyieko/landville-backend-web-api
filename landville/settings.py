@@ -88,6 +88,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -136,6 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Email Configurations
+DOMAIN = os.environ.get('DOMAIN', '')
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
