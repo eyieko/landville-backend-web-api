@@ -3,7 +3,7 @@ branch = true
 omit = */tests/*,
  */migrations/*,
  */urls.py,
- */venv*/,
+ */venv/*,
  */settings.py,
  */wsgi.py,
  */apps.py,

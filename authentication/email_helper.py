@@ -21,7 +21,7 @@ class EmailHelper:
             settings.SECRET_KEY,
             algorithm="HS256",
         ).decode("utf-8")
-        url = f"http://{get_current_site(data[0]).domain}/auth/verify/?token={encoded_jwt}~{user_id}"
+        url = f"http://{get_current_site(data[0]).domain}/api/v1/auth/verify/?token={encoded_jwt}~{user_id}"
         subject = "Account Activation"
         body = f"Hello,\nYou are receiving this e-mail because you have created an account on LandVille, \nClick the link below to activate your account.\n\n{url}"
         EmailMessage(subject, body, to=[email]).send(fail_silently=False)

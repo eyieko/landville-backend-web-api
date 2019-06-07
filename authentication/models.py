@@ -17,12 +17,15 @@ from django.conf import settings
 
 class UserManager(BaseUserManager):
     """
-    We need to override the `create_user` method so that users can only be created
-    when all non-nullable fields are populated.
+    We need to override the `create_user` method so that users can
+    only be created when all non-nullable fields are populated.
     """
 
-    def create_user(self, first_name=None, last_name=None, email=None, password=None, role="BY"):
-        """Create and return a `User` with an email, first name, last name and password."""
+    def create_user(self, first_name=None, last_name=None, email=None, password=None, role='BY'):
+        """
+        Create and return a `User` with an email, first name, last name and
+        password.
+        """
 
         if not first_name:
             raise TypeError('Users must have a first name.')
@@ -40,8 +43,6 @@ class UserManager(BaseUserManager):
             email), username=self.normalize_email(email))
         user.set_password(password)
         user.role = role
-        if user.role == "CA":
-            user.is_active = False
         user.save()
         return user
 
@@ -59,8 +60,9 @@ class UserManager(BaseUserManager):
         if not password:
             raise TypeError('Superusers must have a password.')
 
-        user = self.model(first_name=first_name, last_name=last_name, email=self.normalize_email(
-            email), role='LA')
+        user = self.model(
+            first_name=first_name, last_name=last_name,
+            email=self.normalize_email(email), role='LA')
         user.is_staff = True
         user.is_superuser = True
         user.is_active = True
@@ -82,7 +84,8 @@ class User(AbstractUser, BaseAbstractModel):
         null=True, blank=True, max_length=100, unique=True)
     email = models.EmailField(unique=True)
     role = models.CharField(
-        verbose_name='user role', max_length=2, choices=USER_ROLES, default='BY'
+        verbose_name='user role', max_length=2, choices=USER_ROLES,
+        default='BY'
     )
     is_verified = models.BooleanField(default=False)
 
@@ -94,7 +97,7 @@ class User(AbstractUser, BaseAbstractModel):
     active_objects = CustomQuerySet.as_manager()
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.email}'
 
     @property
     def get_email(self):
@@ -168,8 +171,9 @@ class Client(BaseAbstractModel):
     client_admin = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='employer'
     )
+    is_approved = models.BooleanField(default=False)
     phone = models.CharField(max_length=17, unique=True)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     address = JSONField(
         verbose_name='physical address', encoder=DjangoJSONEncoder
     )
@@ -179,3 +183,10 @@ class Client(BaseAbstractModel):
 
     def __str__(self):
         return self.client_name
+
+class PasswordResetToken(models.Model):
+    """This class creates a Password Reset Token model."""
+
+    token = models.CharField(max_length=400)
+    created = models.DateTimeField(auto_now=True)
+    is_valid = models.BooleanField(default=True)

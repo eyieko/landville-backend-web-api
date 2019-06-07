@@ -12,12 +12,16 @@ Backend Repository for LandVille Project
 
 - List of endpoints exposed by the service
 
-* POST /auth/register/ registers new users by email
-* GET /auth/verify/ activates a users account
-* POST /auth/login/ logs in a user by email
-* POST /auth/google/ user signs in through google
-* POST /auth/twitter/ user signs in through twitter
-* POST /auth/facebook/ user signs in through facebook
+* POST /landville/adm/ logs in Admin
+* POST /api/v1/auth/register/ registers new users by email
+* GET  /api/v1/auth/verify/ activates a users account
+* POST /api/v1/auth/login/ logs in a user by email
+* POST /api/v1/auth/google/ user signs in through google
+* POST /api/v1/auth/twitter/ user signs in through twitter
+* POST /api/v1/auth/facebook/ user signs in through facebook
+* POST /api/v1/auth/client/ application for client company
+* POST /api/v1/auth/password-reset/ user gets a reset password link
+* PATCH /api/v1/auth/password-reset/ user resets password
 
 ## API Documentation
 

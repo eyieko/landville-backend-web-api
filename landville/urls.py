@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.urls import path, include
 from django.contrib import admin
-from django.urls import path, include
+from django.contrib.auth import views as auth_views
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
@@ -41,10 +41,29 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/documentation/', schema_view.with_ui('swagger', cache_timeout=0),
+    path('landville/adm/', admin.site.urls),
+    path('api/v1/documentation/',
+         schema_view.with_ui('swagger', cache_timeout=0),
          name='api_documentation'),
-    path('', RedirectView.as_view(url='api/documentation/', permanent=False),
+    path('', RedirectView.as_view(url='api/v1/documentation/',
+         permanent=False),
          name='api_documentation'),
-    path('auth/', include(("authentication.urls", "auth"), namespace="auth")),
+    path('admin/password-reset/',
+         auth_views.PasswordResetView.as_view
+         (template_name='admin/password_reset.html'),
+         name='password_reset'),
+    path('admin/password_reset_done/',
+         auth_views.PasswordResetDoneView.as_view
+         (template_name='admin/password_reset_done.html'),
+         name='password_reset_done'),
+    path('admin/password-reset-confirm/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view
+         (template_name='admin/password_reset_confirm.html'),
+         name='password_reset_confirm'),
+    path('admin/password-reset-confirm/',
+         auth_views.PasswordResetCompleteView.as_view
+         (template_name='admin/password_reset_complete.html'),
+         name='password_reset_complete'),
+    path('api/v1/auth/', include(("authentication.urls", "auth"),
+         namespace="auth")),
 ]

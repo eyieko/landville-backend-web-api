@@ -1,11 +1,13 @@
 import factory
 from factory.faker import faker
 from faker import Faker
+from datetime import datetime, timedelta
 
-from authentication.models import User, UserProfile, Client
+from authentication.models import User, UserProfile, Client, PasswordResetToken
 
 fake = Faker()
 address = {'City': 'Nairobi', 'Street': 'Valley Road', 'State': 'Nairobi'}
+role = "CA"
 
 
 class UserFactory(factory.DjangoModelFactory):
@@ -18,8 +20,9 @@ class UserFactory(factory.DjangoModelFactory):
     first_name = fake.first_name()
     last_name = fake.last_name()
     password = fake.password()
-    is_verified = True  # verify users so they can easily log in when testing
+    is_verified = False
     email = factory.sequence(lambda n: f'user_{n}@email.com')
+    role = role
 
 
 class ClientFactory(factory.DjangoModelFactory):
@@ -48,3 +51,12 @@ class UserProfileFactory(factory.DjangoModelFactory):
     image = fake.url()
     security_question = fake.sentence()
     security_answer = fake.word()
+
+class PasswordResetTokenFactory(factory.DjangoModelFactory):
+    """ This class creates PasswordResetToken objects for testing."""
+
+    class Meta:
+        model = PasswordResetToken
+    
+    token = fake.text()
+    is_valid = True

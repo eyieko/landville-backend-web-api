@@ -61,14 +61,14 @@ class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ('email', 'is_superuser')
-    list_filter = ('is_superuser',)
+    list_display = ('email', 'is_superuser', 'first_name','last_name')
+    list_filter = ('created_at', 'is_superuser',)
     fieldsets = (
         (None, {'fields': ('password',)}),
         ('Personal info', {
          'fields': ('email', 'first_name', 'last_name', 'username')}),
         ('Permissions', {
-         'fields': ('is_superuser', 'is_staff', 'groups', 'user_permissions')}),
+         'fields': ('is_superuser', 'is_staff', 'groups','user_permissions')}),
         ('User Roles', {
             'fields': ('is_active', 'role', 'is_verified')
         }),
@@ -81,11 +81,10 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'first_name', 'last_name', 'password1', 'password2')}
          ),
     )
-    search_fields = ('email', 'first_name', 'last_name', 'username')
+    search_fields = ('email', 'first_name', 'last_name', 'username'),
+    list_per_page = 15
     ordering = ('email',)
     filter_horizontal = ()
-
-
 # Now register the new UserAdmin...
 admin.site.register(User, UserAdmin)
 # ... and, since we're not using Django's built-in permissions,

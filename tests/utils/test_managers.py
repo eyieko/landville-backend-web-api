@@ -13,10 +13,7 @@ class CustomManagerTest(TestCase):
         self.user1 = UserFactory.create()
         self.user2 = UserFactory.create()
         self.client1 = ClientFactory.create(client_admin=self.user1)
-        self.client2 = ClientFactory.create(
-            client_name='Hank Green And CO', phone='3452435423523', client_admin=self.user2)
         self.property1 = PropertyFactory.create(client=self.client1)
-        self.property2 = PropertyFactory.create(client=self.client2)
 
     def test_that_we_can_use_custom_query_to_get_all_active_users(self):
         users = User.active_objects.all_objects()

@@ -122,11 +122,3 @@ class SocialAuthTest(TestCase):
             format='json')
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('Invalid or expired token.', str(res.data))
-
-    def test_twitter_login_invalid_token(self):
-        res = self.client.post(
-            TWITTER_URL,
-            self.twitter_payload,
-            format='json')
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Invalid or expired token.', str(res.data))

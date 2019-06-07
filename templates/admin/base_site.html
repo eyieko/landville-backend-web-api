@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% block title %}{{ title }} | Landville{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{% static '/assets/style.css' %}" >
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><img src="{% static '/assets/logo.png' %}" width="20" height="20"> LandVille</h1>
+
+{% endblock %}
+{% block welcome-msg %}Welcome to LandVille {% endblock %}
+{% block content_title %}{% if title %}<h1>DASHBOARD</h1>{% endif %}{% endblock %}
+
+
+{% block sidebar %}
+{% if '/landville/adm/login/' in request.path %}
+<p class="remember"><a href="{% url 'password_reset' %}">Forgot password? </a> </p>
+{% endif %}
+{% endblock %} 
