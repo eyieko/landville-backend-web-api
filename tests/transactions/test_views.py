@@ -1,10 +1,14 @@
-
+"""Module of tests for views of transactions app."""
 from tests.transactions import BaseTest
 from transactions.views import ClientAccountAPIView
 from django.urls import reverse
 from rest_framework.test import force_authenticate
 from rest_framework.views import status
 import json
+from rest_framework.test import APITestCase
+from faker import Factory
+from unittest.mock import patch
+from tests.factories.authentication_factory import UserFactory
 
 
 ACCOUNT_DETAIL_URL = reverse("transactions:all-accounts")
@@ -25,7 +29,9 @@ class TestClientAccountDetailsViews(BaseTest):
         force_authenticate(request, user=self.user3)
         res = view(request)
         self.assertIn(
-            'you must have a client company to submit account details', str(res.data))
+            'you must have a client company to submit account details',
+            str(res.data)
+        )
 
     def test_staff_can_get_even_deleted_account_details(self):
         """ a staff can get even deleted items """
@@ -35,7 +41,7 @@ class TestClientAccountDetailsViews(BaseTest):
         force_authenticate(request, user=self.user1)
         res = view(request)
         account_number = res.data['account_number']
-        request2 = self.factory.delete(
+        self.factory.delete(
             single_detail_url(account_number), format='json')
         request3 = self.factory.get(
             single_detail_url(account_number), format='json')
@@ -53,7 +59,7 @@ class TestClientAccountDetailsViews(BaseTest):
         request = self.factory.post(
             ACCOUNT_DETAIL_URL, self.account_details, format='json')
         force_authenticate(request, user=self.user1)
-        resp = view(request)
+        view(request)
 
         request2 = self.factory.get(ACCOUNT_DETAIL_URL)
         self.user1.role = 'CA'
@@ -64,7 +70,10 @@ class TestClientAccountDetailsViews(BaseTest):
         self.assertEqual(resp2.status_code, status.HTTP_200_OK)
 
     def test_staff_gets_the_correct_message_no_details_posted(self):
-        """ staff should be able to get the right details when no details are posted"""
+        """
+        staff should be able to get the right details when no details
+        are posted
+        """
 
         view = ClientAccountAPIView.as_view()
         request = self.factory.get(ACCOUNT_DETAIL_URL)
@@ -124,7 +133,7 @@ class TestClientAccountDetailsViews(BaseTest):
         request = self.factory.post(
             ACCOUNT_DETAIL_URL, self.account_details, format='json')
         force_authenticate(request, user=self.user1)
-        actual_res = view(request)
+        view(request)
         account_number = 'djsdjshdsjdhskddkjwfsjkdfeghfjkas'
 
         request2 = self.factory.get(
@@ -220,7 +229,7 @@ class TestClientAccountDetailsViews(BaseTest):
             ACCOUNT_DETAIL_URL, self.account_details, format='json')
         force_authenticate(request, user=self.user1)
 
-        actual_res = view(request)
+        view(request)
 
         request2 = self.factory.post(
             ACCOUNT_DETAIL_URL, self.account_details, format='json')
@@ -230,3 +239,206 @@ class TestClientAccountDetailsViews(BaseTest):
 
         self.assertEqual(actual_response.status_code,
                          status.HTTP_400_BAD_REQUEST)
+
+
+class CardPaymentTest(APITestCase):
+
+    def setUp(self):
+        self.card_pin_url = reverse('transactions:card_pin')
+        self.card_foreign_url = reverse('transactions:card_foreign')
+        self.card_validate_url = reverse('transactions:validate_card')
+        self.faker = Factory.create()
+        self.auth_user = UserFactory(is_verified=True)
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.auth_user.token}'
+        )
+        self.card_info = {
+            'cardno': self.faker.credit_card_number(card_type=None),
+            'cvv': self.faker.credit_card_security_code(card_type=None),
+            'expirymonth': self.faker.credit_card_expire(
+                start='now', end='+10y', date_format='%m'),
+            'expiryyear': self.faker.credit_card_expire(
+                start='now', end='+10y', date_format='%y'),
+            'amount': 20000.00
+        }
+        self.address_details = {
+            'billingzip': '07205',
+            'billingcity': 'billingcity',
+            'billingaddress': 'billingaddress',
+            'billingstate': 'NJ',
+            'billingcountry': 'UK'
+        }
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    @patch('transactions.transaction_services.'
+           'TransactionServices.authenticate_card_payment')
+    def test_payments_with_domestic_card_valid_transaction(
+            self, mock_auth, mock_initiate
+    ):
+        mock_initiate.return_value = {
+            'status': 'success',
+            'data': {
+                'suggested_auth': 'PIN'
+            }
+        }
+        mock_auth.return_value = {
+            'status': 'success',
+            'data': {
+                'flwRef': 'FLW-MOCK-9deab',
+                'authModelUsed': 'PIN'
+
+            }
+        }
+
+        self.card_info.update({'pin': 1111})
+        resp = self.client.post(self.card_pin_url, self.card_info)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['message'],
+                         'Kindly input the OTP sent to you')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    def test_payments_with_domestic_card_invalid_transaction(
+            self, mock_initiate):
+        mock_initiate.return_value = {
+            "status": "error",
+            "data": {
+                "suggested_auth": "PIN"
+            }
+        }
+
+        self.card_info.update({'pin': 1111})
+
+        resp = self.client.post(self.card_pin_url, self.card_info)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data['message'], None)
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.authenticate_card_payment')
+    def test_payments_with_domestic_card_failed_authentication(
+            self, mock_auth, mock_initiate):
+        mock_initiate.return_value = {
+            "status": "success",
+            "data": {
+                "suggested_auth": "PIN"
+            }
+        }
+        mock_auth.return_value = {
+            'status': 'error',
+            'data': {
+                'flwRef': 'FLW-MOCK-9deab',
+                'authModelUsed': 'PIN'
+
+            }
+        }
+
+        self.card_info.update({'pin': 1111})
+
+        resp = self.client.post(self.card_pin_url, self.card_info)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data['message'], None)
+
+    def test_payments_with_domestic_card_failed_serializer_validation(self):
+
+        del self.card_info['cardno']
+        self.card_info.update({'pin': 1111})
+
+        resp = self.client.post(self.card_pin_url, self.card_info)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data['cardno'], ['This field is required.'])
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.authenticate_card_payment')
+    def test_international_payments_with_valid_transaction(
+            self, mock_auth, mock_initiate):
+        mock_initiate.return_value = {
+            'status': 'success',
+            'message': 'AUTH_SUGGESTION',
+            'data': {
+                'suggested_auth': 'NOAUTH_INTERNATIONAL'
+            }
+        }
+
+        mock_auth.return_value = {
+            'status': 'success',
+            'data': {
+                'authurl': 'authurl',
+                'authModelUsed': 'NOAUTH_INTERNATIONAL'
+
+            }
+        }
+
+        self.card_info.update(self.address_details)
+
+        resp = self.client.post(self.card_foreign_url, self.card_info)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['message'], 'authurl')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    def test_international_payments_with_invalid_transaction(
+            self, mock_initiate):
+        mock_initiate.return_value = {
+            'status': 'error',
+            'data': {
+                'suggested_auth': 'NOAUTH_INTERNATIONAL'
+            }
+        }
+
+        self.card_info.update(self.address_details)
+
+        resp = self.client.post(self.card_foreign_url, self.card_info)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data['message'], None)
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.initiate_card_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.authenticate_card_payment')
+    def test_international_payments_with_failed_authentication(
+            self, mock_auth, mock_initiate):
+        mock_initiate.return_value = {
+            'status': 'success',
+            'message': 'AUTH_SUGGESTION',
+            'data': {
+                'suggested_auth': 'NOAUTH_INTERNATIONAL'
+            }
+        }
+        mock_auth.return_value = {
+            'status': 'error',
+            'message': 'error message'
+
+        }
+
+        self.card_info.update(self.address_details)
+        resp = self.client.post(self.card_foreign_url, self.card_info)
+        self.assertEqual(resp.status_code, 400)
+
+    def test_international_payments_failed_serializer_validation(self):
+        del self.card_info['cardno']
+        resp = self.client.post(self.card_foreign_url, self.card_info)
+        json_resp = resp.json()
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(json_resp['cardno'], ['This field is required.'])
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    def test_valid_payment(self, mock_validate):
+        mock_validate.return_value = {
+            'message': 'Charge Complete',
+            'status_code': 200
+        }
+
+        data = {
+            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
+            'otp': 12345
+        }
+
+        resp = self.client.post(self.card_validate_url, data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['message'], 'Charge Complete')
