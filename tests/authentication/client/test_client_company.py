@@ -19,7 +19,7 @@ class ClientCompanyTest(TestUtils):
         self.assertIn(
             "Phone number must be of the format +234 123 4567890",
             str(response.data)
-            )
+        )
 
     def test_create_client_company_with_invalid_address(self):
         """
@@ -33,7 +33,7 @@ class ClientCompanyTest(TestUtils):
         self.assertIn(
             "Company address should contain State, City and Street details",
             str(response.data)
-            )
+        )
 
     def test_create_client_company_with_address_with_no_street(self):
         """
@@ -107,21 +107,23 @@ class ClientCompanyTest(TestUtils):
         Client admin should not create a second company account.
         """
         self.set_token()
-        self.client.post(self.client_url, self.valid_client_data, format="json")
+        self.client.post(
+            self.client_url, self.valid_client_data, format="json")
         response = self.client.post(
             self.client_url, self.valid_client_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn(
             "You cannot be admin of more than one client client",
             str(response.data)
-            )
+        )
 
     def test_get_client_company_with_no_company(self):
         """Retrieve company when no company is created"""
         self.set_token()
         response = self.client.get(
             self.client_url, format="json")
-        self.assertIn("You don't have a client company created", str(response.data))
+        self.assertIn("You don't have a client company created",
+                      str(response.data))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_client_company(self):
@@ -131,7 +133,8 @@ class ClientCompanyTest(TestUtils):
             self.client_url, self.valid_client_data, format="json")
         response = self.client.get(
             self.client_url, format="json")
-        self.assertIn("You have retrieved your client company", str(response.data)) 
+        self.assertIn("You have retrieved your client company",
+                      str(response.data))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_client_company_with_address_with_empty_street(self):

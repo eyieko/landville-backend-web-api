@@ -1,5 +1,6 @@
 from django.test import TestCase, TransactionTestCase
-from authentication.models import User
+
+from authentication.models import User, UserProfile
 from tests.factories.authentication_factory import UserFactory, UserProfileFactory, ClientFactory
 from authentication.models import Client
 
@@ -98,7 +99,7 @@ class UserProfileModelTest(TestCase):
 
     def setUp(self):
         self.user1 = UserFactory.create(email='user@email.com')
-        self.profile1 = UserProfileFactory.create(user=self.user1)
+        self.profile1 = UserProfile.objects.get(user=self.user1)
 
     def test_that_the_string_representation_is_correct_for_a_profile_model(self):
         self.assertEqual(str(self.profile1), "user@email.com's Profile")

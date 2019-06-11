@@ -1,6 +1,7 @@
 import re
 from rest_framework import serializers
 
+
 class BaseUtils():
     def remove_redundant_spaces(self, value):
         """
@@ -23,3 +24,27 @@ class BaseUtils():
         if not dict_value[key_value].strip():
             raise serializers.ValidationError(message)
 
+    def validate_phone_number(self, phone):
+        """Validate the phone number to match expected format"""
+        p = re.compile(r'\+?\d{3}\s?\d{3}\s?\d{7}')
+        q = re.compile(r'^.{10,16}$')
+        if not (p.match(phone) and q.match(phone)):
+            raise serializers.ValidationError({
+                "phone": "Phone number must be of the format +234 123 4567890"
+            })
+
+    def validate_dependent_fields(self, data, first_field, second_field,
+                                  first_validation_error, second_validation_error):
+        '''
+        Function tests if the fields that depend on each other are both present
+        in the user submitted data
+        '''
+        if first_field in data and not second_field in data:
+            raise serializers.ValidationError({
+                second_field: first_validation_error
+            })
+
+        if second_field in data and not first_field in data:
+            raise serializers.ValidationError({
+                first_field: second_validation_error
+            })

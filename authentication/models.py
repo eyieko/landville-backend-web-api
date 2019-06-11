@@ -13,6 +13,8 @@ import jwt
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet
 from django.conf import settings
+from django.core.validators import RegexValidator
+from fernet_fields import EncryptedTextField
 
 
 class UserManager(BaseUserManager):
@@ -138,24 +140,36 @@ class UserProfile(BaseAbstractModel):
     """This class defines a Profile model for all Users"""
 
     LEVEL_CHOICES = (
-        ('S', 'STARTER'),
-        ('B', 'BUYER'),
-        ('I', 'INVESTOR')
+        ('STARTER', 'STARTER'),
+        ('BUYER', 'BUYER'),
+        ('INVESTOR', 'INVESTOR')
     )
-
+    QUESTION_CHOICES = (
+        ('What is the name of your favorite childhood friend',
+         'What is the name of your favorite childhood friend'),
+        ('What was your childhood nickname', 'What was your childhood nickname'),
+        ('In what city or town did your mother and father meet',
+         'In what city or town did your mother and father meet')
+    )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=17, unique=True)
+    phone = models.CharField(max_length=17, null=True, blank=False)
     address = JSONField(
-        verbose_name='physical address', encoder=DjangoJSONEncoder
+        verbose_name='physical address', encoder=DjangoJSONEncoder, default=dict
     )
     user_level = models.CharField(
-        verbose_name='user level', max_length=1, default='S',
+        verbose_name='user level', max_length=20, default='STARTER',
         choices=LEVEL_CHOICES
     )
     image = models.URLField(null=True, blank=True)
-    security_question = models.TextField(null=True, blank=True)
-    security_answer = models.CharField(
-        max_length=100, null=True, blank=True)
+    security_question = models.CharField(
+        max_length=255, null=True, blank=False, choices=QUESTION_CHOICES)
+    security_answer = EncryptedTextField(null=True)
+    employer = models.CharField(max_length=255, null=True, blank=True)
+    designation = models.CharField(max_length=255, blank=True, null=True)
+    next_of_kin = models.CharField(max_length=255, blank=True, null=True)
+    next_of_kin_contact = models.CharField(
+        max_length=17, blank=True, null=True)
+    bio = models.TextField(blank=True, max_length=255)
 
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()
@@ -191,6 +205,7 @@ class Client(BaseAbstractModel):
 
     def __str__(self):
         return self.client_name
+
 
 class PasswordResetToken(models.Model):
     """This class creates a Password Reset Token model."""

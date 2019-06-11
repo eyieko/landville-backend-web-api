@@ -47,6 +47,10 @@ Backend Repository for LandVille Project
 | GET    | api/v1/properties/enquiries/all/                   | get all your enquiries                                   |
 | GET    | api/v1/properties/enquiries/<enquiry_id>/          | get one enquiry                                          |
 | DELETE | api/v1/properties/:slug/resource                   | delete a cloudinary resource                             |
+| GET    | api/v1/auth/profile/                               | gets a profile of the loggedin user
+
+| PATCH  | api/v1/auth/profile/                               | edits a profile of the loggedin user
+
 
 ## API Documentation
 

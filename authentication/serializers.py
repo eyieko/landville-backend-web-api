@@ -1,5 +1,7 @@
 import re
-
+from authentication.models import User, Client, UserProfile
+from rest_framework import serializers
+from authentication.models import User, PasswordResetToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
@@ -11,6 +13,13 @@ from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
 from utils import BaseUtils
 from utils.resethandler import ResetHandler
+from authentication.validators import validate_phone_number
+from property.validators import validate_address
+from utils.media_handlers import CloudinaryResourceHandler
+import cloudinary.uploader as uploader
+
+
+Uploader = CloudinaryResourceHandler()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -291,19 +300,12 @@ class ClientSerializer(serializers.ModelSerializer, BaseUtils):
         """Validate data before it gets saved."""
         phone = data.get("phone")
         address = data.get("address")
-        p = re.compile(r'\+?\d{3}\s?\d{3}\s?\d{7}')
-        q = re.compile(r'^.{10,16}$')
 
-        if not (p.match(phone) and q.match(phone)):
-            raise serializers.ValidationError({
-                "phone": "Phone number must be of the format +234 123 4567890"
-            })
+        self.validate_phone_number(phone)
 
         # Validate the type of address
-        self.validate_data_instance(
-            address, dict, {
-                "address": ("Company address should contain State, "
-                            "City and Street details")})
+        self.validate_data_instance(address, dict, {
+                                    "address": "Company address should contain State, City and Street details"})
 
         keys = ["State", "Street", "City"]
         for key in keys:
@@ -324,7 +326,7 @@ class ClientSerializer(serializers.ModelSerializer, BaseUtils):
 
 class PasswordResetSerializer(serializers.ModelSerializer):
     """Handles serialization and deserialization of email
-     where password reset link will be sent."""
+    where password reset link will be sent."""
     email = serializers.EmailField(required=True)
 
     class Meta:
@@ -402,8 +404,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
             """ we then check is it is valid """
             if not user_token.is_valid:
                 raise serializers.ValidationError({
-                    "token": ("This token is no longer valid, "
-                              "please get a new one")
+                    "token": "This token is no longer valid, please get a new one"
                 })
 
         except PasswordResetToken.DoesNotExist:
@@ -419,16 +420,14 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         """
         if type(result) == tuple:
 
-            if not RegistrationSerializer().do_passwords_match(
-                    password, confirm_password):
+            if not RegistrationSerializer().do_passwords_match(password, confirm_password):
                 """
                 check if password and confirm passwords do match.
-                no need to create another function since we already
-                have one inside our RegistrationSerializer
-                class above
+                no need to create another function since we already have one inside our
+                RegistrationSerializer class above
                  """
                 raise serializers.ValidationError({
-                    "error": "passwords do not match"
+                    "errors": "passwords do not match"
                 })
             try:
                 validate_password(data["password"])
@@ -449,3 +448,56 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
             })
 
         return {"message": "password has been changed successfully"}
+
+
+class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
+    """Serializer to serialize the user profile data"""
+    user = RegistrationSerializer()
+    address = serializers.JSONField(validators=[validate_address])
+    phone = serializers.CharField(
+        validators=[validate_phone_number])
+    next_of_kin_contact = serializers.CharField(
+        validators=[validate_phone_number], required=False)
+
+    class Meta:
+        model = UserProfile
+        exclude = ('is_deleted',)
+        read_only_fields = ('user', 'updated_at', 'created_at',
+                            'user_level')
+        extra_kwargs = {
+            'security_question': {'write_only': True},
+            'security_answer': {'write_only': True}
+        }
+
+    def update(self, instance, validated_data):
+        """Update the user profile"""
+
+        # Explicitly update the next of kin contact
+        updated_next_of_kin_contact = validated_data.pop(
+            'next_of_kin_contact', None)
+        instance.next_of_kin_contact = updated_next_of_kin_contact
+
+        # Remove the old profile image on cloundinary before it is updated with a new one
+        old_image = instance.image
+        if old_image:
+            public_image_id = Uploader.get_cloudinary_public_id(old_image)
+            uploader.destroy(public_image_id, invalidate=True)
+
+        instance.save()
+        return super().update(instance, validated_data)
+
+    def validate(self, data):
+        """Validate user updated fields"""
+
+        # validate presence of both designation and employer dependent fields
+        if 'designation' in data and not 'employer' in data:
+            raise serializers.ValidationError({
+                "employer": "Please provide an employer"
+            })
+
+        # validate fields that depend on each other
+        self.validate_dependent_fields(data, 'security_question', 'security_answer',
+                                       'Please provide an answer to the selected question',
+                                       'Please choose a question to answer')
+
+        return data

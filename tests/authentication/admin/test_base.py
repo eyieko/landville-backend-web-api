@@ -16,3 +16,10 @@ class BaseTest(TestCase):
             "email": self.user.email + "m"
         }
         self.invalid_user_data = {"password1": "", "password2": ""}
+        self.invalid_user_data_2 = {
+            "password1": self.user.password,
+            "password2": self.user.password+"things",
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "email": self.user.email + "m"
+        }
