@@ -22,6 +22,11 @@ Backend Repository for LandVille Project
 * POST /api/v1/auth/client/ application for client company
 * POST /api/v1/auth/password-reset/ user gets a reset password link
 * PATCH /api/v1/auth/password-reset/ user resets password
+* POST /api/v1/transcations/accounts post account details by Client
+* GET /api/v1/transcations/accounts Get account details depending on User level
+* GET /api/v1/transcations/accounts/<account_number> Get a single account details entry
+* PUT /api/v1/transcations/accounts/<account_number> Update a single account detail entry
+* DELETE /api/v1/transcations/accounts/<account_number> Delete a single account detail entry
 
 * GET api/v1/property/ get all property
 * POST api/v1/property/ create a property page

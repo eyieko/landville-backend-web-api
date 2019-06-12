@@ -49,5 +49,4 @@ class ClientAccountFactory(factory.DjangoModelFactory):
     owner = factory.SubFactory(ClientFactory)
     bank_name = fake.company()
     account_number = str(fake.random.randint(1000000000, 100000000000))
-    account_type = fake.word()
     swift_code = str(fake.random.randint(1000000000, 100000000000))

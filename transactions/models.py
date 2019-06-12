@@ -1,7 +1,7 @@
 from django.db import models
 
 from utils.models import BaseAbstractModel
-from utils.managers import CustomQuerySet
+from utils.managers import CustomQuerySet, ClientAccountQuery
 from property.models import Property
 from authentication.models import User, Client
 
@@ -61,13 +61,22 @@ class Savings(BaseAbstractModel):
 class ClientAccount(BaseAbstractModel):
     """This class defines the Client Accounts model"""
 
+    ACCOUNT_TYPES = (
+        ('CRA', 'CREDIT ACCOUNT'),
+        ('CUR', 'CURRENT ACCOUNT'),
+        ('SAV', 'SAVINGS ACCOUNT'),
+    )
     owner = models.ForeignKey(
         Client, on_delete=models.CASCADE, related_name='account'
     )
     bank_name = models.CharField(max_length=150)
     account_number = models.CharField(max_length=50)
-    account_type = models.CharField(max_length=50)
+    account_type = models.CharField(
+        max_length=3, choices=ACCOUNT_TYPES, default='CRA')
     swift_code = models.CharField(max_length=50)
+
+    objects = models.Manager()
+    active_objects = ClientAccountQuery.as_manager()
 
     def __str__(self):
         return f'{self.owner}\'s account for {self.bank_name}'
