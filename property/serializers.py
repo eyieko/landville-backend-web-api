@@ -6,7 +6,8 @@ from property.validators import (
 
 
 class PropertySerializer(serializers.ModelSerializer):
-    """This class handles serializing and deserializing of Property objects"""
+    """This class handles serializing and
+       deserializing of Property objects"""
 
     price = serializers.FloatField()
     lot_size = serializers.FloatField()

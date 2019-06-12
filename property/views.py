@@ -1,5 +1,8 @@
+import datetime
+from datetime import datetime as dt
 from rest_framework import generics, status
 from rest_framework.response import Response
+from django.utils.datastructures import MultiValueDictKeyError
 
 from property.models import Property, BuyerPropertyList
 from property.serializers import (
@@ -84,6 +87,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         found_property = self.get_object()
 
         found_property.view_count += 1
+        found_property.last_viewed = datetime.datetime.now()
         found_property.save()
         serializer = self.get_serializer(found_property)
         return Response(serializer.data)
@@ -217,3 +221,53 @@ class BuyerPropertyListView(generics.ListCreateAPIView):
         return Response({
             'data': message
         })
+
+
+class TrendingPropertyView(generics.ListAPIView):
+    """
+    Holds getting trending properties based
+    on most views and last_viewed time
+    """
+    serializer_class = PropertySerializer
+    renderer_classes = (PropertyJSONRenderer,)
+    pagination_class = None
+
+    def get_queryset(self):
+        """
+        this method get_queryset to allow users
+        get Published properties in a
+        specific location and which are not sold, a user
+        is given a chance to select a date, if a date
+        is not selected,the query will return trending
+        properties in the last 30 days
+        """
+
+        string_date = self.request.query_params.get('date', dt.strftime(
+            (dt.now() - datetime.timedelta(30)
+             ).date(), '%Y-%m-%d'))
+        date = dt.strptime(string_date, '%Y-%m-%d')
+        city = self.request.query_params['city']
+        query_results = Property.active_objects.filter(
+            address__City__icontains=city,
+            last_viewed__date__gte=date,
+            is_published=True,
+            is_sold=False,
+            view_count__gte=1).order_by('-view_count', 'last_viewed')
+        return query_results[:10]
+
+    def list(self, request):
+        """
+        This list method lists the data
+        from the query after the handling the exception
+        """
+        try:
+            queryset = self.get_queryset()
+            serializer = self.serializer_class(queryset, many=True)
+            return Response(serializer.data)
+        # This try catches an exception of MultiValueDictKeyError
+        # which then returns an error message in case a user
+        # does not specific
+        # location/city where he wants to see properties trending
+        except MultiValueDictKeyError:
+            return Response({'errors': 'Please specify a city'},
+                            status=status.HTTP_400_BAD_REQUEST)

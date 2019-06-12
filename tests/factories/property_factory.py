@@ -31,6 +31,8 @@ class PropertyFactory(factory.DjangoModelFactory):
     image_main = fake.url()
     image_others = [fake.url(), fake.url()]
     purchase_plan = 'I'
+    last_viewed = now()
+    is_sold = False
 
 
 class PropertyEnquiryFactory(factory.DjangoModelFactory):
