@@ -5,6 +5,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet, PropertyQuery
 from authentication.models import User, Client
+from utils.slug_generator import generate_unique_slug
 
 # Create your models here.
 
@@ -44,12 +45,20 @@ class Property(BaseAbstractModel):
         unique=True), blank=True, null=True)
     view_count = models.IntegerField(default=0)
     purchase_plan = models.CharField(max_length=1, choices=PURCHASE_CHOICES)
+    slug = models.SlugField(max_length=250, unique=True)
 
     objects = models.Manager()
     active_objects = PropertyQuery.as_manager()
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        """Saves all the changes of the Property model"""
+        if not self.slug:
+            self.slug = generate_unique_slug(
+                self, 'slug')
+        super().save(*args, **kwargs)
 
 
 class PropertyEnquiry(BaseAbstractModel):
