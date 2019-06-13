@@ -30,7 +30,7 @@ Backend Repository for LandVille Project
 
 * GET api/v1/property/ get all property
 * POST api/v1/property/ create a property page
-* GET api/v1/property/:slug/ get specific property
+* GET api/v1/property/get/:slug/  get specific property
 * DELETE api/v1/property/:slug/ delete specific property
 * PATCH api/v1/property/:slug/ update specific property
 
