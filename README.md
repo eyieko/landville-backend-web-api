@@ -41,6 +41,7 @@ Backend Repository for LandVille Project
 
 * POST api/v1/properties/buyer-list/<slug>/ add property with slug to current user's buyer list
 * DELETE api/v1/properties/buyer-list/<slug>/ remove property with slug from current user's buyer list
+* DELELTE api/v1/properties/:slug/resource delete a cloudinary resource
 
 
 ## API Documentation

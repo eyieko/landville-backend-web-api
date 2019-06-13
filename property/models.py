@@ -42,7 +42,8 @@ class Property(BaseAbstractModel):
     lot_size = models.DecimalField(decimal_places=4, max_digits=8)
     image_main = models.URLField()
     image_others = ArrayField(models.URLField(
-        unique=True), blank=True, null=True)
+        unique=True), size=15, blank=True, null=True)
+    video = models.URLField(unique=True, blank=True, null=True)
     view_count = models.IntegerField(default=0)
     last_viewed = models.DateTimeField(null=True, blank=True)
     purchase_plan = models.CharField(max_length=1, choices=PURCHASE_CHOICES)

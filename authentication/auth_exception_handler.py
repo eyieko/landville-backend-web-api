@@ -3,10 +3,14 @@ from rest_framework import status
 
 
 def custom_exception_handler(exc, context):
-    # raising a NotAuthenticatedError should send a 401 response status code,
-    # however due to the Authentication scheme used by our application it raises 403
-    # instead,this calls for the need to write a custom exception handler and make
-    # it send a 401 in the context of login
+    """
+    This function will handle errors that are returned by
+    the different views.
+    The `handlers` dictionary will map
+    each exception name to the function that should handle it.
+    Each function should return a response with a message
+    and the actual error.
+    """
 
     # We Call REST framework's default exception handler first
     response = exception_handler(exc, context)
@@ -18,17 +22,28 @@ def custom_exception_handler(exc, context):
     }
 
     exception_class = exc.__class__.__name__
-    # Now we add the HTTP status code to the response when its in the context of the LoginAPIVIew.
+    # Now we add the HTTP status code to the response when its in the context
+    # of the LoginAPIVIew.
     if response is not None:
+        # Raising a NotAuthenticatedError should send a 401 response status
+        # code, however due to the Authentication scheme used by our
+        # application it raises 403 instead. This calls for the need to
+        # write a custom exception handler and make it send a 401 in the
+        # context of login
         if "LoginAPIView" in str(context['view']):
             response.status_code = status.HTTP_401_UNAUTHORIZED
             return response
 
     view_context = str(context['view'])
     if exception_class in handlers:
-        # Currently, only errors coming from these views are handled by this exception handler
-        if "PropertyDetailView" in view_context or "CreateAndListPropertyView" in view_context:
-            return handlers[exception_class](exc, context, response)
+        # Currently, only errors coming from these views are handled by this
+        #  exception handler
+        handled_views = ["PropertyDetailView",
+                         "CreateAndListPropertyView",
+                         "DeleteCloudinaryResourceView"]
+        for view in handled_views:
+            if view in view_context:
+                return handlers[exception_class](exc, context, response)
 
     return response
 
