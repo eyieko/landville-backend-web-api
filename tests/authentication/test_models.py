@@ -104,7 +104,7 @@ class UserProfileModelTest(TestCase):
         self.assertEqual(str(self.profile1), "user@email.com's Profile")
 
     def test_that_user_profile_relationship_is_accurate(self):
-        self.assertEquals(self.user1.userprofile, self.profile1)
+        self.assertEqual(self.user1.userprofile, self.profile1)
 
 
 class ClientModelTest(TestCase):

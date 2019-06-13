@@ -6,6 +6,7 @@ from django.utils.timezone import now
 from property.models import (
     Property, PropertyEnquiry, PropertyInspection,
     PropertyReview, BuyerPropertyList)
+
 from .authentication_factory import UserFactory, ClientFactory
 
 fake = Faker()
@@ -33,6 +34,7 @@ class PropertyFactory(factory.DjangoModelFactory):
     purchase_plan = 'I'
     last_viewed = now()
     is_sold = False
+    video = factory.LazyAttribute(lambda _: fake.url())
 
 
 class PropertyEnquiryFactory(factory.DjangoModelFactory):

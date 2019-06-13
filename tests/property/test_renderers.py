@@ -1,6 +1,7 @@
+from collections import OrderedDict
+
 from tests.property import BaseTest
 from property.serializers import PropertySerializer
-from property.models import Property
 
 
 class PropertyJSONRendererTest(BaseTest):
@@ -11,37 +12,13 @@ class PropertyJSONRendererTest(BaseTest):
         serializer = PropertySerializer(
             data=self.property_data)
         serializer.is_valid()
-        rendered_property = self.property_renderer.render(serializer.data)
+        payload = serializer.data
+        payload['id'] = self.property2.pk
+        response = {"data": {"property": payload}}
+        rendered_property = self.property_renderer.render(response)
         self.assertIn("property", rendered_property)
-
-    def test_that_users_see_readable_values_for_fields_with_choices(self):
-        """Users should see human readable values for fields that have choices"""
-
-        serializer = PropertySerializer(
-            data=self.property_data)
-        serializer.is_valid()
-        listing = Property.objects.filter(
-            client_id=serializer.data.get('client')).first()
-        data = serializer.data
-        # we need to pass the `id` to simulate a response from the database
-        data['id'] = listing.pk
-        rendered_property = self.property_renderer.render(data)
+        # the fields with choices are rendered with human-readable values
         self.assertIn("Building", rendered_property)
-        self.assertIn("Installments", rendered_property)
-
-    def test_that_users_see_readable_values_for_fields_with_choices_in_lists(self):
-        """Users should see human readable values for fields that have choices"""
-
-        listings = Property.objects.all()
-
-        serializer = PropertySerializer(
-            data=list(listings), many=True)
-        serializer.is_valid()
-
-        data = {"results": serializer.data}
-
-        rendered_property = self.property_renderer.render(data)
-        self.assertIn("property", rendered_property)
 
     def test_that_errors_are_rendered_as_expected(self):
         dict_data = {"errors": "This error should be properly rendered"
@@ -52,12 +29,19 @@ class PropertyJSONRendererTest(BaseTest):
         self.assertEqual(rendered_data, expected_data)
 
     def test_that_data_of_list_types_are_rendered_as_expected(self):
+        dummy_data = self.property_data
+        dummy_data['address'] = self.property2.address
+        dummy_data['coordinates'] = self.property2.coordinates
         serializer = PropertySerializer(
-            data=self.property_data)
+            data=dummy_data)
         serializer.is_valid()
         data = serializer.data
-        data['client'] = 1
-        list_data = [data]
-        data = {'results': list_data}
-        rendered_data = self.property_renderer.render(data)
+        data['id'] = self.property2.pk
+        # The renderer expects serialized data that is an ordered dictionary
+        ordered = OrderedDict(data)
+        list_data = [ordered]
+        payload = OrderedDict({'results': list_data})
+        rendered_data = self.property_renderer.render(payload)
         self.assertIn("properties", rendered_data)
+        # choices are properly rendered as human-readable values
+        self.assertIn("Installments", rendered_data)
