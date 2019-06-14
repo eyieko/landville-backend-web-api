@@ -69,12 +69,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'authentication.backends.JWTAuthentication',),
     'EXCEPTION_HANDLER': 'authentication.auth_exception_handler.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'errors',
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
     'DEFAULT_VERSION': 'v1',
-    'ALLOWED_VERSIONS': ('v1',)
+    'ALLOWED_VERSIONS': ('v1',),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10,
 }
 
 TEMPLATES = [

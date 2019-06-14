@@ -46,7 +46,7 @@ urlpatterns = [
          schema_view.with_ui('swagger', cache_timeout=0),
          name='api_documentation'),
     path('', RedirectView.as_view(url='api/v1/documentation/',
-         permanent=False),
+                                  permanent=False),
          name='api_documentation'),
     path('admin/password-reset/',
          auth_views.PasswordResetView.as_view
@@ -65,5 +65,9 @@ urlpatterns = [
          (template_name='admin/password_reset_complete.html'),
          name='password_reset_complete'),
     path('api/v1/auth/', include(("authentication.urls", "auth"),
-         namespace="auth")),
+                                 namespace="auth")),
+    path('api/v1/property/',
+         include(('property.urls', 'property'), namespace='property')),
+    path('api/v1/transactions/',
+         include('transactions.urls', namespace='transactions'))
 ]

@@ -16,12 +16,13 @@ class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = User
 
-    username = factory.sequence(lambda n: f'user_{n}')
-    first_name = fake.first_name()
-    last_name = fake.last_name()
-    password = fake.password()
-    is_verified = False
-    email = factory.sequence(lambda n: f'user_{n}@email.com')
+    username = factory.LazyAttribute(lambda _: fake.name())
+    first_name = factory.LazyAttribute(lambda _: fake.first_name())
+    last_name = factory.LazyAttribute(lambda _: fake.last_name())
+    # users are created with the default password of `password`
+    password = factory.PostGenerationMethodCall('set_password',
+                                                'password')
+    email = factory.LazyAttribute(lambda _: fake.email())
     role = role
 
 
@@ -31,12 +32,12 @@ class ClientFactory(factory.DjangoModelFactory):
     class Meta:
         model = Client
 
-    client_name = fake.company()
+    client_name = factory.LazyAttribute(lambda _: fake.company())
     client_admin = factory.SubFactory(UserFactory)
     # phone number shouldn't be longer than 17 digits
-    phone = fake.phone_number()[:17]
+    phone = factory.LazyAttribute(lambda _: fake.phone_number()[:17])
     address = address
-    email = fake.email()
+    email = factory.LazyAttribute(lambda _: fake.email())
 
 
 class UserProfileFactory(factory.DjangoModelFactory):
@@ -46,17 +47,18 @@ class UserProfileFactory(factory.DjangoModelFactory):
         model = UserProfile
 
     user = factory.SubFactory(UserFactory)
-    phone = fake.phone_number()[:17]
+    phone = factory.LazyAttribute(lambda _: fake.phone_number()[:17])
     address = address
     image = fake.url()
     security_question = fake.sentence()
     security_answer = fake.word()
+
 
 class PasswordResetTokenFactory(factory.DjangoModelFactory):
     """ This class creates PasswordResetToken objects for testing."""
 
     class Meta:
         model = PasswordResetToken
-    
+
     token = fake.text()
     is_valid = True

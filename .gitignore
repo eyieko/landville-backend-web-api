@@ -10,6 +10,9 @@ settings.json
 db.sqlite3
 # python_ dotenv
 .env
+
 # Unit test / coverage reports
 .coverage
 .DS_Store
+
+.idea/

@@ -2,6 +2,8 @@ import factory
 from factory.faker import faker
 from faker import Faker
 
+from django.utils.timezone import now
+
 from property.models import Property, PropertyEnquiry, PropertyInspection, PropertyReview
 from .authentication_factory import UserFactory, ClientFactory
 
@@ -22,7 +24,7 @@ class PropertyFactory(factory.DjangoModelFactory):
     coordinates = coordinates
     client = factory.SubFactory(ClientFactory)
     description = fake.sentences()
-    list_date = fake.date_time()
+    list_date = now()
     price = 2452345234.43
     lot_size = 2345.435
     image_main = fake.url()
@@ -62,5 +64,5 @@ class PropertyInspectionFactory(factory.DjangoModelFactory):
 
     requester = factory.SubFactory(UserFactory)
     target_property = factory.SubFactory(PropertyFactory)
-    inspection_time = fake.date_time()
+    inspection_time = now()
     remarks = fake.sentences()
