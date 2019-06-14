@@ -27,18 +27,20 @@ Backend Repository for LandVille Project
 * PATCH /api/v1/auth/password-reset/ user resets password
 * POST /api/v1/transcations/accounts post account details by Client
 * GET /api/v1/transcations/accounts Get account details depending on User level
-* GET /api/v1/transcations/accounts/<account_number> Get a single account details entry
-* PUT /api/v1/transcations/accounts/<account_number> Update a single account detail entry
-* DELETE /api/v1/transcations/accounts/<account_number> Delete a single account detail entry
+* GET /api/v1/transcations/account/<account_number> Get a single account details entry
+* PUT /api/v1/transcations/account/<account_number> Update a single account detail entry
+* DELETE /api/v1/transcations/account/<account_number> Delete a single account detail entry
 
-* GET api/v1/property/ get all property
-* POST api/v1/property/ create a property page
-* GET api/v1/property/get/:slug/  get specific property
-* DELETE api/v1/property/:slug/ delete specific property
-* PATCH api/v1/property/:slug/ update specific property
-* GET api/v1/property/buyer-list/ get properties in current user's buyer list
-* POST api/v1/property/buyer-list/:slug/ add property with slug to current user's buyer list
-* DELETE api/v1/property/buyer-list/:slug/ remove property with slug from current user's buyer list
+* GET api/v1/properties/ get all property
+* POST api/v1/properties/ create a property page
+* GET api/v1/properties/get/<slug>/  get specific property
+* DELETE api/v1/properties/get/<slug>/ delete specific property
+* PATCH api/v1/properties/get/<slug>/ update specific property
+* GET api/v1/properties/buyer-list/ get properties in current user's buyer list
+
+* POST api/v1/properties/buyer-list/<slug>/ add property with slug to current user's buyer list
+* DELETE api/v1/properties/buyer-list/<slug>/ remove property with slug from current user's buyer list
+
 
 ## API Documentation
 

@@ -6,6 +6,7 @@ from property.serializers import (
     PropertySerializer, BuyerPropertyListSerializer)
 from utils.permissions import ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer
 from property.renderers import PropertyJSONRenderer
+from property.filters import PropertyFilter
 
 
 class CreateAndListPropertyView(generics.ListCreateAPIView):
@@ -14,6 +15,7 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
     serializer_class = PropertySerializer
     permission_classes = (IsClientAdmin | ReadOnly,)
     renderer_classes = (PropertyJSONRenderer,)
+    filter_class = PropertyFilter
 
     def get_queryset(self):
         """

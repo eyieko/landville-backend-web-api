@@ -67,7 +67,7 @@ urlpatterns = [
          name='password_reset_complete'),
     path('api/v1/auth/', include(("authentication.urls", "auth"),
                                  namespace="auth")),
-    path('api/v1/property/',
+    path('api/v1/properties/',
          include(('property.urls', 'property'), namespace='property')),
     path('api/v1/transactions/',
          include('transactions.urls', namespace='transactions'))
