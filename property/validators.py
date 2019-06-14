@@ -3,6 +3,9 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
+import pytz
+import datetime
+
 
 def validate_address(address):
     if not isinstance(address, dict):
@@ -110,4 +113,23 @@ def validate_video(video):
         raise ValidationError({
             'video':
             f'Video files cannot be larger than {VIDEO_SIZE/1000000} MBs.'
+        })
+
+
+def validate_visit_date(visit_date):
+    """
+    validate the visit date not to be in the past
+    """
+
+    # lets pick todays date and compare it with the visit date
+    today = datetime.datetime.now()
+    # By default, the datetime object is naive in Python,
+    # so you need to make both of them(today and date
+    # scheduled for visit) either naive or
+    # aware datetime objects
+    utc = pytz.UTC
+    today = utc.localize(today)
+    if visit_date < today:
+        raise ValidationError({
+            "visit_date": "You cannot put a date in the past"
         })

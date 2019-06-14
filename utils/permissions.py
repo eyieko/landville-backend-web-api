@@ -30,13 +30,27 @@ class IsClientAdmin(BasePermission):
         user = request.user if request.user.is_authenticated else None
         if user:
             client = user.employer.first()
-            return client and user.role == 'CA' and client.approval_status=='approved'
+            return client and user.role == 'CA' and client.approval_status == 'approved'
 
 
 class IsBuyer(BasePermission):
     """ Check if user is buyer then grants access."""
 
     def has_permission(self, request, view):
-        user = request.user if request.user.is_authenticated else None
-        if user:
-            return user.role == 'BY'
+
+        if request.method in SAFE_METHODS and request.user.is_authenticated:
+            return (request.user.role == 'LA' or request.user.role == 'BY' or request.user.role == 'CA')
+        return request.user.role == 'BY'
+
+
+class IsOwner(BasePermission):
+    """ a user can be able to edit a property enquiry belonging to only him """
+
+    def has_object_permission(self, request, view, obj):
+
+        user = request.user
+
+        if request.method in SAFE_METHODS:
+            return True
+
+        return obj.requester == user

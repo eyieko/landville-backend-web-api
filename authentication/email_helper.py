@@ -31,4 +31,4 @@ class EmailHelper:
             subject = "Account Activation"
             body = f"Hello,\nYou are receiving this e-mail because you have created an account on LandVille, \nClick the link below to activate your account.\n\n{url}"  # noqa
 
-        EmailMessage(subject, body, to=[email]).send(fail_silently=False)
+        EmailMessage(subject, body, to=[email]).send()

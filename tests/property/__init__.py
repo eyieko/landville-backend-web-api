@@ -9,7 +9,9 @@ from tests.factories.authentication_factory import UserFactory, ClientFactory
 from tests.factories.property_factory import (
     PropertyFactory, PropertyEnquiryFactory, PropertyInspectionFactory,
     PropertyReviewFactory, BuyerPropertyListFactory)
-from property.renderers import PropertyJSONRenderer
+
+from property.renderers import (
+    PropertyJSONRenderer, PropertyEnquiryJSONRenderer)
 
 
 class BaseTest(APITestCase):
@@ -21,6 +23,9 @@ class BaseTest(APITestCase):
         self.buyer1 = UserFactory.create(role='BY')
 
         self.admin = UserFactory.create(is_staff=True, role='LA')
+        self.user3 = UserFactory.create()
+        self.user3.role = 'BY'
+        self.user3.save()
 
         self.client1 = ClientFactory.create(
             client_admin=self.user1, approval_status='approved')
@@ -31,8 +36,9 @@ class BaseTest(APITestCase):
         self.property11 = PropertyFactory.create(client=self.client1)
         self.review1 = PropertyReviewFactory(
             reviewer=self.user1, target_property=self.property1)
-        self.enquiry1 = PropertyEnquiryFactory(
-            enquirer_name='Liz Kiherehere', target_property=self.property1)
+        self.enquiry1 = PropertyEnquiryFactory(enquiry_id='this enquiry',
+                                               requester=self.buyer1,
+                                               target_property=self.property1)
         self.inspection1 = PropertyInspectionFactory(
             requester=self.user1, target_property=self.property1)
 
@@ -79,6 +85,30 @@ class BaseTest(APITestCase):
                                                          "Lagos St"},
                                                 view_count=10,
                                                 is_published=True)
+
+        self.enquiry_data = {
+            "enquiry_id": "we-love-landville-we-love-landville",
+            "visit_date": "2030-09-03T00:00:00.000Z",
+            "message": "I love this propery"
+        }
+
+        self.enquiry_data_update = {
+
+            "enquiry_id": "we-love-landville-we-love-landville",
+            "visit_date": "2030-09-03T00:00:00.000Z",
+            "message": "We are from Landville"
+
+        }
+
+        self.enquiry_with_past_date = {
+
+            "enquiry_id": "we-love-landville-we-love-landville",
+            "visit_date": "1990-09-03T00:00:00.000Z",
+            "message": "We are from Landville"
+
+        }
+
+        self.enquiry_renderer = PropertyEnquiryJSONRenderer()
 
         self.factory = APIRequestFactory()
 
