@@ -3,9 +3,9 @@ from rest_framework import status
 from rest_framework.test import force_authenticate
 
 from tests.property import BaseTest
-from tests.factories.authentication_factory import UserFactory, ClientFactory
-from property.views import CreateAndListPropertyView, PropertyDetailView
-from tests.factories.property_factory import PropertyFactory
+from tests.factories.authentication_factory import UserFactory
+from property.views import (
+    CreateAndListPropertyView, PropertyDetailView, BuyerPropertyListView)
 
 
 class PropertyViewTests(BaseTest):
@@ -58,12 +58,16 @@ class PropertyViewTests(BaseTest):
         view = CreateAndListPropertyView.as_view()
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data.get('results')), 2)
+        self.assertEqual(len(response.data.get('results')), 3)
         self.assertFalse(response.data.get('results')[0].get(
-            'is_published') and response.data.get('results')[1].get('is_published'))
+            'is_published') and response.data.get(
+                'results')[2].get('is_published'))
 
-    def test_that_buyers_can_see_only_published_properties_that_are_not_deleted(self):
-        """Buyers should only be able to see property that is published and not deleted"""
+    def test_that_buyers_can_see_only_published_properties_that_are_not_deleted(self):  # noqa
+        """
+        Buyers should only be able to see property
+        that is published and not deleted
+        """
         buyer = UserFactory.create()
 
         request = self.factory.get(
@@ -73,12 +77,15 @@ class PropertyViewTests(BaseTest):
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # only one property is published and not deleted
-        self.assertEqual(len(response.data.get('results')), 1)
+        self.assertEqual(len(response.data.get('results')), 2)
         self.assertEqual(response.data.get('results')[0].get(
             'title'), 'HardCoded Title Block')
 
     def test_that_admins_can_view_all_property(self):
-        """Admins should be able to see all property regardless of whether it is published or soft deleted"""
+        """
+        Admins should be able to see all property regardless
+        of whether it is published or soft deleted
+        """
 
         request = self.factory.get(
             self.create_list_url)
@@ -93,7 +100,10 @@ class PropertyViewTests(BaseTest):
         self.assertFalse(response.data.get('results')[3].get('is_published'))
 
     def test_that_only_client_admins_can_create_property(self):
-        """Only client admins who currently have client companies can create property"""
+        """
+        Only client admins who currently have client
+        companies can create property
+        """
 
         non_client_admin = UserFactory.create()
 
@@ -104,7 +114,7 @@ class PropertyViewTests(BaseTest):
         response = view(post_request, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_that_client_admins_can_view_a_specific_unpublished_property_that_they_own(self):
+    def test_that_client_admins_can_view_a_specific_unpublished_property_that_they_own(self):  # noqa
         """Client admins should be able to view a specific property
         they own regardless of whether it is published or not.
         They cannot view property that is deleted, however """
@@ -135,8 +145,11 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.data.get('title'), 'Updated Super Lot')
 
     def test_client_admin_cannot_view_property_that_is_not_published(self):
-        """A client admin should not be able to view property belonging to different
-        clients if the property is not published"""
+        """
+        A client admin should not be able to view property
+        belonging to different clients if the property
+        is not published
+        """
 
         url = reverse('property:single_property', args=[self.property11.slug])
 
@@ -146,8 +159,11 @@ class PropertyViewTests(BaseTest):
         response = view(request, slug=self.property11.slug)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_client_admins_cannot_update_property_belonging_to_other_clients(self):
-        """Client admins shouldn't be able to update property belonging to different companies"""
+    def test_client_admins_cannot_update_property_belonging_to_other_clients(self):  # noqa
+        """
+        Client admins shouldn't be able to update
+        property belonging to different companies
+        """
 
         view = PropertyDetailView.as_view()
 
@@ -169,7 +185,10 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response3.status_code, status.HTTP_200_OK)
 
     def test_that_landville_staff_can_view_all_property(self):
-        """LandVille staff should be able to view all property regardless of any parameters"""
+        """
+        LandVille staff should be able to view all
+        property regardless of any parameters
+        """
 
         view = PropertyDetailView.as_view()
 
@@ -190,9 +209,12 @@ class PropertyViewTests(BaseTest):
         response = view(request, slug=self.property11.slug)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_that_client_admins_need_to_have_client_before_they_can_create_property(self):
-        """Client admins should have the role `CA` and they should also have an employer
-        before they can create property """
+    def test_that_client_admins_need_to_have_client_before_they_can_create_property(self):  # noqa
+        """
+        Client admins should have the role `CA`
+        and they should also have an employer
+        before they can create property
+        """
 
         post_request = self.factory.post(
             self.create_list_url, self.property_data, format='json')
@@ -207,7 +229,10 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_that_landville_staff_can_update_property(self):
-        """LandVille staff should be able to update the details of a property"""
+        """
+        LandVille staff should be able to update
+        the details of a property
+        """
 
         url = reverse('property:single_property', args=[self.property11.slug])
         request = self.factory.patch(
@@ -222,9 +247,12 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.data.get('price'), 99999999.99)
         self.assertEqual(response.data.get('title'), 'Updated Super Lot')
 
-    def test_that_landville_staff_cannot_delete_property_that_is_already_deleted(self):
-        """Because LandVille staff can view property that is already deleted, they should not be
-        able to delete that property again. """
+    def test_that_landville_staff_cannot_delete_property_that_is_already_deleted(self):  # noqa
+        """
+        Because LandVille staff can view property
+        that is already deleted, they should not be
+        able to delete that property again.
+        """
 
         view = PropertyDetailView.as_view()
 
@@ -238,7 +266,10 @@ class PropertyViewTests(BaseTest):
                          'Not allowed! This property is already deleted.')
 
     def test_users_should_pass_valid_address_values(self):
-        """Users should not be able to send invalid addresses like numbers and empty strings"""
+        """
+        Users should not be able to send invalid addresses
+        like numbers and empty strings
+        """
 
         url = reverse('property:single_property', args=[self.property11.slug])
         request = self.factory.patch(
@@ -252,3 +283,115 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(str(response.data.get('errors').get('address')[0]),
                          'City cannot be empty!')
+
+
+class BuyerPropertyListTest(BaseTest):
+    """
+    here we test the views arising from
+    the BuyerPropertyList model.
+    """
+
+    def test_users_can_get_their_property_list(self):
+        """we test if users can successfully obtain their lists """
+        request = self.factory.get(
+            self.get_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_users_can_add_property_to_their_buying_list(self):
+        """
+        we test if users can't add non_existent
+        property to their buying list.
+        """
+
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property4.slug])
+        request = self.factory.post(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property4.slug)
+        self.assertIn(
+            ' has been successfully added to your buy list',
+            response.data['data'],
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_users_cant_delete_non_existent_property_from_list(self):
+        """
+        we test if users can delete non_existent
+        property from their buying list.
+        """
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property1.slug])
+        request = self.factory.delete(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property1.slug)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_users_cant_add_non_existent_property_to_list(self):
+        """
+        we test if users can't add non-exisiting
+        property to their buying list.
+        """
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property1.slug])
+        request = self.factory.post(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property1.slug)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data.get('errors'), 'Property not found')
+
+    def test_users_cant_add_already_existing_property_to_their_buying_list(self):  # noqa
+        """
+        we test if users can't add already exisiting
+        property to their buying list.
+        """
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property4.slug])
+        request = self.factory.post(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property2.slug)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('errors'),
+                         self.property2.title + ' is already in your buy list')
+
+    def test_users_can_delete_already_existing_property_from_their_buying_list(self):  # noqa
+        """
+        we test if users can delete already
+        exisiting property from their buying list.
+        """
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property2.slug])
+        request = self.factory.delete(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property2.slug)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data.get('data'), self.property2.title  # noqa
+                         + ' has been successfully removed from your buy list')
+
+    def test_users_cant_delete_non_existing_property_from_their_buying_list(self):  # noqa
+        """
+        we test if users can't delete already exisiting
+        property from their buying list.
+        """
+        self.modify_buyer_list_url = reverse(
+            'property:modify_buyer_list', args=[self.property4.slug])
+        request = self.factory.delete(
+            self.modify_buyer_list_url, format="json")
+        force_authenticate(request, user=self.buyer1)
+        view = BuyerPropertyListView.as_view()
+        response = view(request, self.property4.slug)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get('errors'),
+                         self.property4.title + ' is not in your buy list')

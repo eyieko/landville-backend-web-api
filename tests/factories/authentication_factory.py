@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from authentication.models import User, UserProfile, Client, PasswordResetToken
 
+
 fake = Faker()
 address = {'City': 'Nairobi', 'Street': 'Valley Road', 'State': 'Nairobi'}
 role = "CA"
@@ -62,3 +63,4 @@ class PasswordResetTokenFactory(factory.DjangoModelFactory):
 
     token = fake.text()
     is_valid = True
+    

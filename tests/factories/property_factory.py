@@ -1,10 +1,11 @@
 import factory
-from factory.faker import faker
 from faker import Faker
 
 from django.utils.timezone import now
 
-from property.models import Property, PropertyEnquiry, PropertyInspection, PropertyReview
+from property.models import (
+    Property, PropertyEnquiry, PropertyInspection,
+    PropertyReview, BuyerPropertyList)
 from .authentication_factory import UserFactory, ClientFactory
 
 fake = Faker()
@@ -66,3 +67,13 @@ class PropertyInspectionFactory(factory.DjangoModelFactory):
     target_property = factory.SubFactory(PropertyFactory)
     inspection_time = now()
     remarks = fake.sentences()
+
+
+class BuyerPropertyListFactory(factory.DjangoModelFactory):
+    """This calss creates fake property inspections"""
+
+    class Meta:
+        model = BuyerPropertyList
+
+    buyer = factory.SubFactory(UserFactory)
+    listed_property = factory.SubFactory(PropertyFactory)
