@@ -2,13 +2,15 @@
 __pycache__/
 # Distribution / packaging
 .Python
-venv/
 .vscode
 settings.json
 # SQLite3
 db.sqlite3
 # python_ dotenv
 .env
+venv/
+.venv/
+
 # Unit test / coverage reports
 .coverage
 .DS_Store
@@ -20,3 +22,14 @@ htmlcov/
 # celery task
 celerybeat-schedule
 dump.rdb
+
+# atomic commit message template
+
+commit-message-template.md
+# celery task
+celerybeat-schedule
+dump.rdb
+
+# atomic commit message template
+
+commit-message-template.md

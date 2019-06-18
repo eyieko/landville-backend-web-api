@@ -72,3 +72,5 @@ urlpatterns = [
     path('api/v1/transactions/',
          include('transactions.urls', namespace='transactions'))
 ]
+
+handler404 = 'landville.views.error_404'
