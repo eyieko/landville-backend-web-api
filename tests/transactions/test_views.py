@@ -160,7 +160,7 @@ class TestClientAccountDetailsViews(BaseTest):
 
         res = self.view2(request2, account_number=account_number)
 
-        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn('Account details successfully deleted', str(res.data))
 
     def test_delete_account_details_non_existent(self):

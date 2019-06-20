@@ -124,7 +124,7 @@ class RetrieveUpdateDeleteAccountDetailsAPIView(RetrieveUpdateDestroyAPIView):
         self.check_object_permissions(request, account_details)
         account_details.soft_delete()
         response = {"message": "Account details successfully deleted"}
-        return Response({"data": response}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"data": response}, status=status.HTTP_200_OK)
 
     def put(self, request, account_number):
 

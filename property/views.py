@@ -109,7 +109,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         found_property.soft_delete()
         return Response({
             "message": "Successfully deleted the property"
-        }, status=status.HTTP_204_NO_CONTENT)
+        }, status=status.HTTP_200_OK)
 
     def patch(self, request, slug, **kwargs):
         """
