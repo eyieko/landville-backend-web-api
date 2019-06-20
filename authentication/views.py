@@ -19,6 +19,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import render
 from django.contrib import messages
 from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.views import View
 from property.validators import validate_image
 from authentication.permissions import IsProfileOwner, IsClientAdmin
@@ -30,6 +31,33 @@ from rest_framework.exceptions import ValidationError
 from utils.media_handlers import CloudinaryResourceHandler
 
 Uploader = CloudinaryResourceHandler()
+from rest_framework import (
+    generics,
+    status,
+)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from authentication.authorization_helper import generate_validation_url
+from authentication.models import (
+    Client,
+    User,
+)
+from authentication.permissions import IsClientAdmin
+from authentication.renderer import UserJSONRenderer
+from authentication.serializers import (
+    ChangePasswordSerializer,
+    ClientSerializer,
+    FacebookAuthAPISerializer,
+    GoogleAuthSerializer,
+    LoginSerializer,
+    PasswordResetSerializer,
+    RegistrationSerializer,
+    TwitterAuthAPISerializer,
+)
+from utils import BaseUtils
+from utils.tasks import send_email_notification
 
 
 class RegistrationAPIView(generics.GenericAPIView):
@@ -46,11 +74,24 @@ class RegistrationAPIView(generics.GenericAPIView):
             request,
             user_data["email"]
         ]
-        EmailHelper.send_an_email(message)
+        url = generate_validation_url(message)
+
+        payload = {
+            "subject": "Welcome to Landville, Verify your Account",
+            "recipient": [user_data["email"]],
+            "text_body": "email/authentication/activate_account.txt",
+            "html_body": "email/authentication/activate_account.html",
+            "context": {
+                'username': user_data['first_name'],
+                'url': url
+            }
+        }
+        send_email_notification.delay(payload)
         response = {
             "data": {
                 "user": dict(user_data),
-                "message": "Account created successfully,please check your mailbox to activate your account",
+                "message": "Account created successfully,please check your "
+                           "mailbox to activate your account ",
                 "status": "success"
             }
         }
@@ -87,9 +128,22 @@ class EmailVerificationView(generics.GenericAPIView):
             return self.sendResponse("verification link is invalid",
                                      status.HTTP_400_BAD_REQUEST)
         except jwt.ExpiredSignatureError:
-            EmailHelper.send_an_email([request], user_id=user_id)
-            message = "verification link is expired, we have sent you a new one."
+            url = generate_validation_url([request], user_id=user_id)
+            user = User.objects.filter(id=user_id).first()
+            payload = {
+                "subject": "Landville, Verify your Account",
+                "recipient": [user.email],
+                "text_body": "email/authentication/activate_account.txt",
+                "html_body": "email/authentication/activate_account.html",
+                "context": {
+                    'username': user.first_name,
+                    'url': url
+                }
+            }
+            send_email_notification.delay(payload)
 
+            message = "verification link is expired, we have " \
+                      "sent you a new one."
             return self.sendResponse(message, status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=payload.get("email")).first()
@@ -208,33 +262,41 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         data["client_name"] = self.remove_redundant_spaces(data["client_name"])
 
         if self.check_client_admin_has_company(request.user.id):
-            return Response({'error': 'You cannot be admin of more than one client client'}, status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'You cannot be admin of more than'
+                                      ' one client client'},
+                            status.HTTP_403_FORBIDDEN)
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+
         company = serializer.validated_data['client_name']
         admin = serializer.validated_data['client_admin']
-        subject = 'Landville client company review'
-        text_content = """
-        <h4>Hi Admin, </h4>
-        <p>Please take time to login into your Landville account
-        to review the application for company <b>{}</b> which is pending.</p>
-        The application was initiated by <b>{}</b>.
-        """.format(company, admin)
-        from_email = settings.EMAIL_HOST_USER
-        to_list = list(User.active_objects.filter(
-            role="LA").values_list('email', flat=True))
 
-        msg = EmailMultiAlternatives(
-            subject, text_content, from_email, to_list)
-        msg.attach_alternative(text_content, "text/html")
-        msg.send()
+        recipient = list(
+            User.active_objects.filter(role="LA").values_list('email',
+                                                              flat=True))
 
         serializer.save()
+
+        payload = {
+            "subject": "Landville client company review",
+            "recipient": recipient,
+            "message": "",
+            "text_body": "email/authentication/company_registration.txt",
+            "html_body": "email/authentication/company_registration.html",
+            "context": {
+                company,
+                admin,
+            }
+        }
+        send_email_notification.delay(payload)
+
         response = {
             "data": {
                 "client_company": serializer.data,
-                "message": "Your request to create a company has been received, please wait for approval from landville admin."
+                "message": "Your request to create a company has been "
+                           "received, please wait for approval from "
+                           "landville admin."
             }
         }
 
@@ -281,7 +343,7 @@ class PasswordResetView(APIView):
 
 class ProfileView(generics.GenericAPIView):
     """
-    This View handles retreiving and updating of users profile including 
+    This View handles retreiving and updating of users profile including
     updating the users initial profile image
     """
     permission_classes = (IsAuthenticated, IsProfileOwner)
@@ -348,7 +410,10 @@ class AddReasonView(View):
 
         Enable admins to add a reason for the performed action.
         """
-        return render(request, 'admin/add_notes.html', {"client": request.GET['client'], "status": request.GET['status']})
+        return render(request, 'admin/add_notes.html', {
+            "client": request.GET['client'],
+            "status": request.GET['status']
+        })
 
     def post(self, request):
         """
@@ -376,6 +441,14 @@ class AddReasonView(View):
 
     def notify_user(self, message, email):
         """Send an email message to the provided email."""
-        data = {"subject": "LandVille Application Status",
-                "body": message, "email": email}
-        EmailHelper.send_an_email(data, from_approval=True)
+        payload = {
+            "subject": "Landville Application Status",
+            "recipient": [email],
+            "text_body": "email/authentication/base_email.txt",
+            "html_body": "email/authentication/base_email.html",
+            "context": {
+                'title': "Hey there,",
+                'message': message
+            }
+        }
+        send_email_notification.delay(payload)

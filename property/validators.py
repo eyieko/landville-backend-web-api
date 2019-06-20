@@ -1,6 +1,6 @@
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.conf import settings
+from django.core.validators import URLValidator
 from rest_framework.exceptions import ValidationError
 
 import pytz

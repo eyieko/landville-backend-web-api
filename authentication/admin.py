@@ -1,11 +1,18 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import (
+    admin,
+    messages,
+)
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.contrib import messages
-from authentication.email_helper import EmailHelper
-from authentication.models import User, Client, UserProfile
 from django.http import HttpResponseRedirect
+
+from authentication.models import (
+    Client,
+    User,
+    UserProfile,
+)
+from utils.tasks import send_email_notification
 
 
 class UserCreationForm(forms.ModelForm):
@@ -110,16 +117,28 @@ class ClientAdmin(admin.ModelAdmin):
         when editing an existing object.
         """
         if obj.approval_status == 'approved':
-            message = "Hey there,\n\nyour application was accepted, you may now start listing property"
-            data = {
+            message = "Your application was accepted, you may now start " \
+                      "listing property"
+            payload = {
                 "subject": "LandVille Application Status",
-                "body": message, "email": obj.client_admin.email
+                "recipient": [obj.client_admin.email],
+                "text_body": "email/authentication/base_email.txt",
+                "html_body": "email/authentication/base_email.html",
+                "context": {
+                    'title': "Hey there,",
+                    'message': message
+                }
             }
-            EmailHelper.send_an_email(data=data, from_approval=True)
+            send_email_notification.delay(payload)
             return self._response_post_save(request, obj)
         else:
-            messages.info(request, message="Please add a reason for your action in the text box below")
-            return HttpResponseRedirect("/api/v1/auth/admin/notes/?status={}&client={}".format(obj.approval_status, obj.client_admin.email))
+            text = "Please add a reason for your action in the text box below"
+            messages.info(request, message=text)
+            return HttpResponseRedirect("/api/v1/auth/admin/notes/?"
+                                        "status={}&client={}".format(
+                                         obj.approval_status,
+                                         obj.client_admin.email)
+                                        )
 
 
 admin.site.register(Client, ClientAdmin)
