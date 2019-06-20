@@ -1,3 +1,5 @@
+"""A module of serializer classes for the payment system"""
+
 from rest_framework import serializers
 from transactions.models import ClientAccount
 from rest_framework.exceptions import ValidationError
@@ -8,7 +10,7 @@ class ClientAccountSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         acc_num = data['account_number']
-        if len(acc_num) != 10 and acc_num.isdigit() == False:
+        if len(acc_num) != 10 and not acc_num.isdigit():
             raise ValidationError(
                 'Your account number must be 10 digits and only intergers')
 
@@ -37,3 +39,28 @@ class ClientAccountSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class CardPaymentSerializer(serializers.Serializer):
+    cardno = serializers.CharField(max_length=20)
+    cvv = serializers.CharField(max_length=5)
+    expirymonth = serializers.CharField(max_length=2)
+    expiryyear = serializers.CharField(max_length=2)
+    amount = serializers.FloatField(min_value=0.00)
+
+
+class ForeignCardPaymentSerializer(CardPaymentSerializer):
+    billingzip = serializers.CharField(max_length=10)
+    billingcity = serializers.CharField(max_length=20)
+    billingaddress = serializers.CharField(max_length=50)
+    billingstate = serializers.CharField(max_length=20)
+    billingcountry = serializers.CharField(max_length=20)
+
+
+class PaymentValidationSerializer(serializers.Serializer):
+    otp = serializers.IntegerField()
+    flwRef = serializers.CharField(max_length=60)
+
+
+class PinCardPaymentSerializer(CardPaymentSerializer):
+    pin = serializers.IntegerField()
