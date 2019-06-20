@@ -11,7 +11,7 @@ from .models import User
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-    auth_header_prefix = 'Bearer'.lower() #bearer
+    auth_header_prefix = 'Bearer'.lower()  # bearer
 
     def authenticate(self, request):
         """
@@ -67,11 +67,11 @@ class JWTAuthentication(authentication.BaseAuthentication):
         """
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
-        
+
         except jwt.ExpiredSignatureError:
             msg = 'Your token has expired, please log in again.'
             raise exceptions.AuthenticationFailed(msg)
-        
+
         except Exception as e:
             msg = str(e)
             raise exceptions.AuthenticationFailed(msg)

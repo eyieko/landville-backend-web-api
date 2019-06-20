@@ -70,7 +70,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'authentication.backends.JWTAuthentication',),
     'EXCEPTION_HANDLER':
-    'authentication.auth_exception_handler.custom_exception_handler',
+    'utils.exception_handler.custom_exception_handler',
     'NON_FIELD_ERRORS_KEY': 'errors',
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',

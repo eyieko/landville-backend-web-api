@@ -219,7 +219,7 @@ class TestClientAccountDetailsViews(BaseTest):
 
         result = json.loads(res.content)
         self.assertIn(
-            'Authentication credentials were not provided.', str(result))
+            'Please log in to proceed.', str(result))
 
     def test_account_number_must_be_unique(self):
         """ test that an account shoudl be unique """

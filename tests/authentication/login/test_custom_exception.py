@@ -1,4 +1,4 @@
-from authentication.auth_exception_handler import custom_exception_handler
+from utils.exception_handler import custom_exception_handler
 from django.test import TestCase
 from rest_framework.exceptions import NotAuthenticated
 from authentication.views import LoginAPIView

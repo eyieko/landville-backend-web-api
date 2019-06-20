@@ -124,8 +124,8 @@ class PropertyViewTests(BaseTest):
         temp_main_image.close()
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(res.data.get('errors')[
-                         'image']), 'Please provide a valid image format.')
+        self.assertEqual(str(res.data['errors'].get(
+            'image')), 'Please provide a valid image format.')
 
     @patch('utils.media_handlers.uploader.upload')
     @patch('utils.media_handlers.uploader.upload_large')
@@ -156,7 +156,7 @@ class PropertyViewTests(BaseTest):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(str(
-            res.data.get('errors')['video']),
+            res.data['errors'].get('video')),
             'Please provide a valid video file format.')
 
     def test_that_users_who_are_not_client_admins_cannot_create_property(
@@ -420,7 +420,7 @@ class PropertyViewTests(BaseTest):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(response.data.get('errors').get('address')[
+        self.assertEqual(str(response.data['errors'].get('address')[
             0]), 'City cannot be empty!')
 
     @patch('utils.media_handlers.uploader.upload')
@@ -580,7 +580,7 @@ class PropertyViewTests(BaseTest):
                                content, content_type=content_type)
         temp_main_image.close()
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(res.data.get('errors')['image']),
+        self.assertEqual(str(res.data['errors'].get('image')),
                          ('Image is either corrupted or of an unkown format. '
                           'Please try again with a different image file.'))
 
@@ -687,7 +687,7 @@ class PropertyViewTests(BaseTest):
                                    content, content_type=content_type)
         temp_video.close()
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(res.data.get('errors')['video']),
+        self.assertEqual(str(res.data['errors'].get('video')),
                          ('Video is either corrupted or of an unkown format.'
                           'Please try again with a different video file.'))
 
@@ -730,7 +730,7 @@ class PropertyViewTests(BaseTest):
         excess_image.close()
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(res.data.get('errors')['image_others']),
+        self.assertEqual(str(res.data['errors'].get('image_others')),
                          ('Sorry. You are limited to a maximum of '
                           f'{MAX_PROPERTY_IMAGE_COUNT} images. '
                           'Please reduce the number of images you wish to '
@@ -771,7 +771,7 @@ class PropertyViewTests(BaseTest):
             image.close()
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(str(response.data.get('errors')['image_others']),
+        self.assertEqual(str(response.data['errors'].get('image_others')),
                          ('Sorry. You are limited to a maximum of '
                           f'{MAX_PROPERTY_IMAGE_COUNT} images. '
                           'Please reduce the number of images you wish to '
