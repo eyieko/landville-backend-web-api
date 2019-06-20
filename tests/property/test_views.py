@@ -207,7 +207,7 @@ class PropertyViewTests(BaseTest):
         request = self.factory.delete(url)
         force_authenticate(request, user=self.user1)
         response = view(request, slug=self.property11.slug)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_that_client_admins_need_to_have_client_before_they_can_create_property(self):  # noqa
         """
