@@ -117,3 +117,22 @@ class PropertyReview(BaseAbstractModel):
 
     def __str__(self):
         return f'Review by {self.reviewer} on {self.created_at}'
+
+
+class BuyerPropertyList(BaseAbstractModel):
+    """
+    Model for buyers' property list. Contains
+    list of properties a buyer may be interested
+    in.
+    """
+
+    buyer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='property_of_interest')
+    listed_property = models.ForeignKey(
+        Property, on_delete=models.CASCADE, related_name='property')
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return 'Buyer list for: ' + str(self.buyer.email)

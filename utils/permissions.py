@@ -31,3 +31,12 @@ class IsClientAdmin(BasePermission):
         if user:
             client = user.employer.first()
             return client and user.role == 'CA' and client.approval_status=='approved'
+
+
+class IsBuyer(BasePermission):
+    """ Check if user is buyer then grants access."""
+
+    def has_permission(self, request, view):
+        user = request.user if request.user.is_authenticated else None
+        if user:
+            return user.role == 'BY'

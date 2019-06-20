@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from property.models import Property
-from property.validators import validate_address, validate_coordinates, validate_image_list
+from property.models import Property, BuyerPropertyList
+from property.validators import (
+    validate_address, validate_coordinates, validate_image_list)
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -19,3 +20,16 @@ class PropertySerializer(serializers.ModelSerializer):
         exclude = ('is_deleted',)
         read_only_fields = ('view_count', 'slug', 'is_deleted',
                             'is_published', 'is_sold', 'sold_at', 'list_date')
+
+
+class BuyerPropertyListSerializer(serializers.ModelSerializer):
+    """
+    Class handling serialization and deserialization
+    of BuyerPropertyList objects.
+    """
+
+    property_of_interest = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = BuyerPropertyList
+        exclude = ('created_at', 'updated_at', 'is_deleted', 'id')
