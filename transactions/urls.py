@@ -1,10 +1,8 @@
 """A module of urlconf for transactions app"""
-from transactions.views import (
-    ClientAccountAPIView,
-    RetrieveUpdateDeleteAccountDetailsAPIView
-)
 from django.urls import path
 from transactions.views import (
+    ClientAccountAPIView,
+    RetrieveUpdateDeleteAccountDetailsAPIView,
     card_pin_payment,
     card_foreign_payment,
     validate_payment
