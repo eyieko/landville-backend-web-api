@@ -1,9 +1,4 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-from authentication.models import User
-from rest_framework.permissions import BasePermission
-from transactions.models import ClientAccount
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
 
 
 class IsownerOrReadOnly(BasePermission):
@@ -28,6 +23,6 @@ class IsClient(BasePermission):
 
         if request.method == 'POST':
             return request.user.role == 'CA'
-        if request.method == 'GET':
+        if request.method == 'GET' and request.user.is_authenticated:
             return request.user.role == 'LA' or request.user.role == 'CA'
         return False

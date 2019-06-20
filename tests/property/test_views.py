@@ -4,16 +4,21 @@ from rest_framework.test import force_authenticate
 
 from tests.property import BaseTest
 from tests.factories.authentication_factory import UserFactory
-from property.views import (
-    CreateAndListPropertyView, PropertyDetailView, BuyerPropertyListView)
+from property.views import (CreateAndListPropertyView,
+                            PropertyDetailView,
+                            BuyerPropertyListView,
+                            TrendingPropertyView
+                            )
 
 
 class PropertyViewTests(BaseTest):
     """This class defines tests for the different property views"""
 
     def test_that_client_admins_can_create_property(self):
-        """Admin Clients should be able to create property if
-        they provide correct information """
+        """
+        Admin Clients should be able to create property if
+        they provide correct information
+        """
 
         post_request = self.factory.post(
             self.create_list_url, self.property_data, format='json')
@@ -49,8 +54,10 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_that_client_admins_can_view_all_their_undeleted_property(self):
-        """Client admins should see all their property that is not deleted,
-        regardless of whether the property is published or not """
+        """
+        Client admins should see all their property that is not deleted,
+        regardless of whether the property is published or not
+        """
 
         request = self.factory.get(
             self.create_list_url)
@@ -58,8 +65,8 @@ class PropertyViewTests(BaseTest):
         view = CreateAndListPropertyView.as_view()
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data.get('results')), 3)
-        self.assertFalse(response.data.get('results')[0].get(
+        self.assertEqual(len(response.data.get('results')), 5)
+        self.assertTrue(response.data.get('results')[0].get(
             'is_published') and response.data.get(
                 'results')[2].get('is_published'))
 
@@ -77,15 +84,13 @@ class PropertyViewTests(BaseTest):
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # only one property is published and not deleted
-        self.assertEqual(len(response.data.get('results')), 2)
-        self.assertEqual(response.data.get('results')[0].get(
+        self.assertEqual(len(response.data.get('results')), 4)
+        self.assertEqual(response.data.get('results')[2].get(
             'title'), 'HardCoded Title Block')
 
     def test_that_admins_can_view_all_property(self):
-        """
-        Admins should be able to see all property regardless
-        of whether it is published or soft deleted
-        """
+        """Admins should be able to see all property regardless of whether
+           it is published or soft deleted"""
 
         request = self.factory.get(
             self.create_list_url)
@@ -97,13 +102,11 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 4)
         # admin can view unpublished property
-        self.assertFalse(response.data.get('results')[3].get('is_published'))
+        self.assertFalse(response.data.get('results')[2].get('is_published'))
 
     def test_that_only_client_admins_can_create_property(self):
-        """
-        Only client admins who currently have client
-        companies can create property
-        """
+        """Only client admins who currently
+           have client companies can create property"""
 
         non_client_admin = UserFactory.create()
 
@@ -115,9 +118,11 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_that_client_admins_can_view_a_specific_unpublished_property_that_they_own(self):  # noqa
-        """Client admins should be able to view a specific property
+        """
+        Client admins should be able to view a specific property
         they own regardless of whether it is published or not.
-        They cannot view property that is deleted, however """
+        They cannot view property that is deleted, however
+        """
 
         # self.property1 is not published
         url = reverse('property:single_property', args=[self.property11.slug])
@@ -229,10 +234,8 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_that_landville_staff_can_update_property(self):
-        """
-        LandVille staff should be able to update
-        the details of a property
-        """
+        """LandVille staff should be able to
+           update the details of a property"""
 
         url = reverse('property:single_property', args=[self.property11.slug])
         request = self.factory.patch(
@@ -267,8 +270,8 @@ class PropertyViewTests(BaseTest):
 
     def test_users_should_pass_valid_address_values(self):
         """
-        Users should not be able to send invalid addresses
-        like numbers and empty strings
+        Users should not be able to send
+        invalid addresses like numbers and empty strings
         """
 
         url = reverse('property:single_property', args=[self.property11.slug])
@@ -283,6 +286,50 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(str(response.data.get('errors').get('address')[0]),
                          'City cannot be empty!')
+
+    def test_that_get_trending_properties_succeeds(self):
+        """
+        this methods tests that trending properties
+        have to be pusblished and not sold
+        """
+        url = reverse('property:trending_property')
+        url = url + '?city=Lagos'
+        request = self.factory.get(url, format='json')
+        force_authenticate(request, user=self.user1)
+        view = TrendingPropertyView.as_view()
+        response = view(request)
+        self.assertEqual(response.data[0]['view_count'], 10)
+        self.assertEqual(response.data[1]['view_count'], 4)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_trending_url_without_address(self):
+        """
+        this methods tests when a user provides
+        a url without an address
+        """
+
+        url = reverse('property:trending_property')
+        request = self.factory.get(url, format='json')
+        force_authenticate(request, user=self.user1)
+        view = TrendingPropertyView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(str(response.data.get('errors')),
+                         'Please specify a city')
+
+    def test_trending_property_at_a_specific_time(self):
+        """
+        Since a user may want to search for
+        a property that was trending at a specific time.
+        this helps him or her to get the properties trending
+        """
+        url = reverse('property:trending_property')
+        url = url + '?city=Lagos&date=2019-06-17'
+        request = self.factory.get(url, format='json')
+        force_authenticate(request, user=self.user1)
+        view = TrendingPropertyView.as_view()
+        response = view(request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class BuyerPropertyListTest(BaseTest):

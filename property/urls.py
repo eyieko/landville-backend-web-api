@@ -1,6 +1,7 @@
 from django.urls import path
 from property.views import (
-    CreateAndListPropertyView, PropertyDetailView, BuyerPropertyListView)
+    CreateAndListPropertyView, PropertyDetailView, BuyerPropertyListView,
+    TrendingPropertyView)
 
 
 urlpatterns = [
@@ -12,4 +13,5 @@ urlpatterns = [
          name='get_buyer_list'),
     path('buyer-list/<slug:slug>/', BuyerPropertyListView.as_view(),
          name='modify_buyer_list'),
+    path('trending/', TrendingPropertyView.as_view(), name='trending_property')
 ]

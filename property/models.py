@@ -44,6 +44,7 @@ class Property(BaseAbstractModel):
     image_others = ArrayField(models.URLField(
         unique=True), blank=True, null=True)
     view_count = models.IntegerField(default=0)
+    last_viewed = models.DateTimeField(null=True, blank=True)
     purchase_plan = models.CharField(max_length=1, choices=PURCHASE_CHOICES)
     slug = models.SlugField(max_length=250, unique=True)
 

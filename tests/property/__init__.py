@@ -63,6 +63,23 @@ class BaseTest(TestCase):
             "image_main": "https://www.dope.image/main",
             "purchase_plan": "I"
         }
+        self.property5 = PropertyFactory.create(client=self.client2,
+                                                address={"City": "Lagos",
+                                                         "State":
+                                                         "Greater Lagos",
+                                                         "Street":
+                                                         "Lagos St"},
+                                                view_count=4,
+                                                is_published=True)
+
+        self.property6 = PropertyFactory.create(client=self.client2,
+                                                address={"City": "Lagos",
+                                                         "State":
+                                                         "Greater Lagos",
+                                                         "Street":
+                                                         "Lagos St"},
+                                                view_count=10,
+                                                is_published=True)
 
         self.factory = APIRequestFactory()
 

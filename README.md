@@ -37,6 +37,7 @@ Backend Repository for LandVille Project
 * DELETE api/v1/properties/get/<slug>/ delete specific property
 * PATCH api/v1/properties/get/<slug>/ update specific property
 * GET api/v1/properties/buyer-list/ get properties in current user's buyer list
+* GET api/v1/properties/trending/?address=City get all trending properties in a particular location
 
 * POST api/v1/properties/buyer-list/<slug>/ add property with slug to current user's buyer list
 * DELETE api/v1/properties/buyer-list/<slug>/ remove property with slug from current user's buyer list
