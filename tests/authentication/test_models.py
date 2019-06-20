@@ -1,7 +1,7 @@
 from django.test import TestCase, TransactionTestCase
-
 from authentication.models import User
 from tests.factories.authentication_factory import UserFactory, UserProfileFactory, ClientFactory
+from authentication.models import Client
 
 
 class UserManagerTest(TransactionTestCase):
@@ -116,3 +116,11 @@ class ClientModelTest(TestCase):
 
     def test_that_string_representation_for_client_model_is_correct(self):
         self.assertEqual(str(self.client1), self.client1.client_name)
+
+    def test_should_update_client_approval_status(self):
+        """Test approval status can be updated successfully."""
+        self.client1.approval_status = 'rejected'
+        self.client1.save()
+        approval_status = Client.objects.get(
+            email=self.client1.email).approval_status
+        self.assertEqual(approval_status, "rejected")
