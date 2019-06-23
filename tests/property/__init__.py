@@ -46,7 +46,7 @@ class BaseTest(APITestCase):
             is_published=True)
         self.property3 = PropertyFactory.create(client=self.client2)
         self.property_no_images = PropertyFactory.create(
-            client=self.client2, image_others=None, video=None)
+            client=self.client2, image_others=[], video=None)
 
         self.property3 = PropertyFactory.create(client=self.client2)
         self.buyerpropertylist = BuyerPropertyListFactory.create(

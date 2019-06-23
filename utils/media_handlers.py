@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 
 from property.validators import (
     validate_cloudinary_url, validate_image, validate_video)
+from property.models import MAX_PROPERTY_IMAGE_COUNT
 
 
 class CloudinaryResourceHandler:
@@ -51,17 +52,47 @@ class CloudinaryResourceHandler:
             # case
             pass
 
-    def upload_image_batch(self, request):
+    def upload_image_batch(self, request, instance=None):
         """Upload multiple images from a request object.
         params:
             request - incoming request object
+            instance - optional. Only pass when updating images.
+                This is the instance to be updated.
+                We use this to ensure that the instance does
+                not have more than 15 images after update is
+                finished.
         Return:
             list containing urls of uploaded images
         """
 
         image_list = request.FILES.getlist('image_others')
+        # this is the error message returned when users will exceed their
+        # limit whenever creating or updating property images.
         if image_list:
+            max_image_count_exceeded = (
+                'Sorry. You are limited to a maximum '
+                f'of {MAX_PROPERTY_IMAGE_COUNT} images. '
+                'Please reduce the number '
+                'of images you '
+                'wish to upload and try again.')
+            if len(image_list) > MAX_PROPERTY_IMAGE_COUNT:
+                raise ValidationError({
+                    'image_others': max_image_count_exceeded}
+                )
+            elif image_list and (instance is not None):
+                image_count_in_DB = len(instance.image_others)
+                # check to ensure that updating the images will not result
+                # in more than 15 images being saved for this instance.
+                if image_count_in_DB + len(image_list) > (
+                        MAX_PROPERTY_IMAGE_COUNT):
+                    raise ValidationError({
+                        'image_others': max_image_count_exceeded}
+                    )
             return [self.upload_image(image) for image in image_list]
+        # if there are no images to be updated, we return an empty list
+        # instead of None. The field `image_others` should not contain
+        # null values.
+        return []
 
     def upload_video(self, video):
         """Upload a video file to Cloudinary.

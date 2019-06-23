@@ -9,7 +9,6 @@ from property.models import Property, BuyerPropertyList
 from property.serializers import (
     PropertySerializer, BuyerPropertyListSerializer)
 from utils.permissions import ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer
-from authentication.models import User
 from utils.media_handlers import CloudinaryResourceHandler
 from property.renderers import PropertyJSONRenderer
 from property.filters import PropertyFilter
@@ -147,7 +146,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
             payload['image_main'] = updated_main_image
         # update image list
         updated_image_list = Uploader.upload_image_batch(
-            request)
+            request, instance=obj)
         if updated_image_list:
             payload.setlist('image_others', updated_image_list)
         # update videos

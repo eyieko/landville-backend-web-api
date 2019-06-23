@@ -15,7 +15,7 @@ from property.views import (CreateAndListPropertyView,
                             BuyerPropertyListView,
                             TrendingPropertyView
                             )
-from property.models import Property
+from property.models import Property, MAX_PROPERTY_IMAGE_COUNT
 from tests.factories.property_factory import PropertyFactory
 
 
@@ -677,6 +677,93 @@ class PropertyViewTests(BaseTest):
         self.assertEqual(str(res.data.get('errors')['video']),
                          ('Video is either corrupted or of an unkown format.'
                           'Please try again with a different video file.'))
+
+    @patch('utils.media_handlers.uploader.upload')
+    def test_users_cannot_upload_more_than_max_limit_when_creating_property(
+            self, mock_upload):
+        """
+        There is a limit to the number of images each property can have.
+        This test asserts that the limit is enforced when creating property.
+        """
+
+        mock_upload.return_value = {'url': 'http://main.image/upload'}
+
+        files = []
+
+        # we create image files reaching our limit of MAX_PROPERTY_IMAGE_COUNT
+        while len(files) < MAX_PROPERTY_IMAGE_COUNT:
+            image = NamedTemporaryFile(suffix='.jpg')
+            files.append(image)
+
+        temp_main_image = NamedTemporaryFile(suffix='.jpg')
+        excess_image = NamedTemporaryFile(suffix='.jpg')
+        # we pass an extra image, exceeding the MAX_PROPERTY_IMAGE_COUNT
+        files.append(excess_image)
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.user1.token}')
+
+        data = self.property_data
+        data['image_main'] = temp_main_image
+        data['image_others'] = files
+
+        content = encode_multipart('BoUnDaRyStRiNg', data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        res = self.client.post(self.create_list_url,
+                               content, content_type=content_type)
+        temp_main_image.close()
+        for image in files:
+            image.close()
+        excess_image.close()
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(str(res.data.get('errors')['image_others']),
+                         ('Sorry. You are limited to a maximum of '
+                          f'{MAX_PROPERTY_IMAGE_COUNT} images. '
+                          'Please reduce the number of images you wish to '
+                          'upload and try again.')
+                         )
+
+    @patch('utils.media_handlers.uploader.upload')
+    def test_users_cannot_exceed_image_limit_when_updating_property(
+            self, mock_upload):
+        """When updating property, client admins should not exceed the
+        limit for maximum images property are allowed to have. """
+
+        mock_upload.return_value = {'url': 'http://www.uploaded.com/'}
+
+        url = reverse('property:single_property', args=[
+                      self.property11.slug])
+
+        files = []
+        # the property already has more than one image. If we create
+        # images that are at the maximum limit, it means that sending
+        # them should fail because we will have exceeded the maximum limit.
+        while len(files) < MAX_PROPERTY_IMAGE_COUNT:
+            image = NamedTemporaryFile(suffix='.jpg')
+            files.append(image)
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.user1.token}')
+        update_data = self.property_update
+
+        update_data['image_others'] = files
+        content = encode_multipart('BoUnDaRyStRiNg', update_data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+
+        response = self.client.patch(
+            url, content, content_type=content_type
+        )
+        for image in files:
+            image.close()
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(str(response.data.get('errors')['image_others']),
+                         ('Sorry. You are limited to a maximum of '
+                          f'{MAX_PROPERTY_IMAGE_COUNT} images. '
+                          'Please reduce the number of images you wish to '
+                          'upload and try again.')
+                         )
 
     def test_that_get_trending_properties_succeeds(self):
         """
