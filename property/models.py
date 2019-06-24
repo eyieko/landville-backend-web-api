@@ -7,7 +7,11 @@ from utils.managers import CustomQuerySet, PropertyQuery
 from authentication.models import User, Client
 from utils.slug_generator import generate_unique_slug
 
-# Create your models here.
+
+# assiging this as a global variable makes it easier to access it
+# and use it for validators in other areas. There is now only one place
+# to change if you want to alter this attribute.
+MAX_PROPERTY_IMAGE_COUNT = 15
 
 
 class Property(BaseAbstractModel):
@@ -42,7 +46,8 @@ class Property(BaseAbstractModel):
     lot_size = models.DecimalField(decimal_places=4, max_digits=8)
     image_main = models.URLField()
     image_others = ArrayField(models.URLField(
-        unique=True), blank=True, null=True)
+        unique=True), size=MAX_PROPERTY_IMAGE_COUNT, blank=True, default=list)
+    video = models.URLField(unique=True, blank=True, null=True)
     view_count = models.IntegerField(default=0)
     last_viewed = models.DateTimeField(null=True, blank=True)
     purchase_plan = models.CharField(max_length=1, choices=PURCHASE_CHOICES)

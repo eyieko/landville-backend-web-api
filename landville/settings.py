@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_extensions',
     'sendgrid',
+    'cloudinary',
     # Landville apps
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
@@ -129,22 +130,23 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',  # noqa
+        'NAME':
+        'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',  # noqa
     },
     {
         'NAME':
-            'django.contrib.auth.password_validation.MinimumLengthValidator',
-            'OPTIONS': {
-                'min_length': 6,
-            }
+        'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 6,
+        }
     },
     {
         'NAME':
-            'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME':
-            'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
@@ -186,3 +188,4 @@ STATICFILES_DIRS = (
 django_heroku.settings(locals())
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')

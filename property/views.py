@@ -3,13 +3,17 @@ from datetime import datetime as dt
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django.utils.datastructures import MultiValueDictKeyError
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from property.models import Property, BuyerPropertyList
 from property.serializers import (
     PropertySerializer, BuyerPropertyListSerializer)
 from utils.permissions import ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer
+from utils.media_handlers import CloudinaryResourceHandler
 from property.renderers import PropertyJSONRenderer
 from property.filters import PropertyFilter
+
+Uploader = CloudinaryResourceHandler()
 
 
 class CreateAndListPropertyView(generics.ListCreateAPIView):
@@ -19,12 +23,11 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
     permission_classes = (IsClientAdmin | ReadOnly,)
     renderer_classes = (PropertyJSONRenderer,)
     filter_class = PropertyFilter
+    parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
-        """
-        Change the queryset to use depending on
-        the user making the request
-        """
+        """Change the queryset to use depending
+        on the user making the request"""
         user = self.request.user
 
         if user.is_authenticated and user.role == 'LA':
@@ -42,15 +45,33 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
         return Property.active_objects.all_published()
 
     def create(self, request, *args, **kwargs):
+        """Create a property listing and save it to the database.
+        We pass image and video files to be uploaded to Cloudinary
+        we expect URLs to be returned. It is these URLs that we
+        pass to be serialized and then saved if everything is okay.
+        """
+        # enable the request body to be mutable so that we can
+        # modify the data to pass to the DB
+        request.POST._mutable = True
         payload = request.data
-
         payload['client'] = request.user.employer.first().pk
+        # upload the main image
+        main_image_url = Uploader.upload_image_from_request(request)
+        payload['image_main'] = main_image_url
+        # upload other images
+        image_url_list = Uploader.upload_image_batch(request)
+        if image_url_list:
+            payload.setlist('image_others', image_url_list)
+        # upload videos
+        video = Uploader.upload_video_from_request(request)
+        payload['video'] = video
         serializer = self.serializer_class(data=payload)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
-        property_data = serializer.data
-        return Response(property_data, status=status.HTTP_201_CREATED)
+        response = {
+            'data': {"property": serializer.data}
+        }
+        return Response(response, status=status.HTTP_201_CREATED)
 
 
 class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -59,13 +80,13 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PropertySerializer
     permission_classes = (CanEditProperty,)
     renderer_classes = (PropertyJSONRenderer,)
+    parser_classes = (MultiPartParser, FormParser)
+
     lookup_field = 'slug'
 
     def get_queryset(self):
-        """
-        Change the queryset to use depending on
-        the user making the request
-        """
+        """Change the queryset to use depending
+        on the user making the request"""
         user = self.request.user
 
         if user.is_authenticated and user.role == 'LA':
@@ -79,10 +100,8 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Property.active_objects.all_published()
 
     def retrieve(self, request, slug):
-        """
-        we increase the viewcount whenever property
-        is successfully retrieved
-        """
+        """we increase the viewcount whenever property
+        is successfully retrieved"""
 
         found_property = self.get_object()
 
@@ -90,7 +109,10 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         found_property.last_viewed = datetime.datetime.now()
         found_property.save()
         serializer = self.get_serializer(found_property)
-        return Response(serializer.data)
+        response = {
+            'data': {"property": serializer.data}
+        }
+        return Response(response)
 
     def destroy(self, request, slug):
         """
@@ -112,13 +134,74 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         }, status=status.HTTP_200_OK)
 
     def patch(self, request, slug, **kwargs):
-        """
-        The `client` field is writable.
-        We should not allow users to change
-        this field when making updates.
-        """
-        request.data.pop('client', None)
-        return super().patch(request, slug, **kwargs)
+        """The `client` field is writable. We should not allow users to
+        change this field when making updates."""
+        request.POST._mutable = True
+        payload = request.data
+        payload.pop('client', None)
+        obj = self.get_object()
+        # update main image
+        updated_main_image = Uploader.upload_image_from_request(request)
+        if updated_main_image:
+            payload['image_main'] = updated_main_image
+        # update image list
+        updated_image_list = Uploader.upload_image_batch(
+            request, instance=obj)
+        if updated_image_list:
+            payload.setlist('image_others', updated_image_list)
+        # update videos
+        video = Uploader.upload_video_from_request(request)
+        if video:
+            payload['video'] = video
+        serializer = self.serializer_class(obj, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(obj, payload)
+        response = {
+            "data": {"property": serializer.data},
+            "message": "Successfully updated your property"
+
+        }
+        return Response(response)
+
+
+class DeleteCloudinaryResourceView(generics.DestroyAPIView):
+    """Handle all requests for deleting Cloudinary Resources, ie
+    Cloudinary images and Cloudinary Videos """
+
+    permission_classes = (CanEditProperty,)
+    serializer_class = PropertySerializer
+    renderer_classes = (PropertyJSONRenderer,)
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        """Change the queryset to use depending on the user making
+        the request """
+        user = self.request.user
+
+        if user.is_authenticated and user.role == 'LA':
+            return Property.objects.all()
+
+        if user.is_authenticated and user.employer.first():
+            client = user.employer.first()
+            return Property.active_objects.all_published_and_all_by_client(
+                client=client)
+
+        return Property.active_objects.all_published()
+
+    def destroy(self, request, slug):
+        obj = self.get_object()
+
+        payload = request.data
+
+        updated_fields = Uploader.delete_cloudinary_resource(obj, payload)
+        serializer = self.serializer_class(
+            obj, data=updated_fields, partial=True)
+        serializer.is_valid(raise_exception=True)
+        response = {
+            "data": {"property": serializer.data},
+            "message": "Successfully updated your property"
+        }
+        return Response(response)
 
 
 class BuyerPropertyListView(generics.ListCreateAPIView):

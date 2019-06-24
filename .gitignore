@@ -12,6 +12,8 @@ db.sqlite3
 # Unit test / coverage reports
 .coverage
 .DS_Store
+htmlcov/
+
 .idea/
 staticfiles/
 htmlcov/
