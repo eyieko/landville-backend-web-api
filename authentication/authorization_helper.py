@@ -7,7 +7,7 @@ import jwt
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 
-from .models import User
+from authentication.models import User
 
 
 def generate_validation_url(data, user_id=None):

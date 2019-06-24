@@ -8,6 +8,9 @@ from utils.tasks import send_email_notification
 
 
 class CeleryTest(TestCase):
+    """
+    This class contains tests for celery tasks
+    """
 
     def setUp(self):
         self.user = UserFactory.create()

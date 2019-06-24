@@ -103,7 +103,7 @@ The settings file assumes that rabbitmq-server is running on localhost using
 	```
 	* example 
 	```
-	$ celery -A landfill worker -l info
+	$ celery -A landville worker -l info
 	```
 - Run command `python manage.py runserver` to start the project
 

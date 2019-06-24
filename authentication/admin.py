@@ -117,8 +117,8 @@ class ClientAdmin(admin.ModelAdmin):
         when editing an existing object.
         """
         if obj.approval_status == 'approved':
-            message = "Your application was accepted, you may now start " \
-                      "listing property"
+            message = "Hey there,\n\nyour application was accepted, you may " \
+                      "now start listing property"
             payload = {
                 "subject": "LandVille Application Status",
                 "recipient": [obj.client_admin.email],
@@ -132,13 +132,12 @@ class ClientAdmin(admin.ModelAdmin):
             send_email_notification.delay(payload)
             return self._response_post_save(request, obj)
         else:
-            text = "Please add a reason for your action in the text box below"
-            messages.info(request, message=text)
-            return HttpResponseRedirect("/api/v1/auth/admin/notes/?"
-                                        "status={}&client={}".format(
-                                         obj.approval_status,
-                                         obj.client_admin.email)
-                                        )
+            messages.info(request,
+                          message="Please add a reason for your action in "
+                                  "the text box below")
+            return HttpResponseRedirect(
+                "/api/v1/auth/admin/notes/?status={}&client={}".format(
+                    obj.approval_status, obj.client_admin.email))
 
 
 admin.site.register(Client, ClientAdmin)

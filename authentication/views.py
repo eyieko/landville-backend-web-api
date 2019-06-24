@@ -1,41 +1,16 @@
+import cloudinary.uploader as uploader
 import jwt
-from utils import BaseUtils
-from authentication.renderer import UserJSONRenderer
-from rest_framework.views import APIView
-from authentication.serializers import (
-    GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
-    TwitterAuthAPISerializer, RegistrationSerializer, LoginSerializer,
-    ClientSerializer, ChangePasswordSerializer,
-    ProfileSerializer,)
-from rest_framework.views import APIView
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from authentication.email_helper import EmailHelper
 from django.conf import settings
-from authentication.models import User, Client, UserProfile
-from django.core.mail import EmailMultiAlternatives
-from django.shortcuts import render
 from django.contrib import messages
+from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views import View
-from property.validators import validate_image
-from authentication.permissions import IsProfileOwner, IsClientAdmin
-from django.forms.models import model_to_dict
-from cloudinary.api import Error
-import cloudinary.uploader as uploader
-from rest_framework import mixins
-from rest_framework.exceptions import ValidationError
-from utils.media_handlers import CloudinaryResourceHandler
-
-Uploader = CloudinaryResourceHandler()
 from rest_framework import (
     generics,
     status,
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -43,8 +18,12 @@ from authentication.authorization_helper import generate_validation_url
 from authentication.models import (
     Client,
     User,
+    UserProfile,
 )
-from authentication.permissions import IsClientAdmin
+from authentication.permissions import (
+    IsClientAdmin,
+    IsProfileOwner,
+)
 from authentication.renderer import UserJSONRenderer
 from authentication.serializers import (
     ChangePasswordSerializer,
@@ -53,11 +32,16 @@ from authentication.serializers import (
     GoogleAuthSerializer,
     LoginSerializer,
     PasswordResetSerializer,
+    ProfileSerializer,
     RegistrationSerializer,
     TwitterAuthAPISerializer,
 )
+from property.validators import validate_image
 from utils import BaseUtils
+from utils.media_handlers import CloudinaryResourceHandler
 from utils.tasks import send_email_notification
+
+Uploader = CloudinaryResourceHandler()
 
 
 class RegistrationAPIView(generics.GenericAPIView):
@@ -155,7 +139,9 @@ class EmailVerificationView(generics.GenericAPIView):
         return self.sendResponse("Email has been verified")
 
     def sendResponse(self, message, status=status.HTTP_200_OK):
-        return Response({"message": message}, status)
+        return Response({
+            "message": message
+        }, status)
 
 
 class GoogleAuthAPIView(APIView):
@@ -219,7 +205,9 @@ class TwitterAuthAPIView(APIView):
             data=request.data.get('twitter', {}))
         serializer.is_valid(raise_exception=True)
         token = serializer.validated_data['token']
-        return Response({"token": token}, status=status.HTTP_200_OK)
+        return Response({
+            "token": token
+        }, status=status.HTTP_200_OK)
 
 
 class ClientCreateView(generics.GenericAPIView, BaseUtils):
@@ -262,9 +250,11 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         data["client_name"] = self.remove_redundant_spaces(data["client_name"])
 
         if self.check_client_admin_has_company(request.user.id):
-            return Response({'error': 'You cannot be admin of more than'
-                                      ' one client client'},
-                            status.HTTP_403_FORBIDDEN)
+            return Response({
+                'error': 'You cannot be admin of more than'
+                         ' one client client'
+            },
+                status.HTTP_403_FORBIDDEN)
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -285,8 +275,8 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
             "text_body": "email/authentication/company_registration.txt",
             "html_body": "email/authentication/company_registration.html",
             "context": {
-                company,
-                admin,
+                "company": company,
+                "admin": admin.email,
             }
         }
         send_email_notification.delay(payload)
@@ -355,15 +345,21 @@ class ProfileView(generics.GenericAPIView):
         """
         user_object = User.objects.get(pk=request.user.pk)
         user_data = model_to_dict(
-            user_object, fields=['id', 'email', 'first_name', 'last_name', 'role'])
+            user_object,
+            fields=['id', 'email', 'first_name', 'last_name', 'role'])
 
         profile = UserProfile.objects.get(user=request.user)
         profile_data = model_to_dict(
-            profile, exclude=['security_question', 'security_answer', 'is_deleted'])
+            profile,
+            exclude=['security_question', 'security_answer', 'is_deleted'])
 
         profile_data['user'] = user_data
-        data = {"data": {"profile": profile_data},
-                "message": "Profile retreived successfully"}
+        data = {
+            "data": {
+                "profile": profile_data
+            },
+            "message": "Profile retreived successfully"
+        }
         return Response(data, status=status.HTTP_200_OK)
 
     def upload_image(self, image):
@@ -430,7 +426,8 @@ class AddReasonView(View):
             message = 'Hey there,\n\nyour approval for LandVille was revoked\
         ,for the following reason \n\n{}'.format(notes)
         elif status == 'rejected':
-            message = 'Hey there,\n\nyour application for LandVille was not accepted\
+            message = 'Hey there,\n\nyour application for LandVille was not ' \
+                      'accepted\
             ,for the following reason \n\n{}'.format(notes)
         client = Client.objects.filter(client_admin=User.objects.filter(
             email=client[0]).first()).first()

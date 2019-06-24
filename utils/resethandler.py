@@ -81,7 +81,7 @@ class ResetHandler:
         payload = {
             "subject": "Reset your LandVille Password",
             "recipient": [to_email],
-            "text_body": "",
+            "text_body": "password_reset.html",
             "html_body": "password_reset.html",
             "context": {
                 'token': token,
