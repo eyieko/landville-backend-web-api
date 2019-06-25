@@ -23,7 +23,8 @@ class PropertyQuery(CustomQuerySet):
     """Queryset that will be used by the property model"""
 
     def for_client(self, client):
-        """This query set returns all property that belongs to a client, whether published or not"""
+        """This query set returns all property that
+           belongs to a client, whether published or not"""
         return self._active().filter(client=client)
 
     def by_slug(self, slug):
@@ -39,8 +40,11 @@ class PropertyQuery(CustomQuerySet):
         return self._active().filter(is_sold=True)
 
     def all_published_and_all_by_client(self, client):
-        """Return all property that are published and also all property owned by the client"""
-        return self._active().filter(Q(is_published=True)) | self._active().filter(Q(client=client))
+        """Return all property that are published and also
+           all property owned by the client"""
+        published_properties = self._active().filter(Q(is_published=True))
+        client_propeties = self._active().filter(Q(client=client))
+        return published_properties | client_propeties
 
 
 class ClientAccountQuery(CustomQuerySet):
@@ -51,5 +55,6 @@ class ClientAccountQuery(CustomQuerySet):
         return self._active().filter(owner=owner)
 
     def client_admin_has_client(self, client_admin_id):
-        """check if client Admin has an Client Account if not do not enable him/her to submit account details"""
+        """check if client Admin has an Client Account
+        if not do not enable him/her to submit account details"""
         return self._active().filter(client_admin_id=id)

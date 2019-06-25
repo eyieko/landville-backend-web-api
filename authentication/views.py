@@ -1,6 +1,4 @@
 import jwt
-import os
-import re
 from utils import BaseUtils
 from authentication.renderer import UserJSONRenderer
 from rest_framework.views import APIView
@@ -18,6 +16,10 @@ from authentication.permissions import IsClientAdmin
 from django.conf import settings
 from authentication.models import User, Client
 from django.core.mail import EmailMultiAlternatives
+from django.shortcuts import render
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.views import View
 
 
 class RegistrationAPIView(generics.GenericAPIView):
@@ -34,7 +36,7 @@ class RegistrationAPIView(generics.GenericAPIView):
             request,
             user_data["email"]
         ]
-        EmailHelper.send_verification_email(message)
+        EmailHelper.send_an_email(message)
         response = {
             "data": {
                 "user": dict(user_data),
@@ -76,7 +78,7 @@ class EmailVerificationView(generics.GenericAPIView):
             return self.sendResponse("verification link is invalid",
                                      status.HTTP_400_BAD_REQUEST)
         except jwt.ExpiredSignatureError:
-            EmailHelper.send_verification_email([request], user_id=user_id)
+            EmailHelper.send_an_email([request], user_id=user_id)
             message = "verification link is expired, we have sent you a new one."
 
             return self.sendResponse(message, status.HTTP_400_BAD_REQUEST)
@@ -175,16 +177,16 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         serializer = self.serializer_class(self.get_queryset(), many=True)
         if len(serializer.data) == 0:
             response = {
-                "data":{
+                "data": {
                     "message": "You don't have a client company created"
                 }
             }
             status_code = status.HTTP_404_NOT_FOUND
         else:
             response = {
-            "data":{
-                "client_company": serializer.data[0],
-                "message": "You have retrieved your client company",
+                "data": {
+                    "client_company": serializer.data[0],
+                    "message": "You have retrieved your client company",
                 }
             }
             status_code = status.HTTP_200_OK
@@ -193,6 +195,7 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
     """
     Register new client company by client admin
     """
+
     def post(self, request):
         data = request.data
         data["client_admin"] = request.user.id
@@ -213,7 +216,8 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         The application was initiated by <b>{}</b>.
         """.format(company, admin)
         from_email = settings.EMAIL_HOST_USER
-        to_list = list(User.active_objects.filter(role="LA").values_list('email', flat=True))
+        to_list = list(User.active_objects.filter(
+            role="LA").values_list('email', flat=True))
 
         msg = EmailMultiAlternatives(
             subject, text_content, from_email, to_list)
@@ -222,7 +226,7 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
 
         serializer.save()
         response = {
-            "data":{
+            "data": {
                 "client_company": serializer.data,
                 "message": "Your request to create a company has been received, please wait for approval from landville admin."
             }
@@ -267,3 +271,45 @@ class PasswordResetView(APIView):
             "data": serializer.validated_data
         }
         return Response(response, status=status.HTTP_200_OK)
+
+
+class AddReasonView(View):
+    """A view that enables admins to add a reason for the performed action."""
+
+    def get(self, request):
+        """
+        Render a form.
+
+        Enable admins to add a reason for the performed action.
+        """
+        return render(request, 'admin/add_notes.html', {"client": request.GET['client'], "status": request.GET['status']})
+
+    def post(self, request):
+        """
+        Submit a form that adds a reason for the performed action.
+
+        Sends an email to the company client admin.
+        """
+        notes = request.POST['notes']
+        client = request.POST['client'],
+        status = request.POST['status']
+        messages.info(request, 'Client record has been updated')
+        message = ''
+        if status == "revoked":
+            message = 'Hey there,\n\nyour approval for LandVille was revoked\
+        ,for the following reason \n\n{}'.format(notes)
+        elif status == 'rejected':
+            message = 'Hey there,\n\nyour application for LandVille was not accepted\
+            ,for the following reason \n\n{}'.format(notes)
+        client = Client.objects.filter(client_admin=User.objects.filter(
+            email=client[0]).first()).first()
+        client.approval_status = status
+        client.save()
+        self.notify_user(message, client.email)
+        return HttpResponseRedirect("/landville/adm/authentication/client/")
+
+    def notify_user(self, message, email):
+        """Send an email message to the provided email."""
+        data = {"subject": "LandVille Application Status",
+                "body": message, "email": email}
+        EmailHelper.send_an_email(data, from_approval=True)

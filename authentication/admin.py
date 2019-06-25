@@ -2,8 +2,10 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-
-from .models import User, Client, UserProfile
+from django.contrib import messages
+from authentication.email_helper import EmailHelper
+from authentication.models import User, Client, UserProfile
+from django.http import HttpResponseRedirect
 
 
 class UserCreationForm(forms.ModelForm):
@@ -61,14 +63,14 @@ class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ('email', 'is_superuser', 'first_name','last_name')
+    list_display = ('email', 'is_superuser', 'first_name', 'last_name')
     list_filter = ('created_at', 'is_superuser',)
     fieldsets = (
         (None, {'fields': ('password',)}),
         ('Personal info', {
          'fields': ('email', 'first_name', 'last_name', 'username')}),
         ('Permissions', {
-         'fields': ('is_superuser', 'is_staff', 'groups','user_permissions')}),
+         'fields': ('is_superuser', 'is_staff', 'groups', 'user_permissions')}),
         ('User Roles', {
             'fields': ('is_active', 'role', 'is_verified')
         }),
@@ -85,9 +87,40 @@ class UserAdmin(BaseUserAdmin):
     list_per_page = 15
     ordering = ('email',)
     filter_horizontal = ()
+
+
 # Now register the new UserAdmin...
 admin.site.register(User, UserAdmin)
 # ... and, since we're not using Django's built-in permissions,
 
-admin.site.register(Client)
+
+class ClientAdmin(admin.ModelAdmin):
+    """This class adds custom behavior to the Client ModelAdmin.
+
+    Enable overriding of the response_post_save_change method.
+    """
+
+    list_display = ("client_name", "client_admin",
+                    "phone", "email", "approval_status")
+    ordering = ["-created_at"]
+
+    def response_post_save_change(self, request, obj):
+        """
+        Figure out where to redirect after the 'Save' button has been pressed 
+        when editing an existing object.
+        """
+        if obj.approval_status == 'approved':
+            message = "Hey there,\n\nyour application was accepted, you may now start listing property"
+            data = {
+                "subject": "LandVille Application Status",
+                "body": message, "email": obj.client_admin.email
+            }
+            EmailHelper.send_an_email(data=data, from_approval=True)
+            return self._response_post_save(request, obj)
+        else:
+            messages.info(request, message="Please add a reason for your action in the text box below")
+            return HttpResponseRedirect("/api/v1/auth/admin/notes/?status={}&client={}".format(obj.approval_status, obj.client_admin.email))
+
+
+admin.site.register(Client, ClientAdmin)
 admin.site.register(UserProfile)

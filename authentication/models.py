@@ -165,19 +165,27 @@ class UserProfile(BaseAbstractModel):
 
 
 class Client(BaseAbstractModel):
-    """This class defines the model for Clients"""
+    """This class defines the client Company Model"""
+
+    APPROVAL_STATUS = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('revoked', 'Revoked'),
+    ]
+
+    approval_status = models.CharField(
+        max_length=10, choices=APPROVAL_STATUS, default='pending')
 
     client_name = models.CharField(max_length=100, unique=True)
     client_admin = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='employer'
     )
-    is_approved = models.BooleanField(default=False)
     phone = models.CharField(max_length=17, unique=True)
     email = models.EmailField(unique=True)
     address = JSONField(
         verbose_name='physical address', encoder=DjangoJSONEncoder
     )
-
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()
 

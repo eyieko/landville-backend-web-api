@@ -6,7 +6,6 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-
 FACEBOOK_URL = reverse('authentication:facebook')
 GOOGLE_URL = reverse('authentication:google')
 TWITTER_URL = reverse('authentication:twitter')

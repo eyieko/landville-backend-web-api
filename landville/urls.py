@@ -13,8 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path, include
 from django.contrib import admin
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -37,6 +37,7 @@ schema_view = get_schema_view(
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="thelandville@gmail.com"),
     ),
+    public=True,
     permission_classes=(AllowAny,),
 )
 
@@ -66,7 +67,7 @@ urlpatterns = [
          name='password_reset_complete'),
     path('api/v1/auth/', include(("authentication.urls", "auth"),
                                  namespace="auth")),
-    path('api/v1/property/',
+    path('api/v1/properties/',
          include(('property.urls', 'property'), namespace='property')),
     path('api/v1/transactions/',
          include('transactions.urls', namespace='transactions'))

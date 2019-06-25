@@ -7,7 +7,11 @@ from utils.managers import CustomQuerySet, PropertyQuery
 from authentication.models import User, Client
 from utils.slug_generator import generate_unique_slug
 
-# Create your models here.
+
+# assiging this as a global variable makes it easier to access it
+# and use it for validators in other areas. There is now only one place
+# to change if you want to alter this attribute.
+MAX_PROPERTY_IMAGE_COUNT = 15
 
 
 class Property(BaseAbstractModel):
@@ -42,8 +46,10 @@ class Property(BaseAbstractModel):
     lot_size = models.DecimalField(decimal_places=4, max_digits=8)
     image_main = models.URLField()
     image_others = ArrayField(models.URLField(
-        unique=True), blank=True, null=True)
+        unique=True), size=MAX_PROPERTY_IMAGE_COUNT, blank=True, default=list)
+    video = models.URLField(unique=True, blank=True, null=True)
     view_count = models.IntegerField(default=0)
+    last_viewed = models.DateTimeField(null=True, blank=True)
     purchase_plan = models.CharField(max_length=1, choices=PURCHASE_CHOICES)
     slug = models.SlugField(max_length=250, unique=True)
 
@@ -117,3 +123,22 @@ class PropertyReview(BaseAbstractModel):
 
     def __str__(self):
         return f'Review by {self.reviewer} on {self.created_at}'
+
+
+class BuyerPropertyList(BaseAbstractModel):
+    """
+    Model for buyers' property list. Contains
+    list of properties a buyer may be interested
+    in.
+    """
+
+    buyer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='property_of_interest')
+    listed_property = models.ForeignKey(
+        Property, on_delete=models.CASCADE, related_name='property')
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return 'Buyer list for: ' + str(self.buyer.email)

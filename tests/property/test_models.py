@@ -1,11 +1,5 @@
 from tests.property import BaseTest
-from property.models import Property
-from tests.factories.property_factory import (
-    PropertyFactory, PropertyEnquiryFactory, PropertyReviewFactory,
-    PropertyInspectionFactory
-)
-from tests.factories.authentication_factory import UserFactory, ClientFactory
-from utils.slug_generator import generate_unique_slug as sluggify
+from tests.factories.property_factory import PropertyFactory
 
 
 class PropertyModelTest(BaseTest):
@@ -34,7 +28,8 @@ class PropertyReviewTest(BaseTest):
 
     def test_that_string_representation_works(self):
         self.assertEqual(
-            str(self.review1), f'Review by {self.user1} on {self.review1.created_at}')
+            str(self.review1),
+            f'Review by {self.user1} on {self.review1.created_at}')
 
 
 class PropertyEnquiryTest(BaseTest):
@@ -42,12 +37,28 @@ class PropertyEnquiryTest(BaseTest):
 
     def test_that_string_representation_works(self):
         self.assertEqual(
-            str(self.enquiry1), f'Enquiry by Liz Kiherehere on {self.enquiry1.created_at}')
+            str(self.enquiry1),
+            f'Enquiry by Liz Kiherehere on {self.enquiry1.created_at}')
 
 
 class PropertyInspectionTest(BaseTest):
     """This class defines tests for property inspections"""
 
     def test_that_string_representation_works(self):
+        time = self.inspection1.inspection_time
         self.assertEqual(
-            str(self.inspection1), f'Inspection by {self.user1} due on {self.inspection1.inspection_time}')
+            str(self.inspection1),
+            f'Inspection by {self.user1} due on {time}')
+
+
+class BuyerPropertyListTest(BaseTest):
+    """Test BuyerPropertyList model """
+
+    def test_if_model_is_well_respresented(self):
+        """
+        we test if the string representation of this model
+        works as expected
+        """
+        email = self.buyer1.email
+        self.assertEqual(
+            str(self.buyerpropertylist), 'Buyer list for: ' + email)
