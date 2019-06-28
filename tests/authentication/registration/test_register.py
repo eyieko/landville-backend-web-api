@@ -37,39 +37,11 @@ class UserRegistrationTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIsNotNone(response.data["password"])
 
-    def test_user_should_not_register_with_a_name_with_a_number(self):
-        """Create an account with a first name that has a number in it."""
-        response = self.client.post(
-            self.registration_url, self.number_in_first_name_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIsNotNone(response.data["first_name"])
-
-    def test_user_should_not_register_with_a_lastname_with_a_number(self):
-        """Create an account with a last name that has a number in it."""
-        response = self.client.post(
-            self.registration_url, self.number_in_lastname_name_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIsNotNone(response.data["last_name"])
-
-    def test_user_should_not_register_with_a_lastname_with_a_space(self):
-        """Create an account with a last name that has a space in it."""
-        response = self.client.post(
-            self.registration_url, self.space_in_lastname_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIsNotNone(response.data["last_name"])
-
-    def test_user_should_not_register_with_first_name_with_a_space(self):
-        """Create an account with a first name that has a space in it."""
-
-        response = self.client.post(
-            self.registration_url, self.space_in_firstname_data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIsNotNone(response.data["first_name"])
-
     def test_user_should_not_register_with_unmatching_passwords(self):
         """Create an account with passwords that donot match."""
         response = self.client.post(
-            self.registration_url, self.umatching_passwords_data, format="json")
+            self.registration_url, self.umatching_passwords_data,
+            format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIsNotNone(response.data["passwords"])
 
@@ -108,9 +80,13 @@ class UserRegistrationTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIsNotNone(response.data["role"])
 
-    def test_user_should_not_register_with_no_role_field(self):
-        """Create an account with no firstname field."""
+    def test_user_should_not_register_as_admin(self):
+        """Users should not be able to register as LandVille admins"""
+
+        data = self.new_user
+        data['role'] = 'LA'
         response = self.client.post(
-            self.registration_url, self.no_role_field_data, format="json")
+            self.registration_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Role is required'", str(response.data))
+        self.assertIn('"LA" is not a valid choice.', str(
+            response.data.get('role')[0]))
