@@ -1,18 +1,25 @@
 
 """User email verification tests."""
-from .test_base import BaseTest
+from datetime import (
+    datetime,
+    timedelta,
+)
+from unittest.mock import patch
+
 import jwt
 from django.conf import settings
-from datetime import datetime, timedelta
-from authentication.models import User
 from rest_framework import status
+
+from tests.authentication.registration.test_base import BaseTest
 
 
 class UserEmailVerificationTest(BaseTest):
     """Contains user email verification test methods."""
 
-    def test_should_verify_a_user_successfully(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_should_verify_a_user_successfully(self, mock_email):
         """Tests if a user can be activated successfuly."""
+        mock_email.return_value = True
         self.client.post(
             self.registration_url, self.new_user, format="json")
         response = self.client.get(self.verify_url+"?token=" + jwt.encode(
@@ -21,8 +28,10 @@ class UserEmailVerificationTest(BaseTest):
         self.assertEqual(
             response.status_code, status.HTTP_200_OK)
 
-    def test_user_cant_activate_with_expired_token(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_user_cant_activate_with_expired_token(self, mock_email):
         """Test should not activate an account when the link is expired."""
+        mock_email.return_value = True
         expired_token = jwt.encode({"email": self.user.email, "exp": datetime.utcnow() -
                                     timedelta(hours=23)}, settings.SECRET_KEY).decode("utf-8")+"~"+str(self.user.id)
         response = self.client.get(
