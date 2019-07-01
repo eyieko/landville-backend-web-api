@@ -35,7 +35,6 @@ class PropertyFactory(factory.DjangoModelFactory):
     purchase_plan = 'I'
     last_viewed = now()
     is_sold = False
-    video = factory.LazyAttribute(lambda _: fake.url())
 
 
 class PropertyEnquiryFactory(factory.DjangoModelFactory):
