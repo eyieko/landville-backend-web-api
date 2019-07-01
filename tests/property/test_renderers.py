@@ -65,3 +65,46 @@ class PropertyJSONRendererTest(BaseTest):
         self.assertIn("properties", rendered_data)
         # choices are properly rendered as human-readable values
         self.assertIn("Installments", rendered_data)
+
+
+class TestPropertyEnquiryRender(BaseTest):
+    """all the unittest for PropertyJSONRenderer """
+
+    def test_that_enquiry_data_is_rendered_correctly(self):
+        """test that account details are rendered correctly"""
+
+        enquiry_data = {"message": "hello there"}
+        rendered_data = self.enquiry_renderer.render(enquiry_data)
+
+        expected_data = '{"data": {"enquiry": {"message": "hello there"}}}'
+        self.assertEqual(rendered_data, expected_data)
+
+    def test_data_as_list_is_rendered_correctly(self):
+        """test that data in  a list is rendered correctly"""
+        data_in_list_format = ["this", "might", "get", "a", "list"]
+        rendered_data = self.enquiry_renderer.render(data_in_list_format)
+
+        expected_data = '{"data": {"enquiry": ["this", "might", "get", "a", "list"]}}'
+        self.assertEqual(rendered_data, expected_data)
+
+    def test_that_an_error_is_rendered_correctly(self):
+        """
+        if an error is raised, i.e using serializers.ValidationError, then
+        it should be in a format to show this is an error
+        """
+        Error_detail = {'message': [
+            {"ErrorDetail": [{
+                "phone": "this field is required"}
+            ]}]}
+        rendered_data = self.enquiry_renderer.render(Error_detail)
+
+        expected_data = '{"errors": {"message": [{"ErrorDetail": [{"phone": "this field is required"}]}]}}'
+        self.assertEqual(rendered_data, expected_data)
+
+    def test_that_errors_are_rendered_as_expected(self):
+        dict_data = {"errors": "This error should be properly rendered"
+                     }
+        rendered_data = self.enquiry_renderer.render(dict_data)
+
+        expected_data = b'{"errors":"This error should be properly rendered"}'
+        self.assertEqual(rendered_data, expected_data)

@@ -21,8 +21,6 @@ class IsClient(BasePermission):
 
     def has_permission(self, request, view):
 
-        if request.method == 'POST':
-            return request.user.role == 'CA'
-        if request.method == 'GET' and request.user.is_authenticated:
+        if request.method in SAFE_METHODS and request.user.is_authenticated:
             return request.user.role == 'LA' or request.user.role == 'CA'
-        return False
+        return request.user.role == 'CA'

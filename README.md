@@ -12,37 +12,41 @@ Backend Repository for LandVille Project
 
 - List of endpoints exposed by the service
 
-* POST /landville/adm/ logs in Admin
-* POST /api/v1/auth/register/ registers new users by email
-* GET /api/v1/auth/verify/ activates a users account
-* POST /api/v1/auth/login/ logs in a user by email
-* POST /api/v1/auth/google/ user signs in through google
-* POST /api/v1/auth/twitter/ user signs in through twitter
-* POST /api/v1/auth/facebook/ user signs in through facebook
-* POST /api/v1/auth/client/ application for client company
-* POST /api/v1/auth/password-reset/ user gets a reset password link
-* POST /api/v1/pay/card-pin/ initiate payment with local Nigerian cards, with PIN
-* POST /api/v1/pay/card-foreign/ initiate payment with foreign cards
-* POST /api/v1/pay/validate-card/ validate payment with local Nigerian cards, with PIN
-* PATCH /api/v1/auth/password-reset/ user resets password
-* POST /api/v1/transcations/accounts post account details by Client
-* GET /api/v1/transcations/accounts Get account details depending on User level
-* GET /api/v1/transcations/account/<account_number> Get a single account details entry
-* PUT /api/v1/transcations/account/<account_number> Update a single account detail entry
-* DELETE /api/v1/transcations/account/<account_number> Delete a single account detail entry
-
-* GET api/v1/properties/ get all property
-* POST api/v1/properties/ create a property page
-* GET api/v1/properties/get/<slug>/  get specific property
-* DELETE api/v1/properties/get/<slug>/ delete specific property
-* PATCH api/v1/properties/get/<slug>/ update specific property
-* GET api/v1/properties/buyer-list/ get properties in current user's buyer list
-* GET api/v1/properties/trending/?address=City get all trending properties in a particular location
-
-* POST api/v1/properties/buyer-list/<slug>/ add property with slug to current user's buyer list
-* DELETE api/v1/properties/buyer-list/<slug>/ remove property with slug from current user's buyer list
-* DELELTE api/v1/properties/:slug/resource delete a cloudinary resource
-
+| Method | Endpoint                                           | Description                                              |
+| ------ | -------------------------------------------------- | -------------------------------------------------------- |
+| POST   | /landville/adm/                                    | log in Admin                                             |
+| POST   | /api/v1/auth/register/                             | registers new users by email                             |
+| GET    | /api/v1/auth/verify/                               | activates a users account                                |
+| POST   | /api/v1/auth/login/                                | logs in a user by email                                  |
+| POST   | /api/v1/auth/google/                               | user signs in through google                             |
+| POST   | /api/v1/auth/twitter/                              | user signs in through twitter                            |
+| POST   | /api/v1/auth/facebook/                             | user signs in through facebook                           |
+| POST   | /api/v1/auth/client/                               | application for client company                           |
+| POST   | /api/v1/auth/password-reset/                       | user gets a reset password link                          |
+| POST   | /api/v1/pay/card-pin/                              | initiate payment with local Nigerian cards, with PIN     |
+| POST   | /api/v1/pay/card-foreign/                          | initiate payment with foreign cards                      |
+| POST   | /api/v1/pay/validate-card/                         | validate payment with local Nigerian cards, with PIN     |
+| PATCH  | /api/v1/auth/password-reset/                       | user resets password                                     |
+| POST   | /api/v1/transcations/accounts                      | post account details by Client                           |
+| GET    | /api/v1/transcations/accounts                      | Get account details depending on User level              |
+| GET    | /api/v1/transcations/account/<account_number>      | Get a single account details entry                       |
+| PUT    | /api/v1/transcations/account/<account_number>      | Update a single account detail entry                     |
+| DELETE | /api/v1/transcations/account/<account_number>      | Delete a single account detail entry                     |
+| GET    | /api/v1/properties/                                | get all property                                         |
+| POST   | /api/v1/properties/                                | create a property page                                   |
+| GET    | /api/v1/properties/get/<slug>/                     | get specific property                                    |
+| DELETE | /api/v1/properties/get/<slug>/                     | delete specific property                                 |
+| PATCH  | /api/v1/properties/get/<slug>/                     | update specific property                                 |
+| DELETE | /api/v1/properties/buyer-list/<slug>/              | remove property with slug from current user's buyer list |
+| POST   | /api/v1/properties/buyer-list/<slug>/              | add property with slug to current user's buyer list      |
+| GET    | /api/v1/properties/buyer-list/                     | get properties in current user's buyer list              |
+| GET    | /api/v1/properties/trending/?address=City          | get all trending properties in a particular location     |
+| PUT    | /api/v1/properties/enquiries/<enquiry_id>/         | Update a property Enquiry                                |
+| POST   | api/v1/propertis/enquiries/<property_slug>/create/ | Post a property enquiry                                  |
+| DELETE | api/v1/properties/enquiries/<enquiry_id>/          | Delete an enquiry                                        |
+| GET    | api/v1/properties/enquiries/all/                   | get all your enquiries                                   |
+| GET    | api/v1/properties/enquiries/<enquiry_id>/          | get one enquiry                                          |
+| DELETE | api/v1/properties/:slug/resource                   | delete a cloudinary resource                             |
 
 ## API Documentation
 

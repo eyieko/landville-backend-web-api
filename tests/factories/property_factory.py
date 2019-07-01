@@ -1,5 +1,6 @@
 import factory
 from faker import Faker
+import pytz
 
 from django.utils.timezone import now
 
@@ -42,11 +43,12 @@ class PropertyEnquiryFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = PropertyEnquiry
-
+    enquiry_id = fake.name()
+    client = factory.SubFactory(ClientFactory)
+    requester = factory.SubFactory(UserFactory)
     target_property = factory.SubFactory(PropertyFactory)
-    enquirer_name = fake.name()
-    email = fake.email()
-    phone = fake.phone_number()[:17]
+    visit_date = fake.date_time_between(
+        start_date="+3y", end_date="+20y", tzinfo=pytz.UTC)
     message = fake.sentences()
 
 

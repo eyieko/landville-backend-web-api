@@ -39,12 +39,36 @@ class PropertyQuery(CustomQuerySet):
         """Return all property that is sold"""
         return self._active().filter(is_sold=True)
 
+    def all_published_and_all_not_sold(self):
+        """ returns all published and unsold properties """
+        return self._active().filter(Q(is_published=True)) and self._active(
+        ).filter(Q(is_sold=False))
+
+    def published_and_unsold_property_by_slug(self, slug):
+        """
+        using a slug, return a property that is both unsold and unpublished
+        """
+        return self.all_published_and_all_not_sold().filter(slug=slug)
+
     def all_published_and_all_by_client(self, client):
-        """Return all property that are published and also
-           all property owned by the client"""
-        published_properties = self._active().filter(Q(is_published=True))
-        client_propeties = self._active().filter(Q(client=client))
-        return published_properties | client_propeties
+        """
+        Return all property that are published and also all
+        property owned by the client
+        """
+        return self._active().filter(Q(is_published=True)) | self._active(
+        ).filter(Q(client=client))
+
+
+class PropertyEnquiryQuery(CustomQuerySet):
+    """ Queryset for the Enquiry property """
+
+    def for_user(self, user):
+        """ returns all the queries made by a buyer """
+        return self._active().filter(requester=user)
+
+    def for_client(self, client):
+        """ return all the queires made for a certain client """
+        return self._active().filter(client=client)
 
 
 class ClientAccountQuery(CustomQuerySet):
