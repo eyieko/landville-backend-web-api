@@ -1,23 +1,25 @@
+from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     ListCreateAPIView
 )
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import generics
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
 from utils.client_permissions import IsownerOrReadOnly, IsClient
 from transactions.models import ClientAccount, Client
 from transactions.renderer import AccountDetailsJSONRenderer
-from transactions.serializers import ClientAccountSerializer
+from transactions.serializers import ClientAccountSerializer, TransactionsSerializer
 from transactions.transaction_services import TransactionServices
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from drf_yasg.utils import swagger_auto_schema
 from transactions.serializers import (
     PinCardPaymentSerializer,
     ForeignCardPaymentSerializer,
     PaymentValidationSerializer
 )
+from property.models import Property
 
 
 class ClientAccountAPIView(ListCreateAPIView):
@@ -135,6 +137,44 @@ class RetrieveUpdateDeleteAccountDetailsAPIView(RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class RetreiveTransactionsAPIView(generics.GenericAPIView):
+    """View class used to GET users transactions"""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = TransactionsSerializer
+
+    def get_queryset(self):
+        """Get queryset based on type/role of user currently logged in"""
+        if self.request.user.role == 'CA':
+            client_company = get_object_or_404(
+                Client, client_admin__pk=self.request.user.pk)
+            # return all the client property that have transactions
+            queryset = Property.active_objects.all_objects().filter(
+                transactions__target_property__client__pk=client_company.pk).distinct()
+        elif self.request.user.role == "LA":
+            # return all property with transactions
+            queryset = Property.active_objects.all_objects().filter(
+                transactions__isnull=False).distinct()
+        else:
+            # return all property for which the logged-in user has transactions with
+            queryset = Property.active_objects.all_objects().filter(
+                transactions__buyer__pk=self.request.user.pk).distinct()
+        return queryset
+
+    def get(self, request):
+        """Endpoint to fetch all the property transactions of the logged-in user"""
+        queryset = self.get_queryset()
+        if queryset:
+            serializer = self.serializer_class(
+                queryset, many=True, context={'request': request})
+        else:
+            return Response({"errors": "No transactions available"},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        data = {"data": {"transactions": serializer.data},
+                "message": "Transaction(s) retrieved successfully"}
+        return Response(data, status=status.HTTP_200_OK)
 
 
 @swagger_auto_schema(method='post', request_body=ForeignCardPaymentSerializer)
