@@ -3,9 +3,10 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.serializers.json import DjangoJSONEncoder
 
 from utils.models import BaseAbstractModel
-from utils.managers import CustomQuerySet, PropertyQuery
+from utils.managers import CustomQuerySet, PropertyQuery, PropertyEnquiryQuery
 from authentication.models import User, Client
 from utils.slug_generator import generate_unique_slug
+import uuid
 
 
 # assiging this as a global variable makes it easier to access it
@@ -68,20 +69,25 @@ class Property(BaseAbstractModel):
 
 
 class PropertyEnquiry(BaseAbstractModel):
-    """This class defines the model for enquiries"""
+    """This class defines the model for enquiries that are made by the user"""
 
+    enquiry_id = models.CharField(
+        max_length=100, blank=True, unique=True, default=uuid.uuid4)
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='client')
+    requester = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='enquiry_requester')
     target_property = models.ForeignKey(
         Property, on_delete=models.CASCADE, related_name='enquired_property')
-    enquirer_name = models.CharField(max_length=255)
-    email = models.EmailField()
-    phone = models.CharField(max_length=17)
+    visit_date = models.DateTimeField()
     message = models.TextField(max_length=1000)
+    is_resolved = models.BooleanField(default=False)
 
     objects = models.Manager()
-    active_objects = CustomQuerySet.as_manager()
+    active_objects = PropertyEnquiryQuery.as_manager()
 
     def __str__(self):
-        return f'Enquiry by {self.enquirer_name} on {self.created_at}'
+        return f'Enquiry {self.enquiry_id} by {self.requester}'
 
 
 class PropertyInspection(BaseAbstractModel):

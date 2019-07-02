@@ -5,13 +5,94 @@ from rest_framework.response import Response
 from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from property.models import Property, BuyerPropertyList
+from property.models import Property, BuyerPropertyList, PropertyEnquiry
 from property.serializers import (
-    PropertySerializer, BuyerPropertyListSerializer)
-from utils.permissions import ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer
+    PropertySerializer, BuyerPropertyListSerializer, PropertyEnquirySerializer)
 from utils.media_handlers import CloudinaryResourceHandler
-from property.renderers import PropertyJSONRenderer
+from property.renderers import PropertyJSONRenderer, PropertyEnquiryJSONRenderer
+from utils.permissions import (
+    ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer, IsOwner)
+
 from property.filters import PropertyFilter
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, IsAuthenticated)
+from authentication.models import User
+
+from utils.emailHelper import EmailHelper
+
+
+class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
+    """
+    handle creation of a property enquiry where we
+    we first pass the slug as the argument to fetch the property
+    """
+    serializer_class = PropertyEnquirySerializer
+    permission_classes = (IsBuyer,)
+    renderer_classes = (PropertyEnquiryJSONRenderer, )
+
+    def get_queryset(self):
+        """ return different results depending on who is making a request """
+
+        user = self.request.user
+
+        if user.is_authenticated and user.role == 'LA':
+            # check if the user is a landville admin and return all records
+            # even soft deleted ones
+            return PropertyEnquiry.objects.all()
+
+        if user.is_authenticated and user.role == 'CA':
+            # if the user is a client admin, return only his records
+            employer = user.employer.first()
+            return PropertyEnquiry.active_objects.for_client(client=employer)
+
+        # if the user is a buyer, return also only his enquiries
+        return PropertyEnquiry.active_objects.for_user(user=user)
+
+    def post(self, request, property_slug):
+        """
+        first find a property by slug, then post
+         an enquiry for the property
+         """
+        user = request.user
+        enquirer_name = user.first_name + ' ' + user.last_name
+        enquiry = request.data
+
+        enquiring_property = Property. \
+            active_objects.published_and_unsold_property_by_slug(
+                slug=property_slug).first()
+
+        if enquiring_property is None:
+            return Response({"errors": "we did not find the property"}, status=status.HTTP_404_NOT_FOUND)
+        for user_enquiry in self.get_queryset():
+
+            if user_enquiry.target_property.slug == enquiring_property.slug and \
+                    user_enquiry.is_resolved is False:
+                return Response({
+                    "errors": "enquiry for this property already exists"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(data=enquiry)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save(requester=user,
+                        client_id=enquiring_property.client.pk,
+                        target_property=enquiring_property)
+
+        response = {
+            "data": serializer.data,
+            "message": f'you have succefully enquired about '
+            f'{enquiring_property.title} Property owned by '
+            f'{enquiring_property.client}'
+        }
+        message = [
+            request,
+            user.email,
+            enquiring_property.client.email,
+            enquiring_property
+        ]
+        EmailHelper.send_enquirer_email(message)
+        return Response(response, status=status.HTTP_201_CREATED)
+
 
 Uploader = CloudinaryResourceHandler()
 
@@ -72,6 +153,64 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
             'data': {"property": serializer.data}
         }
         return Response(response, status=status.HTTP_201_CREATED)
+
+
+class PropertyEnquiryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+     Handles request to view, delete or update a specific property Enquiry
+    """
+
+    serializer_class = PropertyEnquirySerializer
+    renderer_classes = (PropertyEnquiryJSONRenderer,)
+    permission_classes = (IsOwner, IsAuthenticated)
+    lookup_field = 'enquiry_id'
+
+    def get_queryset(self):
+        """ return different results depending on who is making a request  """
+
+        user = self.request.user
+
+        if user.role == 'LA':
+            return PropertyEnquiry.objects.all()
+
+        # check if the user is a client admin
+        # and return all enquiries made on his/her property
+        if user.role == 'CA':
+            return PropertyEnquiry.active_objects.for_client(
+                client=user.employer.first())
+
+        # else if the user is a buyer return only
+        # the records that are associated with him/her
+        return PropertyEnquiry.active_objects.for_user(user=user)
+
+    def destroy(self, request, enquiry_id):
+        """
+        :param request:
+        :param enquiry_id:
+        :return: delete a specific enquiry
+        """
+        enquiry = self.get_object()
+        self.check_object_permissions(request, enquiry)
+        enquiry.soft_delete()
+        response = {"message": "Enquiry deleted successfully"}
+        return Response(response, status=status.HTTP_200_OK)
+
+    def put(self, request, enquiry_id):
+        """
+        update an enquiry
+        :param request:
+        :param enquiry_id:
+        :return: the updated enquiry
+        """
+
+        enquiry = self.get_object()
+        self.check_object_permissions(request, enquiry)
+        serializer = self.serializer_class(
+            enquiry, data=request.data, context={'request': self.request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(email=request.user.email)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):

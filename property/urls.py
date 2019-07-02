@@ -1,7 +1,7 @@
 from django.urls import path
 from property.views import (
     CreateAndListPropertyView, PropertyDetailView, BuyerPropertyListView,
-    TrendingPropertyView, DeleteCloudinaryResourceView)
+    TrendingPropertyView, DeleteCloudinaryResourceView, PropertyEnquiryDetailView, ListCreateEnquiryAPIView)
 
 
 urlpatterns = [
@@ -16,4 +16,12 @@ urlpatterns = [
     path('trending/', TrendingPropertyView.as_view(), name='trending_property'),
     path('<slug:slug>/resource', DeleteCloudinaryResourceView.as_view(),
          name='delete_cloudinary_resource'),
+    path('<slug:slug>/', PropertyDetailView.as_view(), name='single_property'),
+
+    path('enquiries/<property_slug>/create/',
+         ListCreateEnquiryAPIView.as_view(), name='post_enquiry'),
+    path('enquiries/all/', ListCreateEnquiryAPIView.as_view(),
+         name='all-enquiries'),
+    path('enquiries/<enquiry_id>/',
+         PropertyEnquiryDetailView.as_view(), name='one-enquiry')
 ]

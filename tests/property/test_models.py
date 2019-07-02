@@ -38,7 +38,7 @@ class PropertyEnquiryTest(BaseTest):
     def test_that_string_representation_works(self):
         self.assertEqual(
             str(self.enquiry1),
-            f'Enquiry by Liz Kiherehere on {self.enquiry1.created_at}')
+            f'Enquiry {self.enquiry1.enquiry_id} by {self.enquiry1.requester}')
 
 
 class PropertyInspectionTest(BaseTest):

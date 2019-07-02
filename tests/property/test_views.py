@@ -13,10 +13,23 @@ from tests.factories.authentication_factory import UserFactory
 from property.views import (CreateAndListPropertyView,
                             PropertyDetailView,
                             BuyerPropertyListView,
-                            TrendingPropertyView
+                            TrendingPropertyView,
+                            ListCreateEnquiryAPIView,
+                            PropertyEnquiryDetailView
                             )
 from property.models import Property, MAX_PROPERTY_IMAGE_COUNT
 from tests.factories.property_factory import PropertyFactory
+
+
+def get_one_enquiry(enquiry_id):
+    return reverse("property:one-enquiry", args=[enquiry_id])
+
+
+GET_ALL_ENQURIES_URL = reverse('property:all-enquiries')
+
+
+def post_enquiry_url(property_slug):
+    return reverse("property:post_enquiry", args=[property_slug])
 
 
 class PropertyViewTests(BaseTest):
@@ -920,3 +933,270 @@ class BuyerPropertyListTest(BaseTest):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data.get('errors'),
                          self.property4.title + ' is not in your buy list')
+
+
+class TestEnquiryViews(BaseTest):
+
+    def test_user_can_be_able_to_create_an_enquiry(self):
+        """
+        test that users can be able to enquire about a property
+        """
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+    def test_non_user_cant_create_enquiries(self):
+        """
+        test that only users can create a property enquiry
+        """
+
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+
+        force_authenticate(post_enquiry, user=self.user1)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_that_a_user_cannot_create_enquiry_two_times(self):
+        """
+        Test a user cannot be able to create an enquiry
+        two times if the one he has created has not already been resolved
+        """
+
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+
+        post_enquiry1 = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry1, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry1, property_slug=slug)
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('enquiry for this property already exists',
+                      str(resp.data))
+
+    def test_user_cannot_create_enquiry_with_a_past_date(self):
+        """
+        A user cannnot be able to post a date that is in the past as the visit
+        date
+        """
+
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_with_past_date)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        self.assertIn(
+            'You cannot put a date in the past',
+            str(resp.data))
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_can_be_able_to_get_one_enquiry(self):
+        """ test that users can be able to get one enquiry
+        after they have posted the enquiry """
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        enquiry_id = resp.data['data']['enquiry_id']
+
+        get_enquiry = self.factory.get(
+            get_one_enquiry(enquiry_id), format='json'
+        )
+        self.user3.role = 'BY'
+        self.user3.save()
+        force_authenticate(get_enquiry, user=self.user3)
+        view2 = PropertyEnquiryDetailView.as_view()
+        get_response = view2(get_enquiry, enquiry_id=enquiry_id)
+        self.assertIn('we-love-landville-we-love-landville',
+                      str(get_response.data))
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+    def test_user_can_delete_an_enquiry(self):
+        """ test users/buyer can be able to delete an enquiry """
+
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        enquiry_id = resp.data['data']['enquiry_id']
+
+        delete_enquiry = self.factory.delete(
+            get_one_enquiry(enquiry_id), format='json'
+        )
+        force_authenticate(delete_enquiry, user=self.user3)
+        view2 = PropertyEnquiryDetailView.as_view()
+        delete_response = view2(delete_enquiry, enquiry_id=enquiry_id)
+
+        self.assertIn('Enquiry deleted successfully',
+                      str(delete_response.data))
+        self.assertEqual(delete_response.status_code,
+                         status.HTTP_200_OK)
+
+    def test_user_update_an_enquiry(self):
+        """ test a user can be able to update an enquiry """
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        enquiry_id = resp.data['data']['enquiry_id']
+
+        update_enquiry = self.factory.put(
+            get_one_enquiry(enquiry_id), self.enquiry_data_update,
+        )
+        force_authenticate(update_enquiry, user=self.user3)
+        view = PropertyEnquiryDetailView.as_view()
+        up_res = view(update_enquiry, enquiry_id=enquiry_id)
+        # lets now check if the new message is contained in the response
+        self.assertIn('We are from Landville', str(up_res.data))
+        self.assertEqual(up_res.status_code, status.HTTP_200_OK)
+
+    def test_user_can_get_all_his_enquiries(self):
+        """ 
+        test that a user gets an empty list when there are no enquiries
+        posted
+
+        """
+
+        get_enquiry = self.factory.get(
+            GET_ALL_ENQURIES_URL, format='json'
+        )
+        self.user3.role = 'BY'
+        self.user3.save()
+        force_authenticate(get_enquiry, user=self.user3)
+        view2 = ListCreateEnquiryAPIView.as_view()
+        get_response = view2(get_enquiry)
+        self.assertEqual(len(get_response.data['results']), 0)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+    def test_landville_admin_can_be_able_to_get_all_records(self):
+        """
+        test landville admin can be able to get all enquiries
+        not that since he is a landville admin, he can be able to get
+        all the enquiries even the one posted in the propertyenquiry factory
+         """
+        get_enquiry = self.factory.get(
+            GET_ALL_ENQURIES_URL, format='json'
+        )
+        self.user3.role = 'LA'
+        self.user3.save()
+        force_authenticate(get_enquiry, user=self.admin)
+        view2 = ListCreateEnquiryAPIView.as_view()
+        get_response = view2(get_enquiry)
+
+        # the admin will be able to get the enquiry we posted in the factory
+        self.assertEqual(len(get_response.data['results']), 1)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+    def test_client_admin_can_be_able_to_get_enquiries_of_his_properties(self):
+        """
+        test client admin can be able
+        to get enquiries about a property
+        """
+        get_enquiry = self.factory.get(
+            GET_ALL_ENQURIES_URL, format='json'
+        )
+
+        force_authenticate(get_enquiry, user=self.user1)
+        view2 = ListCreateEnquiryAPIView.as_view()
+        get_response = view2(get_enquiry)
+        # since no enquiries have been made so far lets assert the list is 0
+        self.assertEqual(len(get_response.data['results']), 0)
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+    def test_landville_admin_can_be_able_to_get_one_one_enquiry(self):
+        """ test landville admin can able to get one enquiry """
+
+ 
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        enquiry_id = resp.data['data']['enquiry_id']
+
+        get_enquiry = self.factory.get(
+            get_one_enquiry(enquiry_id), format='json'
+        )
+
+        force_authenticate(get_enquiry, user=self.admin)
+        view2 = PropertyEnquiryDetailView.as_view()
+        get_response = view2(get_enquiry, enquiry_id=enquiry_id)
+
+        self.assertIn('we-love-landville-we-love-landville',
+                      str(get_response.data))
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)
+
+    def test_user_cant_enquire_for_a_non_existent_propery(self):
+        """ test a user cannot enquire about a non-existent property """
+
+        slug = 'jkshskdhsdksdnskdskdshdskdh'
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+
+        self.assertIn('we did not find the property', str(resp.data))
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_client_admin_can_be_able_to_get_one_enquiry(self):
+        """ test client admin cab be able to get a single enquiry """
+
+
+        slug = self.property11.slug
+
+        post_enquiry = self.factory.post(
+            post_enquiry_url(slug), self.enquiry_data)
+        force_authenticate(post_enquiry, user=self.user3)
+        view = ListCreateEnquiryAPIView.as_view()
+        resp = view(post_enquiry, property_slug=slug)
+        enquiry_id = resp.data['data']['enquiry_id']
+
+        get_enquiry = self.factory.get(
+            get_one_enquiry(enquiry_id), format='json'
+        )
+
+        force_authenticate(get_enquiry, user=self.user1)
+        view2 = PropertyEnquiryDetailView.as_view()
+        get_response = view2(get_enquiry, enquiry_id=enquiry_id)
+        self.assertIn('we-love-landville-we-love-landville',
+                      str(get_response.data))
+        self.assertEqual(get_response.status_code, status.HTTP_200_OK)

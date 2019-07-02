@@ -1,10 +1,15 @@
 import json
 
 from rest_framework import serializers
+import re
+import pytz
+import datetime
+from django.core.validators import ValidationError
 
-from property.models import Property, BuyerPropertyList
+from property.models import Property, BuyerPropertyList, PropertyEnquiry
+
 from property.validators import (
-    validate_address, validate_coordinates, validate_image_list)
+    validate_address, validate_coordinates, validate_image_list, validate_visit_date)
 from utils.media_handlers import CloudinaryResourceHandler
 
 
@@ -96,3 +101,22 @@ class BuyerPropertyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyerPropertyList
         exclude = ('created_at', 'updated_at', 'is_deleted', 'id')
+
+
+class PropertyEnquirySerializer(serializers.ModelSerializer):
+    """ serializer class for property Enquiry """
+    visit_date = serializers.DateTimeField(validators=[validate_visit_date])
+
+    class Meta:
+        model = PropertyEnquiry
+        fields = ['enquiry_id', 'visit_date', 'message']
+
+    def update(self, instance, validated_data):
+        """ update an existing enquiry """
+
+        instance.message = validated_data.get('message', instance.message)
+        instance.visit_date = validated_data.get(
+            'visit_date', instance.visit_date)
+
+        instance.save()
+        return instance

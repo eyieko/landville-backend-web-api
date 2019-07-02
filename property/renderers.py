@@ -1,8 +1,10 @@
+from property.models import Property, PropertyEnquiry
+from rest_framework.utils.serializer_helpers import ReturnDict, ReturnList
+from property.models import Property
+from rest_framework.utils.serializer_helpers import ReturnDict
 import json
 
 from rest_framework.renderers import JSONRenderer
-from rest_framework.utils.serializer_helpers import ReturnDict
-from property.models import Property
 
 
 class PropertyJSONRenderer(JSONRenderer):
@@ -64,3 +66,30 @@ class PropertyJSONRenderer(JSONRenderer):
                 return json.dumps({
                     'data': {'properties': data}
                 })
+
+        return json.dumps({
+            'data': {'property': data}
+        })
+
+
+class PropertyEnquiryJSONRenderer(JSONRenderer):
+    """
+    renderer for property enquiry for properly handling responses and 
+    data that is returned
+    """
+    charset = "utf-8"
+
+    def render(self, data, media_type=None, renderer_context=None):
+
+        if isinstance(data, dict):
+            errors = data.get('errors', None)
+
+            if errors:
+                return super().render(data)
+
+            if 'ErrorDetail' in str(data):
+                return json.dumps({
+                    'errors': data}
+                )
+
+        return json.dumps({"data": {"enquiry": data}})
