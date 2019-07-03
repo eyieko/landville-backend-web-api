@@ -18,6 +18,10 @@ class CustomQuerySet(QuerySet):
         """Return all objects that haven't been soft deleted"""
         return self._active()
 
+    def all_approved(self):
+        """ return client companies that are approved"""
+        return self._active().filter(approval_status='approved')
+
 
 class PropertyQuery(CustomQuerySet):
     """Queryset that will be used by the property model"""

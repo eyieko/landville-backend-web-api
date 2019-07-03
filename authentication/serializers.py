@@ -1,14 +1,9 @@
-import re
-from authentication.models import User, Client, UserProfile
+from authentication.models import (
+    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
 from rest_framework import serializers
-from authentication.models import User, PasswordResetToken
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
-from rest_framework import serializers
-from rest_framework.exceptions import NotAuthenticated
-
-from authentication.models import User, Client, PasswordResetToken
 from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
 from utils import BaseUtils
@@ -256,10 +251,13 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
             'password': randomStringwithDigitsAndSymbols()
         }
 
-        new_user = User.objects.create_user(**payload)
-        new_user.is_verified = True
-        new_user.social_id = user_id
-        new_user.save()
+        try:
+            new_user = User.objects.create_user(**payload)
+            new_user.is_verified = True
+            new_user.social_id = user_id
+            new_user.save()
+        except ValidationError:
+            raise serializers.ValidationError('Error While creating User.')
 
         return {"token": new_user.token}
 
@@ -304,8 +302,12 @@ class ClientSerializer(serializers.ModelSerializer, BaseUtils):
         self.validate_phone_number(phone)
 
         # Validate the type of address
-        self.validate_data_instance(address, dict, {
-                                    "address": "Company address should contain State, City and Street details"})
+        self.validate_data_instance(
+            address, dict,
+            {
+                "address": "Company address should contain State, City and\
+                    Street"
+            })
 
         keys = ["State", "Street", "City"]
         for key in keys:
@@ -341,8 +343,8 @@ class PasswordResetSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """ validate user input. """
         email = data.get('email')
-        message = ('If you have an account with us we have sent '
-                   'an email to reset your password')
+        message = 'If you have an account with us we have sent an email to\
+            reset your password'
         reset_handler = ResetHandler()
 
         try:
@@ -361,6 +363,8 @@ class PasswordResetSerializer(serializers.ModelSerializer):
             link exists in our database. This prevents knowledge
             of which emails actually exist.
             """
+            message = 'If you have an account with us we have sent an email to \
+            reset your password'
             return {'message': message}
 
 
@@ -404,7 +408,8 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
             """ we then check is it is valid """
             if not user_token.is_valid:
                 raise serializers.ValidationError({
-                    "token": "This token is no longer valid, please get a new one"
+                    "token": "This token is no longer valid, please get a \
+                    new one"
                 })
 
         except PasswordResetToken.DoesNotExist:
@@ -420,14 +425,15 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         """
         if type(result) == tuple:
 
-            if not RegistrationSerializer().do_passwords_match(password, confirm_password):
+            if not RegistrationSerializer().do_passwords_match(
+                    password, confirm_password):
                 """
                 check if password and confirm passwords do match.
-                no need to create another function since we already have one inside our
-                RegistrationSerializer class above
-                 """
+                no need to create another function since we already have one
+                inside our RegistrationSerializer class above
+                """
                 raise serializers.ValidationError({
-                    "errors": "passwords do not match"
+                    "error": "passwords do not match"
                 })
             try:
                 validate_password(data["password"])
@@ -501,3 +507,53 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
                                        'Please choose a question to answer')
 
         return data
+
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    """ This handles serializing and deserializing of Replies' objects """
+
+    reviewer = RegistrationSerializer(required=False)
+
+    class Meta:
+        model = ReplyReview
+        fields = (
+            'id',
+            'reply',
+            'review',
+            'created_at',
+            'reviewer'
+        )
+        read_only_fields = ('id', 'createdAt', 'reviewer',
+                            'review', 'is_deleted')
+
+
+class ClientReviewSerializer(serializers.ModelSerializer):
+    """ This handles serializing and deserializing of Client Review objects """
+
+    reviewer = RegistrationSerializer(required=False)
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ClientReview
+        fields = ('id', 'created_at', 'updated_at', 'review',
+                  'reviewer', 'client', 'replies')
+        read_only_fields = ('id', 'createdAt', 'reviewer',
+                            'replies', 'is_deleted')
+
+    def get_replies(self, obj):
+        """ returns all replies that are not soft deleted """
+
+        replies = ReplyReview.active_objects.all_objects().filter(
+            review__pk=obj.pk)
+        data = ReviewReplySerializer(replies, many=True)
+        return data.data
+
+    def update(self, instance, validated_data):
+        """
+        read-only fields cannot be updated
+        """
+        for key, value in validated_data.copy().items():
+            if key in self.Meta.read_only_fields:
+                validated_data.pop(key)
+        instance.save()
+        return super().update(instance, validated_data)

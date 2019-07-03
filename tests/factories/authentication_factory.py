@@ -1,9 +1,8 @@
 import factory
-from factory.faker import faker
 from faker import Faker
-from datetime import datetime, timedelta
 
-from authentication.models import User, UserProfile, Client, PasswordResetToken
+from authentication.models import User, UserProfile, Client, \
+    PasswordResetToken, ClientReview, ReplyReview
 
 
 fake = Faker()
@@ -63,4 +62,25 @@ class PasswordResetTokenFactory(factory.DjangoModelFactory):
 
     token = fake.text()
     is_valid = True
-    
+
+
+class ClientReviewsFactory(factory.DjangoModelFactory):
+    """This class will create reviews on clients for testing """
+
+    class Meta:
+        model = ClientReview
+
+    reviewer = factory.SubFactory(UserFactory)
+    client = factory.SubFactory(ClientFactory)
+    review = fake.sentences()
+
+
+class ReplyReviewsFactory(factory.DjangoModelFactory):
+    """This class will create replies to reviews"""
+
+    class Meta:
+        model = ReplyReview
+
+    review = factory.SubFactory(ClientReviewsFactory)
+    reviewer = factory.SubFactory(UserFactory)
+    reply = fake.sentences()

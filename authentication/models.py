@@ -213,3 +213,35 @@ class PasswordResetToken(models.Model):
     token = models.CharField(max_length=400)
     created = models.DateTimeField(auto_now=True)
     is_valid = models.BooleanField(default=True)
+
+
+class ClientReview(BaseAbstractModel):
+    """This class defines the model for the client reviews"""
+
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviewer')
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='reviewed_client')
+    review = models.TextField()
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return f'Review by {self.reviewer} on {self.created_at}'
+
+
+class ReplyReview(BaseAbstractModel):
+    """This class defines the model for the replies to the client's reviews"""
+
+    review = models.ForeignKey(
+        ClientReview, on_delete=models.CASCADE, related_name='replies')
+    reply = models.TextField()
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reply')
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return f'Review by {self.reviewer} on {self.created_at}'
