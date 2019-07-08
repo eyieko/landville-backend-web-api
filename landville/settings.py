@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/2.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
+import sys
 import os
 import django_heroku
+import logging
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,7 +26,10 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG')
+# Because Python gets the debug setting as a string and not a boolean,
+# The statement below will return a boolean for the DEBUG settings.
+# DEBUG will now be a bool and not a string.
+DEBUG = os.environ.get('DEBUG').lower() == 'true'
 
 ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS')]
 
@@ -189,3 +194,80 @@ django_heroku.settings(locals())
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+
+# This should allow logging in to through the Swagger UI. Just pass
+# `Bearer <token>` to the login form on Swagger and make requests as an
+# authenticated user.
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}
+
+# whenever tests are run, TESTING_MODE is set to true.
+# This is used to create a custom logging filter to disable
+# logging whenever running tests
+TESTING_MODE = len(sys.argv) > 1 and sys.argv[1] == 'test'
+
+
+class DisableTestLogging(logging.Filter):
+    """
+    This custom filter disable logging whenever running tests.
+    https://docs.python.org/3/library/logging.html#filter-objects
+    """
+
+    def filter(self, record):
+        # if tests are being run, no records are logged
+        return not TESTING_MODE
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        # verbose output is similar to Heroku logs
+        'verbose': {
+            'format': ('%(asctime)s [%(process)d] [%(levelname)s] ' +
+                       'pathname=%(pathname)s lineno=%(lineno)s ' +
+                       'funcname=%(funcName)s %(message)s'),
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        }
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'testing': {
+            '()': DisableTestLogging
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'productionLogger': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'filters': ['testing', 'require_debug_false'],
+        },
+        'testLogger': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'filters': ['testing', 'require_debug_true']
+        }
+    }
+}

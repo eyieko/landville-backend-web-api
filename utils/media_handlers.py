@@ -1,4 +1,7 @@
+import logging
+
 from django.utils.datastructures import MultiValueDictKeyError
+from django.conf import settings
 import cloudinary.uploader as uploader
 from cloudinary.api import delete_resources, Error
 from rest_framework.exceptions import ValidationError
@@ -6,6 +9,12 @@ from rest_framework.exceptions import ValidationError
 from property.validators import (
     validate_cloudinary_url, validate_image, validate_video)
 from property.models import MAX_PROPERTY_IMAGE_COUNT
+
+
+if not settings.DEBUG:
+    logger = logging.getLogger('productionLogger')
+else:
+    logger = logging.getLogger('testLogger')
 
 
 class CloudinaryResourceHandler:
@@ -20,12 +29,19 @@ class CloudinaryResourceHandler:
         Image file is first validated before being uploaded.
         """
         try:
+            logger.debug('Validating image before uploading...')
             validate_image(image)
+            logger.debug('Uploading image to Cloudinary')
             result = uploader.upload(image)
             url = result.get('url')
+            logger.info(
+                'Successfully uploaded image to Cloudinary. Returned url: '
+                f'{url}')
             return url
         # Cloudinary might still throw an error if validation fails.
         except Error as e:
+            logger.warning('Upload to cloudinary failed. Error raised: '
+                           f'{e}')
             raise ValidationError({
                 'image':
                 ('Image is either corrupted or of an unkown format. '
@@ -50,6 +66,7 @@ class CloudinaryResourceHandler:
             # This error will be raised if `image_main` is not an
             # uploaded file. There is no need to raise an error in that
             # case
+            logger.debug('No main image was passed in the request.')
             pass
 
     def upload_image_batch(self, request, instance=None):
@@ -69,6 +86,8 @@ class CloudinaryResourceHandler:
         # this is the error message returned when users will exceed their
         # limit whenever creating or updating property images.
         if image_list:
+            logger.debug(
+                f'{len(image_list)} images found in the key `image_others`')
             max_image_count_exceeded = (
                 'Sorry. You are limited to a maximum '
                 f'of {MAX_PROPERTY_IMAGE_COUNT} images. '
@@ -76,6 +95,7 @@ class CloudinaryResourceHandler:
                 'of images you '
                 'wish to upload and try again.')
             if len(image_list) > MAX_PROPERTY_IMAGE_COUNT:
+                logger.debug('Max image limit exceeded.')
                 raise ValidationError({
                     'image_others': max_image_count_exceeded}
                 )
@@ -85,6 +105,7 @@ class CloudinaryResourceHandler:
                 # in more than 15 images being saved for this instance.
                 if image_count_in_DB + len(image_list) > (
                         MAX_PROPERTY_IMAGE_COUNT):
+                    logger.info('Max image limit exceeded.')
                     raise ValidationError({
                         'image_others': max_image_count_exceeded}
                     )
@@ -92,6 +113,7 @@ class CloudinaryResourceHandler:
         # if there are no images to be updated, we return an empty list
         # instead of None. The field `image_others` should not contain
         # null values.
+        logger.debug('No images to be uploaded under key `image_others`')
         return []
 
     def upload_video(self, video):
@@ -104,13 +126,18 @@ class CloudinaryResourceHandler:
             Cloudinary video url if upload is successful
         """
         try:
+            logger.debug('Validating video before uploading to Cloudinary...')
             validate_video(video)
+            logger.debug(
+                'Valid video found. Attempting to upload to Cloudinary.')
             res = uploader.upload_large(
                 video, resource_type="video")
             url = res.get('url')
+            logger.info(f'Video upload succesful. Returned url: {url}')
             return url
         except Error as e:
             # Cloudinary might throw an error during upload
+            logger.error(f'Video upload failed. Error raised: {e}')
             raise ValidationError({
                 'video': ('Video is either corrupted or of an unkown format.'
                           'Please try again with a different video file.')
@@ -130,6 +157,7 @@ class CloudinaryResourceHandler:
             url = self.upload_video(video_file[0])
             return url
         elif video_link:
+            logger.debug('Video link passed instead of video file.')
             return video_link
 
     def get_cloudinary_public_id(self, url):
@@ -176,16 +204,30 @@ class CloudinaryResourceHandler:
         image_list_in_DB = instance.image_others.copy() if instance.image_others else []  # noqa
         video_in_DB = instance.video
         if deleted_image_others:
+            logger.debug(
+                f'{len(deleted_image_others)} images to be deleted...')
             for image in deleted_image_others:
                 if image in image_list_in_DB:
                     try:
+                        logger.debug(
+                            'Checking if resource has a Cloudinary public id')
                         public_image_id = self.get_cloudinary_public_id(image)
+                        logger.debug(
+                            'Attempting to delete image with public id '
+                            f'{public_image_id} from Cloudinary...')
                         uploader.destroy(public_image_id, invalidate=True)
                         instance.image_others.remove(image)
+                        logger.debug('Deleted the image from database.')
                     except ValidationError:
                         # if the image is not from cloudinary, we simply delete
                         # it from the DB
+                        logger.info('Image is not from Cloudinary. Attempting '
+                                    'to remove it from the DB...')
                         instance.image_others.remove(image)
+
+            logger.info('Images deleted from the database.'
+                        f'{len(instance.image_others)} images '
+                        'left for this property')
             updated_fields['image_others'] = instance.image_others
 
         if video_in_DB == deleted_video:
@@ -194,20 +236,27 @@ class CloudinaryResourceHandler:
                 # because video urls don't have to be cloudinary urls,
                 # we first try and check if it's a cloudinary resource
                 # before deleting it.
+                logger.debug('Checking is video has public Cloudinary id...')
                 public_video_id = self.get_cloudinary_public_id(deleted_video)
+                logger.debug('Attempting to delete video with public id '
+                             f'{public_video_id} from Cloudinary...')
                 delete_resources(
                     public_video_id, resource_type='video', invalidate=True)
             except ValidationError:
                 # if the video in the DB is not a cloudinary url, we just pass
                 # but still delete it from the DB in the `finally`
                 # statement below
+                logger.debug('Video to be deleted is not from Cloudinary.')
                 pass
 
             finally:
                 # as long as the video link in the request matches that in
                 # the database we delete that video from the database.
+                logger.debug('Deleting the video from the database.')
                 instance.video = None
-
+            logger.info('Video deleted from the database. Boolean value for '
+                        f'the property video is {bool(instance.video)}. '
+                        'It should be False.')
             updated_fields['video'] = None
 
         instance.save()

@@ -63,14 +63,15 @@ class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ('email', 'is_superuser', 'first_name', 'last_name')
+    list_display = ('email', 'is_superuser', 'first_name', 'last_name', 'role')
     list_filter = ('created_at', 'is_superuser',)
     fieldsets = (
         (None, {'fields': ('password',)}),
         ('Personal info', {
          'fields': ('email', 'first_name', 'last_name', 'username')}),
         ('Permissions', {
-         'fields': ('is_superuser', 'is_staff', 'groups', 'user_permissions')}),
+         'fields': (
+             'is_superuser', 'is_staff', 'groups', 'user_permissions')}),
         ('User Roles', {
             'fields': ('is_active', 'role', 'is_verified')
         }),
@@ -80,7 +81,8 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2')}
+            'fields': (
+                'email', 'first_name', 'last_name', 'password1', 'password2')}
          ),
     )
     search_fields = ('email', 'first_name', 'last_name', 'username'),
@@ -106,7 +108,7 @@ class ClientAdmin(admin.ModelAdmin):
 
     def response_post_save_change(self, request, obj):
         """
-        Figure out where to redirect after the 'Save' button has been pressed 
+        Figure out where to redirect after the 'Save' button has been pressed
         when editing an existing object.
         """
         if obj.approval_status == 'approved':
@@ -118,7 +120,10 @@ class ClientAdmin(admin.ModelAdmin):
             EmailHelper.send_an_email(data=data, from_approval=True)
             return self._response_post_save(request, obj)
         else:
-            messages.info(request, message="Please add a reason for your action in the text box below")
+            messages.info(
+                request, message=("Please add a reason for your action "
+                                  "in the text box below")
+            )
             return HttpResponseRedirect("/api/v1/auth/admin/notes/?status={}&client={}".format(obj.approval_status, obj.client_admin.email))
 
 
