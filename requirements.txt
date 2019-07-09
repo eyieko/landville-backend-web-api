@@ -21,6 +21,8 @@ django-filter==2.1.0
 django-heroku==0.3.1
 django-stubs==0.12.1
 djangorestframework==3.9.4
+djangorestframework-stubs==0.4.2
+django-fernet-fields
 docopt==0.6.2
 dodgy==0.1.9
 drf-yasg==1.15.0
@@ -43,6 +45,7 @@ knocker==0.1.2
 lazy-object-proxy==1.4.1
 MarkupSafe==1.1.1
 mccabe==0.6.1
+mock==3.0.5
 mypy==0.701
 mypy-extensions==0.4.1
 more-itertools==7.0.0
@@ -60,7 +63,7 @@ pycodestyle==2.5.0
 pycparser==2.19
 pycryptodomex==3.8.2
 pydocstyle==3.0.0
-pyflakes==1.6.0
+pyflakes==2.1.1
 PyJWT==1.7.1
 pylint==2.1.1
 pylint-celery==0.3

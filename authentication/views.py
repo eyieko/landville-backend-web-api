@@ -5,21 +5,31 @@ from rest_framework.views import APIView
 from authentication.serializers import (
     GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
     TwitterAuthAPISerializer, RegistrationSerializer, LoginSerializer,
-    ClientSerializer, ChangePasswordSerializer)
+    ClientSerializer, ChangePasswordSerializer,
+    ProfileSerializer,)
 from rest_framework.views import APIView
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from authentication.email_helper import EmailHelper
-from authentication.permissions import IsClientAdmin
 from django.conf import settings
-from authentication.models import User, Client
+from authentication.models import User, Client, UserProfile
 from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import render
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.views import View
+from property.validators import validate_image
+from authentication.permissions import IsProfileOwner, IsClientAdmin
+from django.forms.models import model_to_dict
+from cloudinary.api import Error
+import cloudinary.uploader as uploader
+from rest_framework import mixins
+from rest_framework.exceptions import ValidationError
+from utils.media_handlers import CloudinaryResourceHandler
+
+Uploader = CloudinaryResourceHandler()
 
 
 class RegistrationAPIView(generics.GenericAPIView):
@@ -40,8 +50,7 @@ class RegistrationAPIView(generics.GenericAPIView):
         response = {
             "data": {
                 "user": dict(user_data),
-                "message": "Account created successfully,please check your \
-                mailbox to activate your account ",
+                "message": "Account created successfully,please check your mailbox to activate your account",
                 "status": "success"
             }
         }
@@ -99,7 +108,6 @@ class GoogleAuthAPIView(APIView):
     """
     Manage Google Login
     """
-    permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = GoogleAuthSerializer
 
@@ -121,7 +129,6 @@ class FacebookAuthAPIView(APIView):
     """
     Manage Facebook Login
     """
-    permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = FacebookAuthAPISerializer
 
@@ -144,7 +151,6 @@ class TwitterAuthAPIView(APIView):
     """
     Manage Twitter Login
     """
-    permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = TwitterAuthAPISerializer
 
@@ -269,6 +275,66 @@ class PasswordResetView(APIView):
         serializer.is_valid(raise_exception=True)
         response = {
             "data": serializer.validated_data
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class ProfileView(generics.GenericAPIView):
+    """
+    This View handles retreiving and updating of users profile including 
+    updating the users initial profile image
+    """
+    permission_classes = (IsAuthenticated, IsProfileOwner)
+    serializer_class = ProfileSerializer
+
+    def get(self, request):
+        """
+        Retreive a users profile without their security answer and question
+        """
+        user_object = User.objects.get(pk=request.user.pk)
+        user_data = model_to_dict(
+            user_object, fields=['id', 'email', 'first_name', 'last_name', 'role'])
+
+        profile = UserProfile.objects.get(user=request.user)
+        profile_data = model_to_dict(
+            profile, exclude=['security_question', 'security_answer', 'is_deleted'])
+
+        profile_data['user'] = user_data
+        data = {"data": {"profile": profile_data},
+                "message": "Profile retreived successfully"}
+        return Response(data, status=status.HTTP_200_OK)
+
+    def upload_image(self, image):
+        """
+        Validate and upload an image to cloudinary and return a url
+        """
+        validate_image(image)
+        result = uploader.upload(image)
+        url = result.get('url')
+        return url
+
+    def patch(self, request):
+        """
+        Update a users  profile
+        """
+        profile = UserProfile.objects.get(user=request.user)
+        self.check_object_permissions(request, profile)
+        profile_data = request.data
+        if request.FILES:
+            url = self.upload_image(request.FILES['image'])
+            if url:
+                profile_data["image"] = url
+
+        serializer = self.serializer_class(
+            profile, data=profile_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        updated_profile = dict(serializer.data)
+        response = {
+            "data": {
+                "profile": updated_profile,
+                "message": "Profile updated successfully"
+            }
         }
         return Response(response, status=status.HTTP_200_OK)
 

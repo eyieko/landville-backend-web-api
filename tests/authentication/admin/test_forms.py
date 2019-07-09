@@ -18,3 +18,9 @@ class FormTests(BaseTest):
         form = UserCreationForm(data=self.invalid_user_data)
         self.assertFalse(form.is_valid())
         self.assertRaises(forms.ValidationError)
+
+    def test_user_change_form(self):
+        """Test a user submits form with invalid confirm password"""
+        form = UserCreationForm(data=self.invalid_user_data_2)
+        self.assertFalse(form.is_valid())
+        self.assertRaises(forms.ValidationError)
