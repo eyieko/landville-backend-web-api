@@ -62,11 +62,23 @@ The heroku link redirects direclty to our documentation With these documentation
 
 - Step by step instructions on how to get the code setup locally. This may include:
 
+    ### Description:
+- _Celery_ is a task queue with focus on real-time processing, while also supporting task scheduling.
+- _Redis_ is a message broker. This means it handles the queue of "messages" between Django and Celery.
+- All two work together to make real-time magic.
+- This module contains the Celery application instance for this project, we take configuration from Django settings and use autodiscover_tasks to find task modules inside all packages listed in INSTALLED_APPS.
+
+    ### Installing requirements
+The settings file assumes that rabbitmq-server is running on localhost using the default ports.
+
 ### Dependencies
 
-- python3.7
-- pip3
-- django 2.2.1
+    - python3.7
+    - python3
+    - pip3
+    - django 2.2.1
+    - celery
+    - redis
 
 ### Getting Started
 
@@ -80,6 +92,19 @@ The heroku link redirects direclty to our documentation With these documentation
 - Set your environement variable by running the following command `source .env`
 - Create a Postgres database with the name you put in the `.env` file
 - Run the command `python manage.py migrate` to create database tables
+- Download Redis
+    * Using Homebrew:  ```$ brew install redis```
+    * Start Redis server  ```$ brew services start redis ```
+- Open & Test Redis:
+	```$ redis-server```
+- Run worker:
+	```
+	$ celery -A yourproject worker -l info`
+	```
+	* example 
+	```
+	$ celery -A landville worker -l info
+	```
 - Run command `python manage.py runserver` to start the project
 
 ### Run The Service

@@ -1,24 +1,44 @@
 import datetime
 from datetime import datetime as dt
-from rest_framework import generics, status
-from rest_framework.response import Response
-from django.utils.datastructures import MultiValueDictKeyError
-from rest_framework.parsers import MultiPartParser, FormParser
 
-from property.models import Property, BuyerPropertyList, PropertyEnquiry
-from property.serializers import (
-    PropertySerializer, BuyerPropertyListSerializer, PropertyEnquirySerializer)
-from utils.media_handlers import CloudinaryResourceHandler
-from property.renderers import PropertyJSONRenderer, PropertyEnquiryJSONRenderer
-from utils.permissions import (
-    ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer, IsOwner)
+from django.utils.datastructures import MultiValueDictKeyError
+from rest_framework import (
+    generics,
+    status,
+)
+from rest_framework.parsers import (
+    FormParser,
+    MultiPartParser,
+)
+from rest_framework.permissions import (
+    IsAuthenticated
+)
+from rest_framework.response import Response
 
 from property.filters import PropertyFilter
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated)
-from authentication.models import User
-
-from utils.emailHelper import EmailHelper
+from property.models import (
+    BuyerPropertyList,
+    Property,
+    PropertyEnquiry,
+)
+from property.renderers import (
+    PropertyEnquiryJSONRenderer,
+    PropertyJSONRenderer,
+)
+from property.serializers import (
+    BuyerPropertyListSerializer,
+    PropertyEnquirySerializer,
+    PropertySerializer,
+)
+from utils.media_handlers import CloudinaryResourceHandler
+from utils.permissions import (
+    CanEditProperty,
+    IsBuyer,
+    IsClientAdmin,
+    IsOwner,
+    ReadOnly,
+)
+from utils.tasks import send_email_notification
 
 
 class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
@@ -84,13 +104,33 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
             f'{enquiring_property.title} Property owned by '
             f'{enquiring_property.client}'
         }
-        message = [
-            request,
-            user.email,
-            enquiring_property.client.email,
-            enquiring_property
-        ]
-        EmailHelper.send_enquirer_email(message)
+        payload1 = {
+            "subject": "Landville Property Enquiry",
+            "recipient": [user.email],
+            "text_body": "email/authentication/base_email.txt",
+            "html_body": "email/authentication/base_email.html",
+            "context": {
+                'title': "Hey there,",
+                'message': "You are receiving this because you have enquired "
+                           "about a property at Landville, a representative"
+                           " from the Client will get to you soon. Thanks "
+                           "for using Landville"
+            }
+        }
+        payload2 = {
+            "subject": "Landville Property Enquiry",
+            "recipient": [enquiring_property.client.email],
+            "text_body": "email/authentication/base_email.txt",
+            "html_body": "email/authentication/base_email.html",
+            "context": {
+                'title': "Hey there,",
+                'message': f"Hey {enquiring_property.client.client_name}, "
+                f"somebody is enquiring about your property at LandVille, "
+                f"kindly log into Landville get to know about the enquiry"
+            }
+        }
+        send_email_notification.delay(payload1)
+        send_email_notification.delay(payload2)
         return Response(response, status=status.HTTP_201_CREATED)
 
 

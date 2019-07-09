@@ -1,17 +1,23 @@
 """User registration tests."""
-from tests.authentication.client.test_base import BaseTest
+from unittest.mock import (
+    patch,
+)
+
 from rest_framework import status
+
 from tests.utils.utils import TestUtils
 
 
 class ClientCompanyTest(TestUtils):
     """Contains user registration test methods."""
 
-    def test_create_client_company_with_invalid_phone_number(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_invalid_phone_number(self, mock_email):
         """
         Create a client company account with invalid phone number.
         """
         self.set_token()
+        mock_email.return_value = True
         self.valid_client_data["phone"] = "345"
         response = self.client.post(
             self.client_url, self.valid_client_data, format="json")
@@ -21,11 +27,13 @@ class ClientCompanyTest(TestUtils):
             str(response.data)
         )
 
-    def test_create_client_company_with_invalid_address(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_invalid_address(self, mock_email):
         """
         Create a client company account with invalid address.
         """
         self.set_token()
+        mock_email.return_value = True
         self.valid_client_data["address"] = "address"
         response = self.client.post(
             self.client_url, self.client_with_invalid_address, format="json")
@@ -35,80 +43,101 @@ class ClientCompanyTest(TestUtils):
             str(response.data)
         )
 
-    def test_create_client_company_with_address_with_no_street(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_no_street(self,
+                                                               mock_email):
         """
         Create a client company account with no street.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_no_street, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Street is required in address", str(response.data))
 
-    def test_create_client_company_with_address_with_no_city(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_no_city(self, mock_email):
         """
         Create a client company account with no city.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_no_city, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("City is required in address", str(response.data))
 
-    def test_create_client_company_with_address_with_no_state(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_no_state(self,
+                                                              mock_email):
         """
         Create a client company account with no state.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_no_state, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("State is required in address", str(response.data))
 
-    def test_create_client_company_with_address_with_invalid_state(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_invalid_state(self,
+                                                                   mock_email):
         """
         Create a client company account with invalid state.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_invalid_state, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("State must be a string", str(response.data))
 
-    def test_create_client_company_with_address_with_invalid_city(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_invalid_city(self,
+                                                                  mock_email):
         """
         Create a client company account with invalid city.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_invalid_city, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("City must be a string", str(response.data))
 
-    def test_create_client_company_with_address_with_invalid_street(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_invalid_street(self,
+                                                                    mock_email):
         """
         Create a client company account with invalid street.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_invalid_street, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Street must be a string", str(response.data))
 
-    def test_user_should_create_a_client_company(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_user_should_create_a_client_company(self, mock_email):
         """Create a client company account."""
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.valid_client_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_user_should_not_create_a_second_client_company(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_user_should_not_create_a_second_client_company(self, mock_email):
         """
         Client admin should not create a second company account.
         """
         self.set_token()
-        self.client.post(
-            self.client_url, self.valid_client_data, format="json")
+        mock_email.return_value = True
+        self.client.post(self.client_url, self.valid_client_data,
+                         format="json")
         response = self.client.post(
             self.client_url, self.valid_client_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -117,18 +146,22 @@ class ClientCompanyTest(TestUtils):
             str(response.data)
         )
 
-    def test_get_client_company_with_no_company(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_get_client_company_with_no_company(self, mock_email):
         """Retrieve company when no company is created"""
         self.set_token()
+        mock_email.return_value = True
         response = self.client.get(
             self.client_url, format="json")
         self.assertIn("You don't have a client company created",
                       str(response.data))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_get_client_company(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_get_client_company(self, mock_email):
         """Get client a company account."""
         self.set_token()
+        mock_email.return_value = True
         self.client.post(
             self.client_url, self.valid_client_data, format="json")
         response = self.client.get(
@@ -137,31 +170,40 @@ class ClientCompanyTest(TestUtils):
                       str(response.data))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_create_client_company_with_address_with_empty_street(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_empty_street(self,
+                                                                  mock_email):
         """
         Create a client company account with no street.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_empty_street, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Street value can not be empty", str(response.data))
 
-    def test_create_client_company_with_address_with_empty_city(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_empty_city(self,
+                                                                mock_email):
         """
         Create a client company account with no street.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_empty_city, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("City value can not be empty", str(response.data))
 
-    def test_create_client_company_with_address_with_empty_state(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_address_with_empty_state(self,
+                                                                 mock_email):
         """
         Create a client company account with no street.
         """
         self.set_token()
+        mock_email.return_value = True
         response = self.client.post(
             self.client_url, self.client_with_empty_state, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

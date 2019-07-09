@@ -8,6 +8,7 @@ jobs:
     docker:
       - image: circleci/python:3.7.1
       - image: circleci/postgres:11.3
+      - image: redis:4.0.6
 
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -15,6 +16,17 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          name: Dockerize v0.6.0
+          command: |
+            wget https://github.com/jwilder/dockerize/releases/download/v0.6.0/dockerize-linux-amd64-v0.6.0.tar.gz
+            sudo rm -rf /usr/local/bin/dockerize
+            sudo tar -C /usr/local/bin -xzvf dockerize-linux-amd64-v0.6.0.tar.gz
+            rm dockerize-linux-amd64-v0.6.0.tar.gz
+      - run:
+          name: Wait for Redis
+          command: |
+            dockerize -wait tcp://localhost:6379 -timeout 1m
       # Download and cache dependencies
       - restore_cache:
           keys:

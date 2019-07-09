@@ -17,3 +17,6 @@ htmlcov/
 .idea/
 staticfiles/
 htmlcov/
+# celery task
+celerybeat-schedule
+dump.rdb
