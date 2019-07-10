@@ -1,9 +1,20 @@
 from authentication.models import (
     User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
+
+import re
+
+from authentication.models import User, Client, UserProfile
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
+
+from rest_framework import serializers
+from rest_framework.exceptions import NotAuthenticated
+
+
+from authentication.signals import SocialAuthProfileUpdate
+
 from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
 from utils import BaseUtils
@@ -12,7 +23,6 @@ from authentication.validators import validate_phone_number
 from property.validators import validate_address
 from utils.media_handlers import CloudinaryResourceHandler
 import cloudinary.uploader as uploader
-
 
 Uploader = CloudinaryResourceHandler()
 
@@ -75,19 +85,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return password1 == password2
 
 
-class GoogleAuthSerializer(serializers.ModelSerializer):
+class GoogleAuthSerializer(serializers.Serializer):
     """
     Handle serialization and deserialization of User objects
     """
 
     access_token = serializers.CharField()
 
-    class Meta:
-        model = User
-        fields = ['access_token']
-
-    @staticmethod
-    def validate_access_token(access_token):
+    def validate(self, data):
         """
         Handles validating a request and decoding and getting user's info
         associated to an account on Google then authenticates the User
@@ -96,7 +101,7 @@ class GoogleAuthSerializer(serializers.ModelSerializer):
         """
 
         id_info = SocialValidation.google_auth_validation(
-            access_token=access_token)
+            access_token=data.get('access_token'))
 
         # check if data data retrieved once token decoded is empty
         if id_info is None:
@@ -112,7 +117,17 @@ class GoogleAuthSerializer(serializers.ModelSerializer):
 
         # if the user exists,return the user token
         if user:
-            return user[0].token
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back '+id_info.get('name')
+            }
+
+        if id_info.get('picture'):
+            id_info['user_profile_picture'] = id_info['picture']
+
+        # pass user information to signal to be added to profile after user is created
+        SocialAuthProfileUpdate.get_user_info(id_info)
 
         # create a new user if no new user exists
         first_and_second_name = id_info.get('name').split()
@@ -127,24 +142,24 @@ class GoogleAuthSerializer(serializers.ModelSerializer):
 
         new_user = User.objects.create_user(**payload)
         new_user.is_verified = True
-        new_user.is_active = False
+
         new_user.social_id = user_id
         new_user.save()
 
-        return new_user.token
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. '+first_name +
+            '. Ensure to edit your profile.'
+        }
 
 
-class FacebookAuthAPISerializer(serializers.ModelSerializer):
+class FacebookAuthAPISerializer(serializers.Serializer):
     """Handles serialization and deserialization of User objects."""
 
     access_token = serializers.CharField()
 
-    class Meta:
-        model = User
-        fields = ['access_token']
-
-    @staticmethod
-    def validate_access_token(access_token):
+    def validate(self, data):
         """
         Handles validating the request token by decoding and getting
         user_info associated
@@ -154,10 +169,11 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         : return: user_token
         """
         id_info = SocialValidation.facebook_auth_validation(
-            access_token=access_token)
+            access_token=data.get('access_token'))
 
         # checks if the data retrieved once token is decoded is empty.
         if id_info is None:
+
             raise serializers.ValidationError('Token is not valid.')
 
         # Checks to see if there is a user id associated with
@@ -174,13 +190,24 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         # Returns the user token showing that the user has been
         # registered before and existing in our database.
         if user:
-            return user[0].token
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back '+id_info.get('first_name')
+            }
 
         # Creates a new user because email is not associated
         # with any existing account in our app
-        first_and_second_name = id_info.get('name').split()
-        first_name = first_and_second_name[0]
-        second_name = first_and_second_name[1]
+
+        # Sends user information to signal to be updated into profile after saving
+        if id_info.get('picture'):
+            id_info['user_profile_picture'] = id_info['picture']['data']['url']
+
+        SocialAuthProfileUpdate.get_user_info(id_info)
+
+        # first_and_second_name = id_info.get('name').split()
+        first_name = id_info.get('first_name')
+        second_name = id_info.get('last_name')
         payload = {
             'email': id_info.get('email'),
             'first_name': first_name,
@@ -193,18 +220,19 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         new_user.social_id = user_id
         new_user.save()
 
-        return new_user.token
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. '+first_name +
+            '. Ensure to edit your profile.'
+        }
 
 
-class TwitterAuthAPISerializer(serializers.ModelSerializer):
+class TwitterAuthAPISerializer(serializers.Serializer):
     """Handles serialization and deserialization of User objects."""
 
     access_token = serializers.CharField()
     access_token_secret = serializers.CharField()
-
-    class Meta:
-        model = User
-        fields = ['access_token', 'access_token_secret']
 
     def validate(self, data):
         """
@@ -218,6 +246,7 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
         id_info = SocialValidation.twitter_auth_validation(
             access_token=data.get('access_token'),
             access_token_secret=data.get('access_token_secret'))
+
         # Check if there is an error message in the id_info validation body
         if 'errors' in id_info:
             raise serializers.ValidationError(
@@ -237,7 +266,16 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
         # Returns the user token showing that the user has been
         # registered before and existing in our database.
         if user:
-            return {"token": user[0].token}
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back '+id_info.get('name')
+            }
+
+        if id_info.get('profile_image_url_https'):
+            id_info['user_profile_picture'] = id_info['profile_image_url_https']
+
+        SocialAuthProfileUpdate.get_user_info(id_info)
 
         # Creates a new user because email is not associated
         # with any existing account in our app
@@ -259,7 +297,12 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
         except ValidationError:
             raise serializers.ValidationError('Error While creating User.')
 
-        return {"token": new_user.token}
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. '+first_name +
+            '. Ensure to edit your profile.'
+        }
 
 
 class LoginSerializer(serializers.Serializer):

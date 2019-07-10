@@ -153,7 +153,9 @@ class GoogleAuthAPIView(APIView):
         serializer = self.serializer_class(data=request.data.get('google', {}))
         serializer.is_valid(raise_exception=True)
         return Response({
-            'token': serializer.data.get('access_token')
+            'token': serializer.validated_data['token'],
+            'user_exists': serializer.validated_data['user_exists'],
+            "message": serializer.validated_data['message']
         }, status=status.HTTP_200_OK)
 
 
@@ -174,8 +176,11 @@ class FacebookAuthAPIView(APIView):
         serializer = self.serializer_class(
             data=request.data.get('facebook', {}))
         serializer.is_valid(raise_exception=True)
+
         return Response({
-            'token': serializer.data.get('access_token')
+            'token': serializer.validated_data['token'],
+            'user_exists': serializer.validated_data['user_exists'],
+            "message": serializer.validated_data['message']
         }, status=status.HTTP_200_OK)
 
 
@@ -197,8 +202,11 @@ class TwitterAuthAPIView(APIView):
             data=request.data.get('twitter', {}))
         serializer.is_valid(raise_exception=True)
         token = serializer.validated_data['token']
+
         return Response({
-            "token": token
+            "token": token,
+            "user_exists": serializer.validated_data['user_exists'],
+            "message": serializer.validated_data['message']
         }, status=status.HTTP_200_OK)
 
 

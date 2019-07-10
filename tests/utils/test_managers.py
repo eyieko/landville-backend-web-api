@@ -1,12 +1,13 @@
 from mock import patch
 from django.test import TestCase
+from rest_framework import serializers
 
 from tests.factories.authentication_factory import UserFactory, ClientFactory
 from tests.factories.property_factory import PropertyFactory
 from transactions.models import ClientAccount
 from authentication.models import User
 from property.models import Property
-from utils import managers, client_permissions
+from utils import managers, client_permissions, BaseUtils
 
 
 class CustomManagerTest(TestCase):

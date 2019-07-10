@@ -47,7 +47,8 @@ class SocialAuthTest(TestCase):
     def test_facebook_login_valid_token(self):
         with patch(FACEBOOK_VALIDATION) as mf:
             mf.return_value = {
-                "name": "kelvin onkundi",
+                "first_name": "kelvin",
+                "last_name": "onkundi",
                 "email": "bcmeordvda_1554574357@tfbnw.net",
                 "id": "102723377587866"}
             res = self.client.post(
