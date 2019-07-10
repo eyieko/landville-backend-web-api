@@ -276,11 +276,11 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(username=email, password=password)
 
         if user is None:
-            raise NotAuthenticated({
+            raise serializers.ValidationError({
                 "invalid": "invalid email and password combination"
             })
         if not user.is_verified:
-            raise NotAuthenticated({
+            raise serializers.ValidationError({
                 "user": "Your email is not verified,please vist your mail box"
             })
         user = {

@@ -91,8 +91,10 @@ class JWTAuthenticationTest(TestCase):
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
             res = self.jwt_auth._authenticate_credentials(
                 request, self.expired_token)
-        self.assertEqual(str(e.exception),
-                         'Your token has expired, please log in again.')
+        self.assertEqual(
+            str(e.exception),
+            'Your token has expired, please log in again.'
+        )
 
     def test_authentication_failure_incase_of_decoding_error(self):
         """We unit test our authentication method to see if the method
@@ -116,8 +118,9 @@ class JWTAuthenticationTest(TestCase):
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
             res = self.jwt_auth._authenticate_credentials(
                 request, non_existing.token)
-        self.assertEqual(str(e.exception),
-                         'User matching this token was not found.')
+        self.assertEqual(
+            str(e.exception), 'User matching this token was not found.'
+        )
 
     def test_authentication_failure_if_user_not_active(self):
         """We unit test our authentication method to see if the method
@@ -132,5 +135,6 @@ class JWTAuthenticationTest(TestCase):
         with self.assertRaises(exceptions.AuthenticationFailed) as e:
             res = self.jwt_auth._authenticate_credentials(
                 request, non_existing.token)
-        self.assertEqual(str(e.exception),
-                         'Forbidden! This user has been deactivated.')
+        self.assertEqual(
+            str(e.exception), 'Forbidden! This user has been deactivated.'
+        )

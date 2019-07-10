@@ -31,8 +31,8 @@ class TestClientAdmin(TestUtils):
         """
         response = self.client.get(
             self.client_profile, format="json")
-        self.assertEqual(str(response.data['detail']),
-                         "Authentication credentials were not provided.")
+        self.assertEqual(str(response.data['errors']),
+                         "Please log in to proceed.")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_user_profile(self):
@@ -105,7 +105,7 @@ class TestClientAdmin(TestUtils):
             self.client_profile, content, content_type=content_type)
         image.close()
         self.assertIn('Enter a valid URL.',
-                      str(response.data['image']))
+                      str(response.data['errors']['image']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_upload_invalid_image(self):
@@ -124,7 +124,7 @@ class TestClientAdmin(TestUtils):
             self.client_profile, content, content_type=content_type)
         image.close()
         self.assertIn("Please provide a valid image format.",
-                      str(response.data['image']))
+                      str(response.data['errors']['image']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch('authentication.views.uploader.upload')
@@ -143,7 +143,7 @@ class TestClientAdmin(TestUtils):
             self.client_profile, content, content_type=content_type)
         image.close()
         self.assertIn("Please provide an employer",
-                      str(response.data['employer']))
+                      str(response.data['errors']['employer']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_with_empty_city_field(self):
@@ -154,7 +154,7 @@ class TestClientAdmin(TestUtils):
         response = self.client.patch(
             self.client_profile, self.updated_profile_with_empty_city_field, format="json")
         self.assertIn("City cannot be empty!",
-                      str(response.data['address']))
+                      str(response.data['errors']['address']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_without_security_answer_field(self):
@@ -165,7 +165,7 @@ class TestClientAdmin(TestUtils):
         response = self.client.patch(
             self.client_profile, self.updated_profile_without_security_answer_field, format="json")
         self.assertIn("Please provide an answer to the selected question",
-                      str(response.data['security_answer']))
+                      str(response.data['errors']['security_answer']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_without_phone_field(self):
@@ -188,7 +188,7 @@ class TestClientAdmin(TestUtils):
         response = self.client.patch(
             self.client_profile, self.updated_profile_with_invalid_phonenumber, format="json")
         self.assertIn("Phone number must be of the format +234 123 4567890",
-                      str(response.data['phone']))
+                      str(response.data['errors']['phone']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_without_address_field(self):
