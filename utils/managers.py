@@ -81,4 +81,4 @@ class ClientAccountQuery(CustomQuerySet):
     def client_admin_has_client(self, client_admin_id):
         """check if client Admin has an Client Account
         if not do not enable him/her to submit account details"""
-        return self._active().filter(client_admin_id=id)
+        return self._active().filter(owner_id=client_admin_id)
