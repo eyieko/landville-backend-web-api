@@ -1,12 +1,23 @@
 import factory
-from factory.faker import faker
+import json
 from faker import Faker
-
 from ..factories.property_factory import PropertyFactory
 from .authentication_factory import UserFactory, ClientFactory
 from transactions.models import Transaction, Savings, Deposit, ClientAccount
+from datetime import datetime
 
 fake = Faker()
+
+
+class JSONFactory(factory.DictFactory):
+    """
+    Use with factory.Dict to make JSON strings.
+    """
+
+    @classmethod
+    def _generate(cls, create, attrs):
+        obj = super()._generate(create, attrs)
+        return json.dumps(obj)
 
 
 class TransactionFactory(factory.DjangoModelFactory):
@@ -16,7 +27,7 @@ class TransactionFactory(factory.DjangoModelFactory):
         model = Transaction
 
     target_property = factory.SubFactory(PropertyFactory)
-    amount = 200000.00
+    amount_payed = 200000.00
     buyer = factory.SubFactory(UserFactory)
 
 
@@ -35,10 +46,17 @@ class DepositFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = Deposit
-
-    account = factory.SubFactory(SavingsFactory)
+    transaction = factory.SubFactory(TransactionFactory)
+    references = factory.Dict(
+        {
+            'txRef': '{}_LAND{}'.format('TAX', datetime.now()),
+            'orderRef': '{}_LAND{}'.format('ORDER', datetime.now()),
+            'flwRef': '{}_LAND{}'.format('FLW', datetime.now()),
+            'raveRef': '{}_LAND{}'.format('RAV', datetime.now()),
+        },
+        dict_factory=JSONFactory)
     amount = 2453534.54
-    description = fake.sentences()
+    description = fake.text()
 
 
 class ClientAccountFactory(factory.DjangoModelFactory):

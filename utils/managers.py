@@ -1,4 +1,4 @@
-from django.db.models import QuerySet, Q, Count, Sum
+from django.db.models import QuerySet, Q, Sum
 
 
 class CustomQuerySet(QuerySet):
@@ -94,9 +94,11 @@ class TransactionQuery(CustomQuerySet):
     def total_amount(self, user, property_object):
         """return the total amount so far paid by a user for a property"""
         return self._active().filter(Q(buyer__pk=user.pk) & Q(
-            target_property__pk=property_object.pk)).aggregate(Sum('amount'))['amount__sum']
+            target_property__pk=property_object.pk))\
+            .aggregate(Sum('amount_payed'))['amount_payed__sum']
 
     def client_total_amount(self, property_object):
         """return the total amount so far paid for a property"""
         return self._active().filter(Q(
-            target_property__pk=property_object.pk)).aggregate(Sum('amount'))['amount__sum']
+            target_property__pk=property_object.pk))\
+            .aggregate(Sum('amount_payed'))['amount_payed__sum']

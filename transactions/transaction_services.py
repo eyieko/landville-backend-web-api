@@ -13,8 +13,8 @@ from authentication.models import User
 class TransactionServices:
     """A helper class for online payment services"""
 
-    rave_public_key = os.getenv('RAVE_PUBLIC_KEY')
-    rave_secret_key = os.getenv('RAVE_SECRET_KEY')
+    rave_public_key = os.getenv('RAVE_TEST_PUBLIC_KEY')
+    rave_secret_key = os.getenv('RAVE_TEST_SECRET_KEY')
     redirect_url = os.getenv('RAVE_REDIRECT_URL')
 
     @classmethod

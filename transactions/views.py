@@ -2,10 +2,9 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 import json
 from rest_framework import status
-from rest_framework.generics import (
-    RetrieveUpdateDestroyAPIView,
-    ListCreateAPIView
-)
+from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
+                                     ListCreateAPIView, ListAPIView)
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework.permissions import (
@@ -14,20 +13,23 @@ from rest_framework.permissions import (
 )
 from rest_framework.decorators import api_view, permission_classes
 from utils.client_permissions import IsownerOrReadOnly, IsClient
-from transactions.models import ClientAccount, Client
+from transactions.models import (ClientAccount,
+                                 Client,
+                                 Deposit)
 from transactions.renderer import AccountDetailsJSONRenderer
 from transactions.serializers import (
     ClientAccountSerializer,
-    TransactionsSerializer
-)
-from transactions.transaction_services import TransactionServices
-from transactions.serializers import (
+    TransactionsSerializer,
+    DepositSerializer,
     PinCardPaymentSerializer,
     ForeignCardPaymentSerializer,
     PaymentValidationSerializer,
     CardlessPaymentSerializer
 )
+from transactions.transaction_services import TransactionServices
 from property.models import Property
+from transactions.transaction_utils import (save_deposit,)
+# from django.shortcuts import get_object_or_404
 
 
 class ClientAccountAPIView(ListCreateAPIView):
@@ -204,8 +206,8 @@ def card_foreign_payment(request):
     data = request.data
     user = request.user
     serializer = ForeignCardPaymentSerializer(data=data)
+    # property = None
     if serializer.is_valid():
-
         pay_data = {
             'cardno': serializer.validated_data.get('cardno'),
             'cvv': serializer.validated_data.get('cvv'),
@@ -218,7 +220,10 @@ def card_foreign_payment(request):
             'firstname': user.first_name,
             'lastname': user.last_name,
         }
-
+        # purpose = str(serializer.validated_data.get('purpose'))
+        # property_id = serializer.validated_data.get('property_id')
+        # if purpose == 'Buying':
+        #     property = get_object_or_404(Property, pk=property_id)
         init_resp = TransactionServices.initiate_card_payment(pay_data)
         if init_resp.get('status') == 'error':
             return Response(
@@ -234,19 +239,18 @@ def card_foreign_payment(request):
             'billingcountry': serializer.validated_data.get('billingcountry'),
         }
         pay_data['auth_dict'] = auth_dict
-
         auth_resp = TransactionServices.authenticate_card_payment(pay_data)
-
-        if auth_resp.get('status') == 'error':
+        if auth_resp.get('status') == 'success':
+            return Response(
+                {'message': auth_resp['data']['authurl']},
+                status=status.HTTP_200_OK
+            )
+        else:
             return Response(
                 {'message': auth_resp.get('message')},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response(
-            {'message': auth_resp['data']['authurl']},
-            status=status.HTTP_200_OK
-        )
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -266,7 +270,6 @@ def card_pin_payment(request):
     user = request.user
     serializer = PinCardPaymentSerializer(data=data)
     if serializer.is_valid():
-
         pay_data = {
             'cardno': serializer.validated_data.get('cardno'),
             'cvv': serializer.validated_data.get('cvv'),
@@ -279,7 +282,6 @@ def card_pin_payment(request):
             'firstname': user.first_name,
             'lastname': user.last_name,
         }
-
         init_resp = TransactionServices.initiate_card_payment(pay_data)
         if init_resp.get('status') == 'error':
             return Response(
@@ -300,7 +302,6 @@ def card_pin_payment(request):
                 {'message': auth_resp.get('message')},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         return Response(
             {
                 'message': 'Kindly input the OTP sent to you',
@@ -322,20 +323,48 @@ def validate_payment(request):
     :return: JSON response
     """
     data = request.data
+    user = request.user
     flwref = data.get('flwRef')
     otp = data.get('otp')
-
+    property = None
+    purpose = None
+    serializer = PaymentValidationSerializer(data=data)
+    if serializer.is_valid():
+        purpose = str(serializer.validated_data.get('purpose'))
+        property_id = serializer.validated_data.get('property_id')
+    else:
+        return Response({'errors': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+    if purpose == 'Buying':
+        property = get_object_or_404(Property, pk=property_id)
     resp = TransactionServices.validate_card_payment(flwref, otp)
-    txRef = resp['data']['tx']['txRef']
-    verify_resp = TransactionServices.verify_payment(txRef)
-    save_card = verify_resp['data']['meta'][0]['metavalue']
-    message = verify_resp['data']['vbvmessage']
-    if verify_resp['data']['status'] == 'successful' and int(save_card) == 1:
-        message += TransactionServices.save_card(verify_resp)
+    if resp.get('status') == 'error':
+        return Response(
+            {'message': resp.get('message')},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    else:
+        txRef = resp['data']['tx']['txRef']
+        verify_resp = TransactionServices.verify_payment(txRef)
+        if verify_resp.get('data').get('status') == 'successful':
+            save_card = verify_resp['data']['meta'][0]['metavalue']
+            message = verify_resp['data']['vbvmessage']
+            if int(save_card) == 1:
+                message += TransactionServices.save_card(verify_resp)
+            data = resp.get('data').get('tx')
+            references = {k: v for k, v in data.items() if k.endswith('Ref')}
+            amount = data.get('amount', 0)
+            save_deposit(purpose,
+                         references,
+                         amount,
+                         user,
+                         property)
+        else:
+            return Response({'message': verify_resp.get('message')},
+                            status=status.HTTP_400_BAD_REQUEST)
+    return Response({'message': resp['message']}, status=resp['status_code'])
 
-    return Response({'message': message})
-
-
+# should be a post method with purpose and property_id
 @api_view(['GET'])
 def foreign_card_validation_response(request):
     """
@@ -349,8 +378,16 @@ def foreign_card_validation_response(request):
 
     save_card = verify_resp['data']['meta'][0]['metavalue']
     message = verify_resp['data']['vbvmessage']
-    if verify_resp['data']['status'] == 'successful' and int(save_card) == 1:
-        message += TransactionServices.save_card(verify_resp)
+    if verify_resp.get('data').get('status') == 'successful':
+        if int(save_card) == 1:
+            message += TransactionServices.save_card(verify_resp)
+        # data = verify_resp.get('data').get('tx')
+        # references = {k: v for k, v in data.items() if k.endswith('Ref')}
+        # amount = data.get('amount', 0)
+        # save_deposit(purpose, references, amount, user, property)
+    else:
+        return Response({'message': message},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     return Response({'message': message})
 
@@ -372,8 +409,32 @@ def tokenized_card_payment(request):
         amount = serializer.validated_data.get('amount')
         resp = TransactionServices.pay_with_saved_card(user, amount)
         return Response(
-            {'message': resp['data']['status']},
-            status=resp['data']['status_code']
+            {'message': resp.get('data').get('status')},
+            status=resp.get('data').get('status_code')
         )
     else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'errors': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+
+class RetrieveDepositsApiView(ListAPIView):
+    serializer_class = DepositSerializer
+    permission_classes = (IsAuthenticated, )
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the  deposits
+        for the currently authenticated user.
+        """
+
+        user = self.request.user
+        if user.is_authenticated:
+            if user.role != "LA":
+                query = Deposit.objects.select_related(
+                    'transaction', 'account').filter(
+                        Q(transaction__buyer__id=user.id) |
+                        Q(account__owner__id=user.id))
+            else:
+                query = Deposit.objects.select_related(
+                    'transaction', 'account').all()
+        return query

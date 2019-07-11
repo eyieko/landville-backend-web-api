@@ -1,8 +1,8 @@
 """A module of serializer classes for the payment system"""
-
+import json
 from rest_framework import serializers
+from transactions.models import ClientAccount, Deposit, Transaction, Savings
 from rest_framework.exceptions import ValidationError
-from transactions.models import ClientAccount, Transaction
 from property.models import Property
 from property.serializers import PropertySerializer
 from authentication.models import User
@@ -55,8 +55,12 @@ class TransactionsSerializer(PropertySerializer):
 
     class Meta:
         model = Property
-        fields = ['title', 'buyer', 'price', 'total_amount_paid', 'balance',
-                  'deposits', 'percentage_completion']
+        fields = ['title',
+                  'buyer',
+                  'price',
+                  'total_amount_paid',
+                  'balance', 'deposits',
+                  'percentage_completion']
 
     def get_percentage_completion(self, obj):
         """
@@ -83,7 +87,7 @@ class TransactionsSerializer(PropertySerializer):
         for transaction in transactions:
             data = {
                 "date": transaction.created_at,
-                "amount": transaction.amount
+                "amount": transaction.amount_payed
             }
             deposits.append(data)
         return deposits
@@ -104,9 +108,8 @@ class TransactionsSerializer(PropertySerializer):
         return total_amount
 
     def get_balance(self, obj):
-        """
-        Return the balance the user is remaining with to complete payement
-        """
+        """Return the balance the user is remaining with
+        to complete payment"""
         request = self.context.get('request')
         price = obj.price
         if request.user.role == 'BY':
@@ -119,8 +122,30 @@ class TransactionsSerializer(PropertySerializer):
         return balance
 
 
-class CardPaymentSerializer(serializers.Serializer):
-    """The base serializer class for all card payments"""
+class PurposePropertySerializer(serializers.Serializer):
+    """
+    serializer for payment purpose
+    inherit base serializer
+    Raises:
+        serializers.ValidationError: For buying if the property_id is none
+    """
+    purpose = serializers.ChoiceField(choices=('Saving', 'Buying'))
+    property_id = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        """
+        check if when buying  the property_id is not null
+        """
+        if data.get('purpose') == 'Buying' and not data.get('property_id'):
+            raise serializers.ValidationError("Please provide a property_id")
+        return data
+
+
+class CardPaymentSerializer(PurposePropertySerializer):
+    """
+    Serialize any payment via visa card
+    inherit property serializer
+    """
     cardno = serializers.CharField(max_length=20)
     cvv = serializers.CharField(max_length=5)
     expirymonth = serializers.CharField(max_length=2)
@@ -130,7 +155,10 @@ class CardPaymentSerializer(serializers.Serializer):
 
 
 class ForeignCardPaymentSerializer(CardPaymentSerializer):
-    """The serializer class for international card payments"""
+    """
+    Serialize any payment via  international visa card
+    inherit property serializer
+    """
     billingzip = serializers.CharField(max_length=10)
     billingcity = serializers.CharField(max_length=20)
     billingaddress = serializers.CharField(max_length=50)
@@ -138,8 +166,10 @@ class ForeignCardPaymentSerializer(CardPaymentSerializer):
     billingcountry = serializers.CharField(max_length=20)
 
 
-class PaymentValidationSerializer(serializers.Serializer):
-    """The serializer class used for PIN card validation view method"""
+class PaymentValidationSerializer(PurposePropertySerializer):
+    """
+    Otp code validation serializer , inherit from purpose serializer
+    """
     otp = serializers.IntegerField()
     flwRef = serializers.CharField(max_length=60)
 
@@ -152,3 +182,52 @@ class PinCardPaymentSerializer(CardPaymentSerializer):
 class CardlessPaymentSerializer(serializers.Serializer):
     """The serializer class used for cardless payment view method"""
     amount = serializers.FloatField(min_value=0.00)
+
+
+class SavingSerializer(serializers.ModelSerializer):
+    """
+    Saving serializer inherit from modelSerializer
+    """
+    class Meta:
+        model = Savings
+        fields = ['balance']
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    """
+    Transaction serializer inherit from modelSerializer
+    """
+    balance = serializers.DecimalField(source='amount_payed',
+                                       decimal_places=2,
+                                       max_digits=10)
+
+    class Meta:
+        model = Transaction
+        fields = ['balance', 'status']
+
+
+class DepositSerializer(serializers.ModelSerializer):
+    """
+    Deposit  serializer inherit from modelSerializer
+    """
+    saving_account = SavingSerializer(read_only=True, source='account')
+    transaction = TransactionSerializer(read_only=True)
+    references = serializers.SerializerMethodField(method_name='ref_to_dict')
+
+    def ref_to_dict(self, deposit):
+        """
+        convert json references to python objects
+        Args:
+         deposit ([type]): the deposit object
+        """
+        return json.loads(deposit.references)
+
+    class Meta:
+        model = Deposit
+        fields = [
+            "references",
+            "amount",
+            "created_at",
+            "saving_account",
+            "transaction"
+        ]

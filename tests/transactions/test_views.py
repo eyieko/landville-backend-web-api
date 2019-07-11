@@ -1,4 +1,5 @@
 """Module of tests for views of transactions app."""
+import json
 from tests.transactions import BaseTest
 from transactions.views import (
     ClientAccountAPIView,
@@ -6,13 +7,20 @@ from transactions.views import (
 )
 from django.urls import reverse
 from rest_framework.test import force_authenticate
-from rest_framework import status
-import json
-from rest_framework.test import APITestCase
+from rest_framework.views import status
 from faker import Factory
 from unittest.mock import patch
-from tests.factories.authentication_factory import UserFactory
+from tests.factories.authentication_factory import UserFactory, ClientFactory
 from tests.factories.transaction_factory import TransactionFactory
+from ..factories.property_factory import PropertyFactory
+from transactions.serializers import DepositSerializer
+from transactions.models import Deposit
+from transactions.views import RetrieveDepositsApiView
+from ..factories.transaction_factory import SavingsFactory
+from transactions.transaction_utils import save_deposit
+from .test_utils import references
+from django.db.models import Q
+from unittest import skip
 
 
 ACCOUNT_DETAIL_URL = reverse("transactions:all-accounts")
@@ -180,9 +188,7 @@ class TestClientAccountDetailsViews(BaseTest):
 
         res = self.view2(request2, account_number=account_number)
 
-        self.assertIn(
-            'Not found',
-            str(res.data))
+        self.assertIn('No ClientAccount', str(res.data))
 
     def test_update_account_details(self):
         """ test account details updated successfully """
@@ -247,29 +253,45 @@ class TestClientAccountDetailsViews(BaseTest):
                          status.HTTP_400_BAD_REQUEST)
 
 
-class TestCardPayment(APITestCase):
-    """A test class containing integrated tests on card payment views"""
+class CardPaymentTest(BaseTest):
 
     def setUp(self):
         self.card_pin_url = reverse('transactions:card_pin')
+        self.auth_user = UserFactory(is_verified=True)
+        self.land_client = ClientFactory.create(client_admin=self.auth_user)
+        self.property = PropertyFactory.create(client=self.land_client)
+        self.transaction = TransactionFactory.\
+            create(target_property=self.property,
+                   buyer=self.auth_user,
+                   amount_payed=90)
         self.card_foreign_url = reverse('transactions:card_foreign')
         self.cardless_url = reverse('transactions:tokenized_card')
         self.card_validate_url = reverse('transactions:validate_card')
         self.foreign_validate_url = reverse('transactions:validation_response'
                                             )+'?response={"txRef": "sometxref"}'  # noqa
         self.faker = Factory.create()
-        self.auth_user = UserFactory(is_verified=True)
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {self.auth_user.token}'
         )
         self.card_info = {
-            'cardno': self.faker.credit_card_number(card_type=None),
-            'cvv': self.faker.credit_card_security_code(card_type=None),
-            'expirymonth': self.faker.credit_card_expire(
-                start='now', end='+10y', date_format='%m'),
-            'expiryyear': self.faker.credit_card_expire(
-                start='now', end='+10y', date_format='%y'),
-            'amount': 20000.00
+            'cardno':
+            self.faker.credit_card_number(card_type=None),
+            'cvv':
+            self.faker.credit_card_security_code(card_type=None),
+            'expirymonth':
+            self.faker.credit_card_expire(start='now',
+                                          end='+10y',
+                                          date_format='%m'),
+            'expiryyear':
+            self.faker.credit_card_expire(start='now',
+                                          end='+10y',
+                                          date_format='%y'),
+            'amount':
+            20000.00,
+            'purpose':
+            'Buying',
+            'property_id':
+            self.property.id
         }
         self.address_details = {
             'billingzip': '07205',
@@ -322,7 +344,7 @@ class TestCardPayment(APITestCase):
 
         resp = self.client.post(self.card_pin_url, self.card_info)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.data['message'], None)
+        self.assertEqual(resp.data.get('message'), None)
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -349,7 +371,7 @@ class TestCardPayment(APITestCase):
 
         resp = self.client.post(self.card_pin_url, self.card_info)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.data['message'], None)
+        self.assertEqual(resp.data.get('message'), None)
 
     def test_payments_with_domestic_card_failed_serializer_validation(self):
 
@@ -384,10 +406,12 @@ class TestCardPayment(APITestCase):
         }
 
         self.card_info.update(self.address_details)
-
-        resp = self.client.post(self.card_foreign_url, self.card_info)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data['message'], 'authurl')
+        for purpose in ['Saving', 'Buying']:
+            card_data = self.card_info.copy()
+            card_data['purpose'] = purpose
+            resp = self.client.post(self.card_foreign_url, card_data)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.data['message'], 'authurl')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -404,7 +428,7 @@ class TestCardPayment(APITestCase):
 
         resp = self.client.post(self.card_foreign_url, self.card_info)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.data['message'], None)
+        self.assertEqual(resp.data.get('message'), None)
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -436,11 +460,37 @@ class TestCardPayment(APITestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(json_resp['cardno'], ['This field is required.'])
 
+    @skip('not implemented for now')
+    def test_should_return_error_if_property_not_found(self):
+        """
+        Check if an error is returned if a property we are buying is not
+        found
+        """
+        invalid_card_infos = self.card_info
+        invalid_card_infos['purpose'] = 'Buying'
+        invalid_card_infos['property_id'] = 199
+        invalid_card_infos.update(self.address_details)
+        resp = self.client.post(self.card_foreign_url, invalid_card_infos)
+        json_resp = resp.json()
+        self.assertEqual(resp.status_code, 404)
+        self.assertEqual(json_resp.get('errors'),
+                         'No Property matches the given query.')
+
+    def test_payments_failed_no_purpose(self):
+        del self.card_info['purpose']
+        for url in (
+                self.card_foreign_url, self.card_pin_url
+        ):
+            resp = self.client.post(url, self.card_info)
+            json_resp = resp.json()
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(json_resp['purpose'], ['This field is required.'])
+
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
     @patch('transactions.transaction_services'
            '.TransactionServices.validate_card_payment')
-    def test_valid_PIN_payment(self, mock_validate, mock_verify):
+    def test_valid_pin_payment(self, mock_validate, mock_verify):
         """
         An integrated test for the view method for validating card PIN
         payment if card tokenization is requested.
@@ -463,13 +513,13 @@ class TestCardPayment(APITestCase):
 
         data = {
             'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
-            'otp': 12345
+            'otp': 12345,
+            'purpose': 'Saving',
         }
 
         resp = self.client.post(self.card_validate_url, data)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()['message'],
-                         'somemessage. Card details have been saved.')
+        self.assertEqual(resp.json()['message'], 'Charge Complete')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
@@ -495,32 +545,102 @@ class TestCardPayment(APITestCase):
                     'last4digits': 1234, 'card_tokens':
                         [{'embedtoken': 'sometoken'}], 'brand': 'somebrand'}}
         }
-
         data = {
             'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
-            'otp': 12345
+            'otp': 12345,
         }
+        for purpose in ('Buying', 'Saving'):
+            data['purpose'] = purpose
+            if purpose == 'Buying':
+                transaction = self.create_transaction()
+                data['property_id'] = transaction.target_property.id
+            resp = self.client.post(self.card_validate_url, data)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.data['message'], 'Charge Complete')
 
-        resp = self.client.post(self.card_validate_url, data)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()['message'], 'somemessage')
-
-    @patch('transactions.transaction_services'
-           '.TransactionServices.verify_payment')
     @patch('transactions.transaction_services'
            '.TransactionServices.validate_card_payment')
-    def test_validate_foreign_payment_with_card_save(
-            self, mock_validate, mock_verify):
-        """
-        An integrated test for the view method for validating card
-        international payment if card tokenization is requested.
-        """
+    def test_validate_local_payment_fail(
+            self, mock_validate):
+        mock_validate.return_value = {
+            'status': 'error',
+            'data': {
+                'suggested_auth': 'NOAUTH_INTERNATIONAL'
+            }
+        }
+        data = {
+            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
+            'otp': 12345,
+        }
+        for purpose in ('Buying', 'Saving'):
+            data['purpose'] = purpose
+            if purpose == 'Buying':
+                transaction = self.create_transaction()
+                data['property_id'] = transaction.target_property.id
+            resp = self.client.post(self.card_validate_url, data)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.data.get('message'), None)
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    def test_validate_local_payment_fail_verify_response(self,
+                                                         mock_verify,
+                                                         mock_validate):
+        mock_verify.return_value = {
+            'status': 'error',
+            'data': {
+                'suggested_auth': 'NOAUTH_INTERNATIONAL',
+                'status': 'error'
+            }
+        }
         mock_validate.return_value = {
             'message': 'Charge Complete',
             'status_code': 200,
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}]}
+                'tx': {
+                    'txRef': 'sampletxref',
+                },
+                'meta': [{
+                    'metavalue': 0
+                }]
+            }
         }
+
+        data = {
+            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
+            'otp': 12345,
+        }
+        for purpose in ('Buying', 'Saving'):
+            data['purpose'] = purpose
+            if purpose == 'Buying':
+                transaction = self.create_transaction()
+                data['property_id'] = transaction.target_property.id
+            resp = self.client.post(self.card_validate_url, data)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.data.get('message'), None)
+
+    def test_pin_validation_failed_no_purpose(self):
+
+        data = {
+            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
+            'otp': 12345,
+        }
+        resp = self.client.post(self.card_validate_url, data)
+        json_resp = resp.json()
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(json_resp.get("errors").get('purpose'),
+                         ['This field is required.'])
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    def test_validate_foreign_payment_with_card_save(
+            self, mock_verify):
+        """
+        An integrated test for the view method for validating card
+        international payment if card tokenization is requested.
+        """
         mock_verify.return_value = {
             'data': {
                 'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
@@ -535,6 +655,31 @@ class TestCardPayment(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()['message'],
                          'somemessage. Card details have been saved.')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    def test_validate_foreign_payment_with_card_save_failed(self, mock_verify):
+        """
+        An integrated test for the view method for validating card
+        international payment if card tokenization is requested.
+        """
+        mock_verify.return_value = {
+            'data': {
+                'tx': {
+                    'txRef': 'sampletxref'
+                },
+                'meta': [{
+                    'metavalue': 1
+                }],
+                'status': 'error',
+                'vbvmessage': 'fake fake'
+            },
+            'message': 'invalid transaction id'
+        }
+
+        resp = self.client.get(self.foreign_validate_url)
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json().get('message'), 'fake fake')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
@@ -581,9 +726,8 @@ class TestCardPayment(APITestCase):
         }
 
         self.card_info.update(self.address_details)
-
         resp = self.client.post(self.cardless_url, self.card_info)
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data['message'], 'successful')
 
     @patch('transactions.serializers.CardlessPaymentSerializer')
@@ -594,12 +738,15 @@ class TestCardPayment(APITestCase):
         that is not successful
         """
         mock_serializer.return_value.is_valid.return_value = False
-
         resp = self.client.post(self.cardless_url)
+        json_resp = resp.json()
         self.assertEqual(resp.status_code, 400)
+        self.assertEqual(json_resp.get('errors').get('amount'),
+                         ['This field is required.'])
 
 
 class TestTransactions(BaseTest):
+
     """Tests for the user transactions functionality"""
 
     def test_retreive_buyer_transactions(self):
@@ -684,3 +831,63 @@ class TestTransactions(BaseTest):
         response = view(request)
         self.assertEqual(response.data['errors'], "No transactions available")
         self.assertEqual(response.status_code, 404)
+
+
+class TestReturnAllMyDeposit(BaseTest):
+    def test_should_return_all_my_deposit(self):
+        """
+        This test ensure that I can get all my deposit
+        """
+        amount_to_save = 100
+        savings = SavingsFactory.create(owner=self.user1)
+        deposit, saving_updated = save_deposit('Saving',
+                                               references,
+                                               amount_to_save,
+                                               self.user1,
+                                               'test test')
+        request = self.factory.get(reverse("transactions:my_deposit"),
+                                   format='json')
+        force_authenticate(request, user=self.user1)
+        view = RetrieveDepositsApiView.as_view()
+        response = view(request, format='json')
+        expected = Deposit.objects.select_related(
+            'transaction', 'account').filter(
+                Q(transaction__buyer__id=self.user1.id) |
+                Q(account__owner__id=self.user1.id))
+        serialized = DepositSerializer(expected, many=True)
+        results = response.data.get('results')
+        self.assertEqual(results, serialized.data)
+        self.assertTrue(results[0].get('saving_account'))
+        self.assertEqual(
+            float(results[0].get('saving_account').get('balance')),
+            float(saving_updated.balance))
+        self.assertEqual(float(results[0].get('amount')),
+                         float(deposit.amount))
+        self.assertEqual(savings.owner.id, self.user1.id)
+        self.assertIsInstance(results[0].get('references'), dict)
+        self.assertEqual(results[0].get('references'),
+                         json.loads(deposit.references))
+        self.assertIsNotNone(results[0].get('created_at'))
+        self.assertEqual(savings.balance + amount_to_save,
+                         float(saving_updated.balance))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_if_the_landville_admin_has_has_access_to_all_deposits(self):
+        request = self.factory.get(reverse("transactions:my_deposit"),
+                                   format='json')
+        force_authenticate(request, user=self.user_land_admin)
+        view = RetrieveDepositsApiView.as_view()
+        response = view(request, format='json')
+        expected = Deposit.objects.select_related('transaction',
+                                                  'account').all()
+        serialized = DepositSerializer(expected, many=True)
+        results = response.data.get('results')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(results, serialized.data)
+
+    def test_if_an_unauthenticated_user_get_403_when_no_deposit(self):
+        request = self.factory.get(reverse("transactions:my_deposit"),
+                                   format='json')
+        view = RetrieveDepositsApiView.as_view()
+        response = view(request, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
