@@ -40,11 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # third party django extensions
+    'corsheaders',
     'rest_framework',
     'drf_yasg',
     'django_extensions',
     'sendgrid',
     'cloudinary',
+
 
     # Landville apps
     'authentication.apps.AuthenticationConfig',
@@ -53,6 +55,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -199,3 +202,8 @@ django_heroku.settings(locals())
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+
+
+CORS_ORIGIN_WHITELIST = (
+    os.environ.get('CORS_WHITELIST'),
+)
