@@ -1,8 +1,13 @@
 """A module of serializer classes for the payment system"""
 
 from rest_framework import serializers
-from transactions.models import ClientAccount
 from rest_framework.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
+from transactions.models import ClientAccount, Transaction
+from property.models import Property
+from property.serializers import PropertySerializer
+from authentication.serializers import RegistrationSerializer
+from authentication.models import User
 
 
 class ClientAccountSerializer(serializers.ModelSerializer):
@@ -39,6 +44,76 @@ class ClientAccountSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class TransactionsSerializer(PropertySerializer):
+    """Serializer for transactions"""
+    percentage_completion = serializers.SerializerMethodField()
+    deposits = serializers.SerializerMethodField()
+    price = serializers.FloatField()
+    buyer = serializers.SerializerMethodField()
+    balance = serializers.SerializerMethodField()
+    total_amount_paid = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Property
+        fields = ['title', 'buyer', 'price', 'total_amount_paid', 'balance', 'deposits',
+                  'percentage_completion']
+
+    def get_percentage_completion(self, obj):
+        """Return the total percentage a user has so far paid for a property"""
+        request = self.context.get('request')
+        price = obj.price
+        if request.user.role == 'BY':
+            total_amount = Transaction.active_objects.total_amount(
+                request.user, obj)
+        else:
+            total_amount = Transaction.active_objects.client_total_amount(obj)
+
+        percentage = total_amount/price * 100
+        # return a percentage as a 2 decimals value
+        return "{:0.2f}".format(percentage)
+
+    def get_deposits(self, obj):
+        """Return all the deposits a user has made for a property"""
+        transactions = Transaction.objects.filter(
+            target_property__slug=obj.slug)
+        deposits = []
+        for transaction in transactions:
+            data = {
+                "date": transaction.created_at,
+                "amount": transaction.amount
+            }
+            deposits.append(data)
+        return deposits
+
+    def get_buyer(self, obj):
+        """Return the name of the user/buyer"""
+        user = User.objects.get(pk=obj.transactions.first().buyer.pk)
+        return user.email
+
+    def get_total_amount_paid(self, obj):
+        """Return the total amount paid by user for property so far"""
+        request = self.context.get('request')
+        if request.user.role == 'BY':
+            total_amount = Transaction.active_objects.total_amount(
+                request.user, obj)
+        else:
+            total_amount = Transaction.active_objects.client_total_amount(obj)
+        return total_amount
+
+    def get_balance(self, obj):
+        """Return the balance the user is remaining with to complete payement"""
+        request = self.context.get('request')
+        price = obj.price
+        if request.user.role == 'BY':
+            total_amount = Transaction.active_objects.total_amount(
+                request.user, obj)
+        else:
+            total_amount = Transaction.active_objects.client_total_amount(obj)
+
+        balance = price - total_amount
+        return balance
 
 
 class CardPaymentSerializer(serializers.Serializer):

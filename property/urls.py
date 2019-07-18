@@ -7,8 +7,6 @@ from property.views import (
 urlpatterns = [
     path('', CreateAndListPropertyView.as_view(),
          name='create_and_list_property'),
-    path('get/<slug:slug>/', PropertyDetailView.as_view(),
-         name='single_property'),
     path('buyer-list/', BuyerPropertyListView.as_view(),
          name='get_buyer_list'),
     path('buyer-list/<slug:slug>/', BuyerPropertyListView.as_view(),
@@ -17,7 +15,6 @@ urlpatterns = [
     path('<slug:slug>/resource', DeleteCloudinaryResourceView.as_view(),
          name='delete_cloudinary_resource'),
     path('<slug:slug>/', PropertyDetailView.as_view(), name='single_property'),
-
     path('enquiries/<property_slug>/create/',
          ListCreateEnquiryAPIView.as_view(), name='post_enquiry'),
     path('enquiries/all/', ListCreateEnquiryAPIView.as_view(),

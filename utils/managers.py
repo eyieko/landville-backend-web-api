@@ -1,4 +1,4 @@
-from django.db.models import QuerySet, Q
+from django.db.models import QuerySet, Q, Count, Sum
 
 
 class CustomQuerySet(QuerySet):
@@ -86,3 +86,17 @@ class ClientAccountQuery(CustomQuerySet):
         """check if client Admin has an Client Account
         if not do not enable him/her to submit account details"""
         return self._active().filter(owner_id=client_admin_id)
+
+
+class TransactionQuery(CustomQuerySet):
+    """Queryset used by the Transactions model"""
+
+    def total_amount(self, user, property_object):
+        """return the total amount so far paid by a user for a property"""
+        return self._active().filter(Q(buyer__pk=user.pk) & Q(
+            target_property__pk=property_object.pk)).aggregate(Sum('amount'))['amount__sum']
+
+    def client_total_amount(self, property_object):
+        """return the total amount so far paid for a property"""
+        return self._active().filter(Q(
+            target_property__pk=property_object.pk)).aggregate(Sum('amount'))['amount__sum']

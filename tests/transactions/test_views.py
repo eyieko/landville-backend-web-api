@@ -1,6 +1,6 @@
 """Module of tests for views of transactions app."""
 from tests.transactions import BaseTest
-from transactions.views import ClientAccountAPIView
+from transactions.views import ClientAccountAPIView, RetreiveTransactionsAPIView
 from django.urls import reverse
 from rest_framework.test import force_authenticate
 from rest_framework.views import status
@@ -8,10 +8,13 @@ import json
 from rest_framework.test import APITestCase
 from faker import Factory
 from unittest.mock import patch
-from tests.factories.authentication_factory import UserFactory
+from tests.factories.authentication_factory import UserFactory, ClientFactory
+from tests.factories.transaction_factory import TransactionFactory, PropertyFactory
 
 
 ACCOUNT_DETAIL_URL = reverse("transactions:all-accounts")
+# url to access the GET transactions endpoint
+USER_TRANSACTIONS_URL = reverse("transactions:transactions")
 
 
 def single_detail_url(account_number):
@@ -442,3 +445,81 @@ class CardPaymentTest(APITestCase):
         resp = self.client.post(self.card_validate_url, data)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data['message'], 'Charge Complete')
+
+
+class TestTransactions(BaseTest):
+    """Tests for the user transactions functionality"""
+
+    def test_retreive_buyer_transactions(self):
+        """test to retreive user transaction detailes"""
+        view = RetreiveTransactionsAPIView.as_view()
+        transaction = TransactionFactory.create(
+            target_property=self.property1, buyer=self.user4)
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user4)
+        response = view(request)
+        self.assertEqual(
+            response.data['message'], "Transaction(s) retrieved successfully")
+        self.assertEqual(response.status_code, 200)
+
+    def test_retreive_client_transactions(self):
+        """test to retreive all transaction detailes of a client"""
+        view = RetreiveTransactionsAPIView.as_view()
+        transaction = TransactionFactory.create(
+            target_property=self.property1, buyer=self.user4)
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user1)
+        response = view(request)
+        self.assertEqual(
+            response.data['message'], "Transaction(s) retrieved successfully")
+        self.assertEqual(response.status_code, 200)
+
+    def test_retreive_landville_transactions(self):
+        """test to retreive all transactions in landville"""
+        view = RetreiveTransactionsAPIView.as_view()
+        transaction = TransactionFactory.create(
+            target_property=self.property1, buyer=self.user4)
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user5)
+        response = view(request)
+        self.assertEqual(
+            response.data['message'], "Transaction(s) retrieved successfully")
+        self.assertEqual(response.status_code, 200)
+
+    def test_buyer_cant_retreive_other_buyers_transactions(self):
+        """test to retreive other users transaction detailes"""
+        view = RetreiveTransactionsAPIView.as_view()
+        transaction = TransactionFactory.create(
+            target_property=self.property1, buyer=self.user4)
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user6)
+        response = view(request)
+        self.assertEqual(response.data['errors'], "No transactions available")
+        self.assertEqual(response.status_code, 404)
+
+    def test_retreive_transactions_of_user_with_zero_transactions(self):
+        """test to retreive user transaction detailes where user has no transactions yet"""
+        view = RetreiveTransactionsAPIView.as_view()
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user4)
+        response = view(request)
+        self.assertEqual(response.data['errors'], "No transactions available")
+        self.assertEqual(response.status_code, 404)
+
+    def test_client_admin_retreive_transactions_when_none_exists(self):
+        """test for client admin to retreive client company transactions when none exists"""
+        view = RetreiveTransactionsAPIView.as_view()
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user1)
+        response = view(request)
+        self.assertEqual(response.data['errors'], "No transactions available")
+        self.assertEqual(response.status_code, 404)
+
+    def test_landville_admin_retreive_transactions_when_none_exists(self):
+        """test for landville admin to retreive all landville transactions when none exists"""
+        view = RetreiveTransactionsAPIView.as_view()
+        request = self.factory.get(USER_TRANSACTIONS_URL)
+        force_authenticate(request, user=self.user5)
+        response = view(request)
+        self.assertEqual(response.data['errors'], "No transactions available")
+        self.assertEqual(response.status_code, 404)

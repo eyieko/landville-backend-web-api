@@ -51,6 +51,7 @@ Backend Repository for LandVille Project
 
 | PATCH  | api/v1/auth/profile/                               | edits a profile of the loggedin user
 
+| GET    | api/v1/transactions/                               | get a users transaction details                          
 
 ## API Documentation
 
@@ -83,12 +84,12 @@ The settings file assumes that rabbitmq-server is running on localhost using
 ### Getting Started
 
 - First clone the project to your local machine using `git clone https://github.com/landvilleng/landville-backend-web-api.git`
-- Create a virtual environment using the following command :  `python3 -m venv /path/to/new/virtual/environment`
+- Create a virtual environment using the following command : `python3 -m venv /path/to/new/virtual/environment`
 - Activate your virtual environment using `source (virtualenv name)/bin/activate`
 - Create a new branch from the develop branch using the command `git checkout -b your_branch_name`
 - Install project requirements using `pip install -r requirements.txt`
-- To create a dot_env file `.env`,  run the command `cp .env_sample .env` so that the `.env_sample` file can be copied to `.env`.
-- Edit the `.env` file  with your own credentials. Eg : database username, password ,etc
+- To create a dot_env file `.env`, run the command `cp .env_sample .env` so that the `.env_sample` file can be copied to `.env`.
+- Edit the `.env` file with your own credentials. Eg : database username, password ,etc
 - Set your environement variable by running the following command `source .env`
 - Create a Postgres database with the name you put in the `.env` file
 - Run the command `python manage.py migrate` to create database tables

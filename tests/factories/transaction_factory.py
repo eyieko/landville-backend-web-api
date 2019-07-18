@@ -16,6 +16,7 @@ class TransactionFactory(factory.DjangoModelFactory):
         model = Transaction
 
     target_property = factory.SubFactory(PropertyFactory)
+    amount = 200000.00
     buyer = factory.SubFactory(UserFactory)
 
 
