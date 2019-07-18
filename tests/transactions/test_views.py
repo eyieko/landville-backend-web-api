@@ -1,9 +1,12 @@
 """Module of tests for views of transactions app."""
 from tests.transactions import BaseTest
-from transactions.views import ClientAccountAPIView, RetreiveTransactionsAPIView
+from transactions.views import (
+    ClientAccountAPIView,
+    RetreiveTransactionsAPIView
+)
 from django.urls import reverse
 from rest_framework.test import force_authenticate
-from rest_framework.views import status
+from rest_framework import status
 import json
 from rest_framework.test import APITestCase
 from faker import Factory
@@ -460,7 +463,7 @@ class CardPaymentTest(APITestCase):
 
         resp = self.client.post(self.card_validate_url, data)
         self.assertEqual(resp.status_code, 200)
-self.assertEqual(resp.json()['message'],
+        self.assertEqual(resp.json()['message'],
                          'somemessage. Card details have been saved.')
 
     @patch('transactions.transaction_services'
@@ -571,14 +574,13 @@ self.assertEqual(resp.json()['message'],
         self.assertEqual(resp.status_code, 400)
 
 
-
 class TestTransactions(BaseTest):
     """Tests for the user transactions functionality"""
 
     def test_retreive_buyer_transactions(self):
         """test to retreive user transaction detailes"""
         view = RetreiveTransactionsAPIView.as_view()
-        transaction = TransactionFactory.create(
+        TransactionFactory.create(
             target_property=self.property1, buyer=self.user4)
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user4)
@@ -590,7 +592,7 @@ class TestTransactions(BaseTest):
     def test_retreive_client_transactions(self):
         """test to retreive all transaction detailes of a client"""
         view = RetreiveTransactionsAPIView.as_view()
-        transaction = TransactionFactory.create(
+        TransactionFactory.create(
             target_property=self.property1, buyer=self.user4)
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user1)
@@ -602,7 +604,7 @@ class TestTransactions(BaseTest):
     def test_retreive_landville_transactions(self):
         """test to retreive all transactions in landville"""
         view = RetreiveTransactionsAPIView.as_view()
-        transaction = TransactionFactory.create(
+        TransactionFactory.create(
             target_property=self.property1, buyer=self.user4)
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user5)
@@ -614,7 +616,7 @@ class TestTransactions(BaseTest):
     def test_buyer_cant_retreive_other_buyers_transactions(self):
         """test to retreive other users transaction detailes"""
         view = RetreiveTransactionsAPIView.as_view()
-        transaction = TransactionFactory.create(
+        TransactionFactory.create(
             target_property=self.property1, buyer=self.user4)
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user6)
@@ -623,7 +625,10 @@ class TestTransactions(BaseTest):
         self.assertEqual(response.status_code, 404)
 
     def test_retreive_transactions_of_user_with_zero_transactions(self):
-        """test to retreive user transaction detailes where user has no transactions yet"""
+        """
+        test to retreive user transaction detailes where user has no
+        transactions yet
+        """
         view = RetreiveTransactionsAPIView.as_view()
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user4)
@@ -632,7 +637,10 @@ class TestTransactions(BaseTest):
         self.assertEqual(response.status_code, 404)
 
     def test_client_admin_retreive_transactions_when_none_exists(self):
-        """test for client admin to retreive client company transactions when none exists"""
+        """
+        test for client admin to retreive client company transactions
+        when none exists
+        """
         view = RetreiveTransactionsAPIView.as_view()
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user1)
@@ -641,7 +649,10 @@ class TestTransactions(BaseTest):
         self.assertEqual(response.status_code, 404)
 
     def test_landville_admin_retreive_transactions_when_none_exists(self):
-        """test for landville admin to retreive all landville transactions when none exists"""
+        """
+        test for landville admin to retreive all landville transactions when
+        none exists
+        """
         view = RetreiveTransactionsAPIView.as_view()
         request = self.factory.get(USER_TRANSACTIONS_URL)
         force_authenticate(request, user=self.user5)
