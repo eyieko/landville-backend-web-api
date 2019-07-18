@@ -1,8 +1,11 @@
 from django.test import TestCase, TransactionTestCase
-
 from authentication.models import User, UserProfile
-from tests.factories.authentication_factory import UserFactory, UserProfileFactory, ClientFactory
+from tests.factories.authentication_factory import UserFactory, UserProfileFactory, ClientFactory, ClientReviewsFactory, ReplyReviewsFactory
 from authentication.models import Client
+from tests.factories.authentication_factory import (
+    UserFactory, UserProfileFactory, ClientFactory, ClientReviewsFactory,
+    ReplyReviewsFactory)
+from authentication.models import Client, User
 
 
 class UserManagerTest(TransactionTestCase):
@@ -11,7 +14,8 @@ class UserManagerTest(TransactionTestCase):
     def setUp(self):
         self.user1 = UserFactory.create(email='user@email.com')
         self.user2 = User.objects.create_user(
-            first_name='Test', last_name='User', email='test@mail.com', password='password', role='CA')
+            first_name='Test', last_name='User', email='test@mail.com',
+            password='password', role='CA')
 
     def test_that_the_string_representation_is_correct(self):
         self.assertEqual(str(self.user1), 'user@email.com')
@@ -21,7 +25,8 @@ class UserManagerTest(TransactionTestCase):
 
     def test_email_representation(self):
         self.assertIn('user', self.user1.get_email)
-        self.assertIn('eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9', self.user1.token)
+        self.assertIn(
+            'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9', self.user1.token)
 
     def test_that_user_token_is_created(self):
         self.assertIsNotNone(self.user2.token)
@@ -29,30 +34,36 @@ class UserManagerTest(TransactionTestCase):
     def test_that_user_cannot_be_created_without_password(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
-                first_name='Test', last_name='User', email='test_user@mail.com', password='')
+                first_name='Test', last_name='User',
+                email='test_user@mail.com', password='')
         self.assertEqual(str(e.exception), 'Users must have a password.')
 
     def test_that_user_cannot_be_created_without_first_name(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
-                first_name='', last_name='User', email='test@email.com', password='password')
+                first_name='', last_name='User', email='test@email.com',
+                password='password')
         self.assertEqual(str(e.exception), 'Users must have a first name.')
 
     def test_that_user_cannot_be_created_without_last_name(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
-                first_name='Test', last_name='', email='test@mail.com', password='password')
+                first_name='Test', last_name='', email='test@mail.com',
+                password='password')
         self.assertEqual(str(e.exception), 'Users must have a last name.')
 
     def test_that_user_cannot_be_created_without_email_address(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_user(
-                first_name='Test', last_name='User', email='', password='password')
-        self.assertEqual(str(e.exception), 'Users must have an email address.')
+                first_name='Test', last_name='User', email='',
+                password='password')
+        self.assertEqual(
+            str(e.exception), 'Users must have an email address.')
 
     def test_that_we_can_successfully_create_user(self):
         user = User.objects.create_user(
-            first_name='Test', last_name='User', email='test5@mail.com', password='password', role="BY")
+            first_name='Test', last_name='User', email='test5@mail.com',
+            password='password', role="BY")
         self.assertTrue(user.is_active)
         self.assertIsInstance(self.user2, User)
         self.assertIsInstance(self.user1, User)
@@ -60,28 +71,32 @@ class UserManagerTest(TransactionTestCase):
     def test_that_superuser_cannot_be_created_without_email_address(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_superuser(
-                first_name='Super', last_name='User', email='', password='password')
+                first_name='Super', last_name='User', email='',
+                password='password')
         self.assertEqual(str(e.exception),
                          'Superusers must have an email address.')
 
     def test_that_superuser_cannot_be_created_without_first_name(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_superuser(
-                first_name='', last_name='User', email='superuser@mail.com', password='password')
+                first_name='', last_name='User',
+                email='superuser@mail.com', password='password')
         self.assertEqual(str(e.exception),
                          'Superusers must have a first name.')
 
     def test_that_superuser_cannot_be_created_without_last_name(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_superuser(
-                first_name='Super', last_name=None, email='superuser@mail.com', password='password')
+                first_name='Super', last_name=None,
+                email='superuser@mail.com', password='password')
         self.assertEqual(str(e.exception),
                          'Superusers must have a last name.')
 
     def test_that_superuser_cannot_be_created_without_password(self):
         with self.assertRaises(TypeError) as e:
             User.objects.create_superuser(
-                first_name='Super', last_name='User', email='superuser@mail.com', password='')
+                first_name='Super', last_name='User',
+                email='superuser@mail.com', password='')
         self.assertEqual(str(e.exception),
                          'Superusers must have a password.')
 
@@ -101,7 +116,7 @@ class UserProfileModelTest(TestCase):
         self.user1 = UserFactory.create(email='user@email.com')
         self.profile1 = UserProfile.objects.get(user=self.user1)
 
-    def test_that_the_string_representation_is_correct_for_a_profile_model(self):
+    def test_string_representation_is_correct_for_a_profile_model(self):
         self.assertEqual(str(self.profile1), "user@email.com's Profile")
 
     def test_that_user_profile_relationship_is_accurate(self):
@@ -125,3 +140,29 @@ class ClientModelTest(TestCase):
         approval_status = Client.objects.get(
             email=self.client1.email).approval_status
         self.assertEqual(approval_status, "rejected")
+
+
+class ClientReviewsModelTest(TestCase):
+    """This class defines tests for client reviews model"""
+
+    def setUp(self):
+        self.reviewer = UserFactory.create()
+        self.review = ClientReviewsFactory.create(reviewer=self.reviewer)
+
+    def test_that_string_representation_for_client_reviews_is_correct(self):
+        self.assertEqual(
+            str(self.review),
+            f'Review by {self.reviewer} on {self.review.created_at}')
+
+
+class ReplyReviewsModelTest(TestCase):
+    """This class defines tests for replies to client reviews"""
+
+    def setUp(self):
+        self.reviewer = UserFactory.create()
+        self.reply = ReplyReviewsFactory.create(reviewer=self.reviewer)
+
+    def test_that_string_representation_for_reply_reviews_is_correct(self):
+        self.assertEqual(
+            str(self.reply),
+            f'Review by {self.reviewer} on {self.reply.created_at}')

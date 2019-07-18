@@ -5,13 +5,8 @@ from django.contrib import (
 )
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
+from authentication.models import User, Client, UserProfile, ClientReview
 from django.http import HttpResponseRedirect
-
-from authentication.models import (
-    Client,
-    User,
-    UserProfile,
-)
 from utils.tasks import send_email_notification
 
 
@@ -59,7 +54,7 @@ class UserChangeForm(forms.ModelForm):
         # Regardless of what the user provides, return the initial value.
         # This is done here, rather than on the field, because the
         # field does not have access to the initial value
-        return self.initial["password"]
+        return self.initial.get('password')
 
 
 class UserAdmin(BaseUserAdmin):
@@ -77,7 +72,11 @@ class UserAdmin(BaseUserAdmin):
         ('Personal info', {
          'fields': ('email', 'first_name', 'last_name', 'username')}),
         ('Permissions', {
-         'fields': ('is_superuser', 'is_staff', 'groups', 'user_permissions')}),
+         'fields': (
+             'is_superuser',
+             'is_staff',
+             'groups',
+             'user_permissions')}),
         ('User Roles', {
             'fields': ('is_active', 'role', 'is_verified')
         }),
@@ -87,7 +86,9 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2')}
+            'fields': ('email', 'first_name', 'last_name',
+                       'password1', 'password2'
+                       )}
          ),
     )
     search_fields = ('email', 'first_name', 'last_name', 'username'),
@@ -113,7 +114,7 @@ class ClientAdmin(admin.ModelAdmin):
 
     def response_post_save_change(self, request, obj):
         """
-        Figure out where to redirect after the 'Save' button has been pressed 
+        Figure out where to redirect after the 'Save' button has been pressed
         when editing an existing object.
         """
         if obj.approval_status == 'approved':
@@ -142,3 +143,4 @@ class ClientAdmin(admin.ModelAdmin):
 
 admin.site.register(Client, ClientAdmin)
 admin.site.register(UserProfile)
+admin.site.register(ClientReview)

@@ -1,45 +1,37 @@
+from utils.permissions import IsBuyerOrReadOnly, IsReviewer
 import cloudinary.uploader as uploader
 import jwt
 from django.conf import settings
+from utils import BaseUtils
+from authentication.renderer import UserJSONRenderer
+from rest_framework.views import APIView
+from authentication.serializers import (
+    GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
+    ProfileSerializer, TwitterAuthAPISerializer, RegistrationSerializer,
+    LoginSerializer, ClientSerializer, ChangePasswordSerializer,
+    ClientReviewSerializer, ReviewReplySerializer)
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from authentication.models import (
+    User, Client, UserProfile, ClientReview, ReplyReview)
+from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
 from django.views import View
 from rest_framework import (
     generics,
     status,
 )
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from authentication.authorization_helper import generate_validation_url
-from authentication.models import (
-    Client,
-    User,
-    UserProfile,
-)
 from authentication.permissions import (
     IsClientAdmin,
     IsProfileOwner,
 )
-from authentication.renderer import UserJSONRenderer
-from authentication.serializers import (
-    ChangePasswordSerializer,
-    ClientSerializer,
-    FacebookAuthAPISerializer,
-    GoogleAuthSerializer,
-    LoginSerializer,
-    PasswordResetSerializer,
-    ProfileSerializer,
-    RegistrationSerializer,
-    TwitterAuthAPISerializer,
-)
 from property.validators import validate_image
-from utils import BaseUtils
 from utils.media_handlers import CloudinaryResourceHandler
 from utils.tasks import send_email_notification
+from django.http import Http404
 
 Uploader = CloudinaryResourceHandler()
 
@@ -250,11 +242,10 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         data["client_name"] = self.remove_redundant_spaces(data["client_name"])
 
         if self.check_client_admin_has_company(request.user.id):
-            return Response({
-                'error': 'You cannot be admin of more than'
-                         ' one client client'
-            },
-                status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'You cannot be admin of more than one client'},
+                status.HTTP_403_FORBIDDEN
+            )
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -284,9 +275,8 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         response = {
             "data": {
                 "client_company": serializer.data,
-                "message": "Your request to create a company has been "
-                           "received, please wait for approval from "
-                           "landville admin."
+                "message": "Your request to create a company has been\
+                    received, please wait for approval from landville admin."
             }
         }
 
@@ -406,10 +396,12 @@ class AddReasonView(View):
 
         Enable admins to add a reason for the performed action.
         """
-        return render(request, 'admin/add_notes.html', {
-            "client": request.GET['client'],
-            "status": request.GET['status']
-        })
+        return render(
+            request, 'admin/add_notes.html',
+            {
+                "client": request.GET['client'],
+                "status": request.GET['status']
+            })
 
     def post(self, request):
         """
@@ -449,3 +441,167 @@ class AddReasonView(View):
             }
         }
         send_email_notification.delay(payload)
+
+
+class ClientReviewsView(generics.ListCreateAPIView):
+    """
+     Handles request and get client Reviews
+    """
+    serializer_class = ClientReviewSerializer
+    permission_classes = (IsBuyerOrReadOnly,)
+
+    def get_queryset(self, **kwargs):
+        client = get_object_or_404(Client, pk=self.kwargs.get('client_id'))
+        queryset = ClientReview.active_objects.all_objects().filter(
+            client=client)
+        if queryset:
+            return queryset
+        else:
+            raise Http404
+
+    def create(self, request, *args, **kwargs):
+        """ allows buyers to add reviews to a client """
+
+        try:
+            Client.active_objects.all_approved().get(
+                pk=kwargs.get('client_id'))
+        except Client.DoesNotExist:
+            return Response({
+                "errors": "Client not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        payload = request.data
+        payload['client'] = kwargs.get('client_id')
+        serializer = self.serializer_class(data=payload)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(reviewer=request.user)
+        response = {
+            "message": "Your review has been added"
+        }
+        return Response(response, status.HTTP_201_CREATED)
+
+
+class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+     Handles request to view, delete or update a review
+    """
+    serializer_class = ClientReviewSerializer
+    permission_classes = (IsReviewer, IsAuthenticatedOrReadOnly,)
+    lookup_field = 'pk'
+
+    def get_queryset(self):
+        """ returns different results depending on who is making a request """
+
+        return ClientReview.active_objects.all_objects()
+
+    def destroy(self, request, pk):
+        """
+        :param request:
+        :param pk:
+        :return: delete a specific review
+        """
+
+        review = self.get_object()
+        review.soft_delete()
+        return Response({
+            "message": "You have deleted this review"
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        """  allows user to update only their own review """
+
+        payload = request.data
+        review = self.get_object()
+        serializer = self.serializer_class(
+            review, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(review, payload)
+        response = {
+            "data": serializer.data,
+            "message": "Successfully updated your Review"
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class ReplyView(generics.GenericAPIView):
+    """
+     Handles request to create, delete or update a reply on a review
+    """
+    serializer_class = ReviewReplySerializer
+    permission_classes = (IsReviewer, IsAuthenticated)
+
+    def post(self, request, **kwargs):
+        """ allow users add replies to reviews """
+
+        try:
+            review = ClientReview.active_objects.all_objects().get(
+                pk=kwargs.get('pk'))
+        except ClientReview.DoesNotExist:
+            return Response({
+                "errors": "Review does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        payload = request.data
+        review.replies.create(
+            reply=payload['reply'],
+            reviewer=request.user
+        )
+        response = {
+            "message": "Your reply has been added"
+        }
+        return Response(response, status.HTTP_201_CREATED)
+
+    def delete(self, request, **kwargs):
+        """ allow users delete only their replies """
+
+        try:
+            reply = ReplyReview.active_objects.all_objects().get(
+                pk=kwargs.get('pk'))
+        except ReplyReview.DoesNotExist:
+            return Response({
+                "errors": "Reply does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(self.request, reply)
+
+        reply.soft_delete()
+        return Response({
+            "message": "You have deleted this reply"
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request, **kwargs):
+        """ allow users update only their replies """
+
+        try:
+            reply = ReplyReview.active_objects.all_objects().get(
+                pk=kwargs.get('pk'))
+        except ReplyReview.DoesNotExist:
+            return Response({
+                "errors": "Reply does not exist"
+            }, status=status.HTTP_404_NOT_FOUND)
+        self.check_object_permissions(self.request, reply)
+
+        payload = request.data
+        serializer = self.serializer_class(
+            reply, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.update(reply, payload)
+        response = {
+            "message": "Successfully updated your reply",
+            "data": {"review": serializer.data}
+        }
+        return Response(response, status=status.HTTP_200_OK)
+
+
+class UserReviewsView(generics.GenericAPIView):
+    """
+    get all a user's reviews for same or different clients
+    """
+
+    serializer_class = ClientReviewSerializer
+    permission_classes = (IsAuthenticated, IsReviewer)
+
+    def get(self, request, **kwargs):
+        reviews = ClientReview.active_objects.all_objects().filter(
+            reviewer__pk=kwargs.get('reviewer_id'))
+        serializer = self.serializer_class(reviews, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
