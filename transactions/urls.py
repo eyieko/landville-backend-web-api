@@ -6,7 +6,9 @@ from transactions.views import (
     card_pin_payment,
     card_foreign_payment,
     validate_payment,
-    RetreiveTransactionsAPIView
+    RetreiveTransactionsAPIView,
+    foreign_card_validation_response,
+    tokenized_card_payment
 )
 
 app_name = 'transactions'
@@ -19,5 +21,8 @@ urlpatterns = [
     path('card-pin/', card_pin_payment, name='card_pin'),
     path('card-foreign/', card_foreign_payment, name='card_foreign'),
     path('validate-card/', validate_payment, name='validate_card'),
-    path('', RetreiveTransactionsAPIView.as_view(), name='transactions')
+    path('', RetreiveTransactionsAPIView.as_view(), name='transactions'),
+    path('rave-response/', foreign_card_validation_response,
+         name='validation_response'),
+    path('tokenized-card/', tokenized_card_payment, name='tokenized_card')
 ]

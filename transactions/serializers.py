@@ -122,6 +122,7 @@ class CardPaymentSerializer(serializers.Serializer):
     expirymonth = serializers.CharField(max_length=2)
     expiryyear = serializers.CharField(max_length=2)
     amount = serializers.FloatField(min_value=0.00)
+    save_card = serializers.BooleanField(default=False)
 
 
 class ForeignCardPaymentSerializer(CardPaymentSerializer):
@@ -139,3 +140,7 @@ class PaymentValidationSerializer(serializers.Serializer):
 
 class PinCardPaymentSerializer(CardPaymentSerializer):
     pin = serializers.IntegerField()
+
+
+class CardlessPaymentSerializer(serializers.Serializer):
+    amount = serializers.FloatField(min_value=0.00)

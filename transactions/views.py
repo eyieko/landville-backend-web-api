@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
+import json
 from rest_framework import status
 from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
@@ -17,7 +18,8 @@ from transactions.transaction_services import TransactionServices
 from transactions.serializers import (
     PinCardPaymentSerializer,
     ForeignCardPaymentSerializer,
-    PaymentValidationSerializer
+    PaymentValidationSerializer,
+    CardlessPaymentSerializer
 )
 from property.models import Property
 
@@ -200,6 +202,7 @@ def card_foreign_payment(request):
             'expiryyear': serializer.validated_data.get('expiryyear'),
             'country': serializer.validated_data.get('country', 'NG'),
             'amount': str(serializer.validated_data.get('amount')),
+            'save_card': serializer.validated_data.get('save_card'),
             'email': user.email,
             'firstname': user.first_name,
             'lastname': user.last_name,
@@ -260,6 +263,7 @@ def card_pin_payment(request):
             'expiryyear': serializer.validated_data.get('expiryyear'),
             'country': serializer.validated_data.get('country', 'NG'),
             'amount': str(serializer.validated_data.get('amount')),
+            'save_card': serializer.validated_data.get('save_card'),
             'email': user.email,
             'firstname': user.first_name,
             'lastname': user.last_name,
@@ -300,7 +304,7 @@ def card_pin_payment(request):
 @permission_classes((IsAuthenticated, ))
 def validate_payment(request):
     """
-    Endpoint for handling pcard payment validation. It gets transaction
+    Endpoint for handling card payment validation. It gets transaction
     reference and OTP from the request object and uses this to make payment
     request to rave
     :param request: DRF request object
@@ -311,4 +315,50 @@ def validate_payment(request):
     otp = data.get('otp')
 
     resp = TransactionServices.validate_card_payment(flwref, otp)
-    return Response({'message': resp['message']}, status=resp['status_code'])
+    txRef = resp['data']['tx']['txRef']
+    verify_resp = TransactionServices.verify_payment(txRef)
+    save_card = verify_resp['data']['meta'][0]['metavalue']
+    message = verify_resp['data']['vbvmessage']
+    if verify_resp['data']['status'] == 'successful' and int(save_card) == 1:
+        message += TransactionServices.save_card(verify_resp)
+
+    return Response({'message': message})
+
+
+@api_view(['GET'])
+def foreign_card_validation_response(request):
+    """
+    Endpoint for handling foreign card validation response. It uses the
+    response to verify the payment and save the card token, if requested
+    :param request: DRF request object
+    :return: JSON response
+    """
+    resp = json.loads(request.query_params['response'])
+    verify_resp = TransactionServices.verify_payment(resp['txRef'])
+
+    save_card = verify_resp['data']['meta'][0]['metavalue']
+    message = verify_resp['data']['vbvmessage']
+    if verify_resp['data']['status'] == 'successful' and int(save_card) == 1:
+        message += TransactionServices.save_card(verify_resp)
+
+    return Response({'message': message})
+
+
+@swagger_auto_schema(method='post', request_body=CardlessPaymentSerializer)
+@api_view(['POST'])
+@permission_classes((IsAuthenticated, ))
+def tokenized_card_payment(request):
+    """
+    Endpoint for handling payment using tokenized cards. The user makes payment
+    without providing card details
+    :param request: DRF request object
+    :return: JSON response
+    """
+    data = request.data
+    user = request.user
+    serializer = CardlessPaymentSerializer(data=data)
+    if serializer.is_valid():
+        amount = serializer.validated_data.get('amount')
+        resp = TransactionServices.pay_with_saved_card(user, amount)
+
+    return Response({'message': resp['data']['status']})

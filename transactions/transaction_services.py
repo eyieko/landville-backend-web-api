@@ -7,12 +7,12 @@ import datetime
 import base64
 from Cryptodome.Cipher import DES3
 from urllib.parse import urljoin
+from authentication.models import User
 
 
 class TransactionServices:
-
-    rave_public_key = os.getenv('RAVE_TEST_PUBLIC_KEY')
-    rave_secret_key = os.getenv('RAVE_TEST_SECRET_KEY')
+    rave_public_key = os.getenv('RAVE_PUBLIC_KEY')
+    rave_secret_key = os.getenv('RAVE_SECRET_KEY')
     redirect_url = os.getenv('RAVE_REDIRECT_URL')
 
     @classmethod
@@ -123,7 +123,11 @@ class TransactionServices:
             'firstname': pay_data.get('firstname'),
             'lastname': pay_data.get('lastname'),
             'txRef': f'LANDVILLE-{datetime.datetime.now()}',
-            'redirect_url': TransactionServices.redirect_url
+            'redirect_url': TransactionServices.redirect_url,
+            'meta': [{
+                'metaname': 'save_card',
+                'metavalue': pay_data.get('save_card')
+            }]
         }
 
         data.update(pay_data['auth_dict'])
@@ -153,3 +157,66 @@ class TransactionServices:
         response_json = response.json()
         response_json['status_code'] = response.status_code
         return response_json
+
+    @classmethod
+    def verify_payment(cls, txref):
+        data = {
+            "txref": txref,
+            "SECKEY": cls.rave_secret_key
+        }
+        endpoint = urljoin(os.getenv('RAVE_URL'),
+                           'flwv3-pug/getpaidx/api/v2/verify')
+        headers = {'content-type': 'application/json'}
+
+        response = requests.post(
+            endpoint, headers=headers, data=json.dumps(data))
+        return response.json()
+
+    @classmethod
+    def save_card(cls, verify_resp):
+        email = verify_resp['data']['custemail']
+        save_card = verify_resp['data']['meta'][0]['metavalue']
+        card_number = verify_resp['data']['card']['last4digits']
+        embedtoken = verify_resp['data']['card']['card_tokens'][0]['embedtoken']  # noqa
+        card_brand = verify_resp['data']['card']['brand']
+        card_expiry = f"{verify_resp['data']['card']['expirymonth']}/" \
+            f"{verify_resp['data']['card']['expiryyear']}"
+        card_info = {
+            'embedtoken': embedtoken,
+            'card_number': f'*********{card_number}',
+            'card_expiry': card_expiry,
+            'card_brand': card_brand
+
+        }
+
+        if verify_resp['data']['status'] == 'successful' \
+                and int(save_card) == 1:
+            try:
+                user = User.active_objects.filter(email=email)
+                user.update(card_info=card_info)
+                message = '. Card details have been saved.'
+            except:  # noqa
+                message = '. Card details could not be saved. Try latter.'
+            return message
+
+    @classmethod
+    def pay_with_saved_card(cls, user, amount):
+        data = {
+            'currency': 'NGN',
+            'SECKEY': cls.rave_secret_key,
+            'token': user.card_info['embedtoken'],
+            'country': 'NG',
+            'amount': amount,
+            'email': user.email,
+            'firstname': user.first_name,
+            'lastname': user.last_name,
+            'txRef': f'LANDVILLE-{datetime.datetime.now()}'
+        }
+
+        endpoint = urljoin(os.getenv('RAVE_URL'),
+                           'flwv3-pug/getpaidx/api/tokenized/charge')
+        headers = {'content-type': 'application/json'}
+
+        response = requests.post(
+            endpoint, headers=headers, data=json.dumps(data))
+        return response.json()
