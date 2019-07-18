@@ -360,5 +360,6 @@ def tokenized_card_payment(request):
     if serializer.is_valid():
         amount = serializer.validated_data.get('amount')
         resp = TransactionServices.pay_with_saved_card(user, amount)
-
-    return Response({'message': resp['data']['status']})
+        return Response({'message': resp['data']['status']})
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

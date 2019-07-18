@@ -8,8 +8,8 @@ import json
 from rest_framework.test import APITestCase
 from faker import Factory
 from unittest.mock import patch
-from tests.factories.authentication_factory import UserFactory, ClientFactory
-from tests.factories.transaction_factory import TransactionFactory, PropertyFactory
+from tests.factories.authentication_factory import UserFactory
+from tests.factories.transaction_factory import TransactionFactory
 
 
 ACCOUNT_DETAIL_URL = reverse("transactions:all-accounts")
@@ -249,7 +249,10 @@ class CardPaymentTest(APITestCase):
     def setUp(self):
         self.card_pin_url = reverse('transactions:card_pin')
         self.card_foreign_url = reverse('transactions:card_foreign')
+        self.cardless_url = reverse('transactions:tokenized_card')
         self.card_validate_url = reverse('transactions:validate_card')
+        self.foreign_validate_url = reverse('transactions:validation_response'
+                                            )+'?response={"txRef": "sometxref"}'  # noqa
         self.faker = Factory.create()
         self.auth_user = UserFactory(is_verified=True)
         self.client.credentials(
@@ -430,11 +433,24 @@ class CardPaymentTest(APITestCase):
         self.assertEqual(json_resp['cardno'], ['This field is required.'])
 
     @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    @patch('transactions.transaction_services'
            '.TransactionServices.validate_card_payment')
-    def test_valid_payment(self, mock_validate):
+    def test_valid_PIN_payment(self, mock_validate, mock_verify):
         mock_validate.return_value = {
             'message': 'Charge Complete',
-            'status_code': 200
+            'status_code': 200,
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}]}
+        }
+        mock_verify.return_value = {
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+                'vbvmessage': 'somemessage', 'status': 'successful',
+                'custemail': 'email@email.com', 'card': {'expirymonth': '11',
+                                                         'expiryyear': 22, 'last4digits': 1234,  # noqa
+                                                         'card_tokens': [{'embedtoken': 'sometoken'}],  # noqa
+                                                         'brand': 'somebrand'}}
         }
 
         data = {
@@ -444,7 +460,116 @@ class CardPaymentTest(APITestCase):
 
         resp = self.client.post(self.card_validate_url, data)
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.data['message'], 'Charge Complete')
+self.assertEqual(resp.json()['message'],
+                         'somemessage. Card details have been saved.')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    def test_valid_PIN_payment_no_card_save(self, mock_validate, mock_verify):
+        mock_validate.return_value = {
+            'message': 'Charge Complete',
+            'status_code': 200,
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}]}
+        }
+        mock_verify.return_value = {
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}],
+                'vbvmessage': 'somemessage', 'status': 'successful',
+                'custemail': 'email@email.com', 'card': {
+                    'expirymonth': '11', 'expiryyear': 22,
+                    'last4digits': 1234, 'card_tokens':
+                        [{'embedtoken': 'sometoken'}], 'brand': 'somebrand'}}
+        }
+
+        data = {
+            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
+            'otp': 12345
+        }
+
+        resp = self.client.post(self.card_validate_url, data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['message'], 'somemessage')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    def test_validate_foreign_payment_with_card_save(
+            self, mock_validate, mock_verify):
+        mock_validate.return_value = {
+            'message': 'Charge Complete',
+            'status_code': 200,
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}]}
+        }
+        mock_verify.return_value = {
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+                'vbvmessage': 'somemessage', 'status': 'successful',
+                'custemail': 'email@email.com', 'card': {
+                    'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
+                    'card_tokens': [{'embedtoken': 'sometoken'}],
+                    'brand': 'somebrand'}}
+        }
+
+        resp = self.client.get(self.foreign_validate_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['message'],
+                         'somemessage. Card details have been saved.')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    def test_validate_foreign_payment_no_card_save(self, mock_validate,
+                                                   mock_verify):
+        mock_validate.return_value = {
+            'message': 'Charge Complete',
+            'status_code': 200,
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}]}
+        }
+        mock_verify.return_value = {
+            'data': {
+                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}],
+                'vbvmessage': 'somemessage', 'status': 'successful',
+                'custemail': 'email@email.com', 'card': {
+                    'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
+                    'card_tokens': [{'embedtoken': 'sometoken'}],
+                    'brand': 'somebrand'}}
+        }
+
+        resp = self.client.get(self.foreign_validate_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['message'], 'somemessage')
+
+    @patch('transactions.transaction_services'
+           '.TransactionServices.pay_with_saved_card')
+    def test_cardless_payments_with_valid_transaction(
+            self, mock_saved_card):
+        mock_saved_card.return_value = {
+            'data': {
+                'status': 'successful'
+            }
+        }
+
+        self.card_info.update(self.address_details)
+
+        resp = self.client.post(self.cardless_url, self.card_info)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['message'], 'successful')
+
+    @patch('transactions.serializers.CardlessPaymentSerializer')
+    def test_cardless_payments_with_failed_serialization(
+            self, mock_serializer):
+        mock_serializer.return_value.is_valid.return_value = False
+
+        resp = self.client.post(self.cardless_url)
+        self.assertEqual(resp.status_code, 400)
+
 
 
 class TestTransactions(BaseTest):
