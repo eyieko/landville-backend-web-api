@@ -13,8 +13,10 @@ def single_detail_url(account_number):
 
 class TestSerializers(BaseTest):
     def test_error_when_you_post_with_invalid_account_number(self):
-        """ you get an error when you upload with an a non interger
-        acc number """
+        """
+        you get an error when you upload with an a non interger
+        acc number
+        """
 
         view = ClientAccountAPIView.as_view()
 
@@ -29,8 +31,10 @@ class TestSerializers(BaseTest):
             str(resp.data))
 
     def test_error_when_you_post_with_invalid_swift_code(self):
-        """ you get an error when you upload with an a non
-        letter swift code """
+        """
+        you get an error when you upload with an a non
+        letter swift code
+        """
 
         view = ClientAccountAPIView.as_view()
 

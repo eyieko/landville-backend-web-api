@@ -11,6 +11,8 @@ from authentication.models import User
 
 
 class TransactionServices:
+    """A helper class for online payment services"""
+
     rave_public_key = os.getenv('RAVE_PUBLIC_KEY')
     rave_secret_key = os.getenv('RAVE_SECRET_KEY')
     redirect_url = os.getenv('RAVE_REDIRECT_URL')
@@ -160,6 +162,11 @@ class TransactionServices:
 
     @classmethod
     def verify_payment(cls, txref):
+        """
+
+        :param txref: the transaction reference number for the payment
+        :return: AJSON response
+        """
         data = {
             "txref": txref,
             "SECKEY": cls.rave_secret_key
@@ -174,6 +181,12 @@ class TransactionServices:
 
     @classmethod
     def save_card(cls, verify_resp):
+        """
+        The service method that handles persistence of the card token
+        :param verify_resp: the object containing the response from payment
+        verification
+        :return: A message indicating success or otherwise of the operation
+        """
         email = verify_resp['data']['custemail']
         save_card = verify_resp['data']['meta'][0]['metavalue']
         card_number = verify_resp['data']['card']['last4digits']
@@ -201,10 +214,16 @@ class TransactionServices:
 
     @classmethod
     def pay_with_saved_card(cls, user, amount):
+        """
+        A service method for payment with card tokens
+        :param user: The user making the payment
+        :param amount: The amount to pay.
+        :return: A JSON response
+        """
         data = {
             'currency': 'NGN',
             'SECKEY': cls.rave_secret_key,
-            'token': user.card_info['embedtoken'],
+            'token': user.card_info.get('embedtoken'),
             'country': 'NG',
             'amount': amount,
             'email': user.email,
@@ -213,10 +232,17 @@ class TransactionServices:
             'txRef': f'LANDVILLE-{datetime.datetime.now()}'
         }
 
+        if data['token'] is None:
+            return {
+                'data': {
+                    'status_code': 400,
+                    'status': 'You do not have a saved card'
+                }}
         endpoint = urljoin(os.getenv('RAVE_URL'),
                            'flwv3-pug/getpaidx/api/tokenized/charge')
         headers = {'content-type': 'application/json'}
 
         response = requests.post(
-            endpoint, headers=headers, data=json.dumps(data))
-        return response.json()
+            endpoint, headers=headers, data=json.dumps(data)).json()
+        response['data']['status_code'] = 200
+        return response

@@ -247,7 +247,8 @@ class TestClientAccountDetailsViews(BaseTest):
                          status.HTTP_400_BAD_REQUEST)
 
 
-class CardPaymentTest(APITestCase):
+class TestCardPayment(APITestCase):
+    """A test class containing integrated tests on card payment views"""
 
     def setUp(self):
         self.card_pin_url = reverse('transactions:card_pin')
@@ -440,6 +441,10 @@ class CardPaymentTest(APITestCase):
     @patch('transactions.transaction_services'
            '.TransactionServices.validate_card_payment')
     def test_valid_PIN_payment(self, mock_validate, mock_verify):
+        """
+        An integrated test for the view method for validating card PIN
+        payment if card tokenization is requested.
+        """
         mock_validate.return_value = {
             'message': 'Charge Complete',
             'status_code': 200,
@@ -471,6 +476,10 @@ class CardPaymentTest(APITestCase):
     @patch('transactions.transaction_services'
            '.TransactionServices.validate_card_payment')
     def test_valid_PIN_payment_no_card_save(self, mock_validate, mock_verify):
+        """
+        An integrated test for the view method for validating card PIN
+        payment if card tokenization is not requested.
+        """
         mock_validate.return_value = {
             'message': 'Charge Complete',
             'status_code': 200,
@@ -502,6 +511,10 @@ class CardPaymentTest(APITestCase):
            '.TransactionServices.validate_card_payment')
     def test_validate_foreign_payment_with_card_save(
             self, mock_validate, mock_verify):
+        """
+        An integrated test for the view method for validating card
+        international payment if card tokenization is requested.
+        """
         mock_validate.return_value = {
             'message': 'Charge Complete',
             'status_code': 200,
@@ -529,6 +542,10 @@ class CardPaymentTest(APITestCase):
            '.TransactionServices.validate_card_payment')
     def test_validate_foreign_payment_no_card_save(self, mock_validate,
                                                    mock_verify):
+        """
+        An integrated test for the view method for validating card
+        international payment if card tokenization is not requested.
+        """
         mock_validate.return_value = {
             'message': 'Charge Complete',
             'status_code': 200,
@@ -553,6 +570,10 @@ class CardPaymentTest(APITestCase):
            '.TransactionServices.pay_with_saved_card')
     def test_cardless_payments_with_valid_transaction(
             self, mock_saved_card):
+        """
+        An integrated test for the view method for payment with tokenized card
+        that is succesful
+        """
         mock_saved_card.return_value = {
             'data': {
                 'status': 'successful'
@@ -568,6 +589,10 @@ class CardPaymentTest(APITestCase):
     @patch('transactions.serializers.CardlessPaymentSerializer')
     def test_cardless_payments_with_failed_serialization(
             self, mock_serializer):
+        """
+        An integrated test for the view method for payment with tokenized card
+        that is not successful
+        """
         mock_serializer.return_value.is_valid.return_value = False
 
         resp = self.client.post(self.cardless_url)

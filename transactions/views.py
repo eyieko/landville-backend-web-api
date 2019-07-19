@@ -8,12 +8,18 @@ from rest_framework.generics import (
 )
 from rest_framework.response import Response
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated
+)
 from rest_framework.decorators import api_view, permission_classes
 from utils.client_permissions import IsownerOrReadOnly, IsClient
 from transactions.models import ClientAccount, Client
 from transactions.renderer import AccountDetailsJSONRenderer
-from transactions.serializers import ClientAccountSerializer, TransactionsSerializer
+from transactions.serializers import (
+    ClientAccountSerializer,
+    TransactionsSerializer
+)
 from transactions.transaction_services import TransactionServices
 from transactions.serializers import (
     PinCardPaymentSerializer,
@@ -153,19 +159,24 @@ class RetreiveTransactionsAPIView(generics.GenericAPIView):
                 Client, client_admin__pk=self.request.user.pk)
             # return all the client property that have transactions
             queryset = Property.active_objects.all_objects().filter(
-                transactions__target_property__client__pk=client_company.pk).distinct()
+                transactions__target_property__client__pk=client_company.pk)\
+                .distinct()
         elif self.request.user.role == "LA":
             # return all property with transactions
             queryset = Property.active_objects.all_objects().filter(
                 transactions__isnull=False).distinct()
         else:
-            # return all property for which the logged-in user has transactions with
+            # return all property for which the logged-in user has
+            # transactions with
             queryset = Property.active_objects.all_objects().filter(
                 transactions__buyer__pk=self.request.user.pk).distinct()
         return queryset
 
     def get(self, request):
-        """Endpoint to fetch all the property transactions of the logged-in user"""
+        """
+        Endpoint to fetch all the property transactions of the logged-in
+        user
+        """
         queryset = self.get_queryset()
         if queryset:
             serializer = self.serializer_class(
@@ -349,8 +360,8 @@ def foreign_card_validation_response(request):
 @permission_classes((IsAuthenticated, ))
 def tokenized_card_payment(request):
     """
-    Endpoint for handling payment using tokenized cards. The user makes payment
-    without providing card details
+    Endpoint for handling payment using tokenized cards. The user makes
+    payment without providing card details
     :param request: DRF request object
     :return: JSON response
     """
@@ -360,6 +371,9 @@ def tokenized_card_payment(request):
     if serializer.is_valid():
         amount = serializer.validated_data.get('amount')
         resp = TransactionServices.pay_with_saved_card(user, amount)
-        return Response({'message': resp['data']['status']})
+        return Response(
+            {'message': resp['data']['status']},
+            status=resp['data']['status_code']
+        )
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
