@@ -1,3 +1,6 @@
+import re
+
+
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -5,7 +8,10 @@ from django.contrib.auth import authenticate
 import cloudinary.uploader as uploader
 
 from authentication.models import (
-    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
+    User, Client, UserProfile,
+    ClientReview, ReplyReview,
+    PasswordResetToken, BlackList,
+)
 from authentication.signals import SocialAuthProfileUpdate
 from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
@@ -605,3 +611,12 @@ class ClientReviewSerializer(serializers.ModelSerializer):
                 validated_data.pop(key)
         instance.save()
         return super().update(instance, validated_data)
+
+
+class BlackListSerializer(serializers.ModelSerializer):
+    """
+    Handle serializing and deserializing blacklist tokens
+    """
+    class Meta:
+        model = BlackList
+        fields = ('__all__')

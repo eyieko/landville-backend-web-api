@@ -80,7 +80,8 @@ class JWTAuthenticationTest(TestCase):
         request.META['HTTP_AUTHORIZATION'] = 'Bearer, {}'.format(
             self.user_token)
         res = self.jwt_auth._authenticate_credentials(request, self.user_token)
-        self.assertEqual(res, (self.user, self.user_token))
+
+        self.assertEqual(self.user.email, res[0].email)
 
     def test_authentication_failure_incase_of_expired_token(self):
         """We unit test our authentication method to see if the method

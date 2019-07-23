@@ -5,12 +5,13 @@ import os
 from django.conf import settings
 from utils import BaseUtils
 from authentication.renderer import UserJSONRenderer
+from rest_framework import authentication
 from rest_framework.views import APIView
 from authentication.serializers import (
     GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
     ProfileSerializer, TwitterAuthAPISerializer, RegistrationSerializer,
     LoginSerializer, ClientSerializer, ChangePasswordSerializer,
-    ClientReviewSerializer, ReviewReplySerializer)
+    ClientReviewSerializer, ReviewReplySerializer, BlackListSerializer)
 from rest_framework.response import Response
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -34,6 +35,7 @@ from property.validators import validate_image
 from utils.media_handlers import CloudinaryResourceHandler
 from utils.tasks import send_email_notification
 from django.http import Http404
+from authentication.models import BlackList
 
 Uploader = CloudinaryResourceHandler()
 
@@ -615,3 +617,32 @@ class UserReviewsView(generics.GenericAPIView):
             reviewer__pk=kwargs.get('reviewer_id'))
         serializer = self.serializer_class(reviews, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class LogoutView(generics.CreateAPIView):
+    """
+    This class deals with logging out a user by
+    creating blacklist tokens
+    """
+    serializer_class = BlackListSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, **args):
+        """
+        This method creates a blacklist token
+        """
+
+        auth_header = authentication.get_authorization_header(request).split()
+        token = auth_header[1].decode('utf-8')
+        data = {'token': token}
+
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {
+                'data':
+                {"message":  "Successfully logged out"}
+            },
+            status=status.HTTP_200_OK
+        )

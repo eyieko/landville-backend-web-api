@@ -5,6 +5,7 @@ from datetime import (
     timedelta,
 )
 from unittest.mock import patch
+from django.urls import reverse
 
 import jwt
 from django.conf import settings
@@ -22,11 +23,13 @@ class UserEmailVerificationTest(BaseTest):
         mock_email.return_value = True
         self.client.post(
             self.registration_url, self.new_user, format="json")
+
         response = self.client.get(self.verify_url+"?token=" + jwt.encode(
             {"email": self.new_user["email"]}, settings.SECRET_KEY,
             algorithm="HS256").decode("utf-8")+"~6")
+
         self.assertEqual(
-            response.status_code, status.HTTP_200_OK)
+            response.status_code, status.HTTP_302_FOUND)
 
     @patch('utils.tasks.send_email_notification.delay')
     def test_user_cant_activate_with_expired_token(self, mock_email):
@@ -51,6 +54,6 @@ class UserEmailVerificationTest(BaseTest):
         invalid_token = jwt.encode({"email": self.user.email, "exp": datetime.utcnow() -
                                     timedelta(hours=23)}, settings.SECRET_KEY).decode("utf-8")+"1~"+str(self.user.id)
 
-        response = self.client.get(
-            self.verify_url+"?token="+invalid_token, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response = self.client.get(reverse('auth:verify') +
+                                   "?token="+invalid_token, format="json")
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)

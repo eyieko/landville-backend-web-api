@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'django_extensions',
     'cloudinary',
 
-
     # Landville apps
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
@@ -89,6 +88,10 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     )
 }
+
+
+# for all scheduled tasks
+SCHEDULER_AUTOSTART = True
 
 TEMPLATES = [
     {

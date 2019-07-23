@@ -1,8 +1,12 @@
 from django.urls import path
-from authentication.views import (RegistrationAPIView, EmailVerificationView,
-                                  ClientCreateView, GoogleAuthAPIView,
-                                  FacebookAuthAPIView, TwitterAuthAPIView,
-                                  LoginAPIView, PasswordResetView, ProfileView, AddReasonView, ClientReviewsView, ReviewDetailView, ReplyView, UserReviewsView,)
+from authentication.views import (
+    RegistrationAPIView, EmailVerificationView,
+    ClientCreateView, GoogleAuthAPIView,
+    FacebookAuthAPIView, TwitterAuthAPIView,
+    LoginAPIView, PasswordResetView, ProfileView,
+    AddReasonView, ClientReviewsView, ReviewDetailView,
+    ReplyView, UserReviewsView, LogoutView
+)
 
 app_name = 'authentication'
 
@@ -30,4 +34,5 @@ urlpatterns = [
     path('<int:pk>/reply/', ReplyView.as_view(), name='replies'),
     path('reviewer/<int:reviewer_id>/',
          UserReviewsView.as_view(), name='user-reviews'),
+    path('logout/', LogoutView.as_view(), name='logout'),
 ]
