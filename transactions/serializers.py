@@ -2,11 +2,9 @@
 
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
 from transactions.models import ClientAccount, Transaction
 from property.models import Property
 from property.serializers import PropertySerializer
-from authentication.serializers import RegistrationSerializer
 from authentication.models import User
 
 
@@ -57,11 +55,14 @@ class TransactionsSerializer(PropertySerializer):
 
     class Meta:
         model = Property
-        fields = ['title', 'buyer', 'price', 'total_amount_paid', 'balance', 'deposits',
-                  'percentage_completion']
+        fields = ['title', 'buyer', 'price', 'total_amount_paid', 'balance',
+                  'deposits', 'percentage_completion']
 
     def get_percentage_completion(self, obj):
-        """Return the total percentage a user has so far paid for a property"""
+        """
+        Return the total percentage a user has so far paid for a
+        property
+        """
         request = self.context.get('request')
         price = obj.price
         if request.user.role == 'BY':
@@ -103,7 +104,9 @@ class TransactionsSerializer(PropertySerializer):
         return total_amount
 
     def get_balance(self, obj):
-        """Return the balance the user is remaining with to complete payement"""
+        """
+        Return the balance the user is remaining with to complete payement
+        """
         request = self.context.get('request')
         price = obj.price
         if request.user.role == 'BY':
@@ -117,14 +120,17 @@ class TransactionsSerializer(PropertySerializer):
 
 
 class CardPaymentSerializer(serializers.Serializer):
+    """The base serializer class for all card payments"""
     cardno = serializers.CharField(max_length=20)
     cvv = serializers.CharField(max_length=5)
     expirymonth = serializers.CharField(max_length=2)
     expiryyear = serializers.CharField(max_length=2)
     amount = serializers.FloatField(min_value=0.00)
+    save_card = serializers.BooleanField(default=False)
 
 
 class ForeignCardPaymentSerializer(CardPaymentSerializer):
+    """The serializer class for international card payments"""
     billingzip = serializers.CharField(max_length=10)
     billingcity = serializers.CharField(max_length=20)
     billingaddress = serializers.CharField(max_length=50)
@@ -133,9 +139,16 @@ class ForeignCardPaymentSerializer(CardPaymentSerializer):
 
 
 class PaymentValidationSerializer(serializers.Serializer):
+    """The serializer class used for PIN card validation view method"""
     otp = serializers.IntegerField()
     flwRef = serializers.CharField(max_length=60)
 
 
 class PinCardPaymentSerializer(CardPaymentSerializer):
+    """The base serializer class for domestic card payments with PIN"""
     pin = serializers.IntegerField()
+
+
+class CardlessPaymentSerializer(serializers.Serializer):
+    """The serializer class used for cardless payment view method"""
+    amount = serializers.FloatField(min_value=0.00)

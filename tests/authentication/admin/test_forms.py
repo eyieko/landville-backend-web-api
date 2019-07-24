@@ -1,10 +1,9 @@
-from django.test import TestCase
 from authentication.admin import UserCreationForm, UserChangeForm
 from django import forms
 from tests.authentication.admin.test_base import BaseTest
 
 
-class FormTests(BaseTest):
+class TestsForms(BaseTest):
     """Test custom user creation and change forms for in admin panel."""
 
     def test_user_creation_valid_form_data(self):

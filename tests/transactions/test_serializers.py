@@ -13,7 +13,10 @@ def single_detail_url(account_number):
 
 class TestSerializers(BaseTest):
     def test_error_when_you_post_with_invalid_account_number(self):
-        """ you get an error when you upload with an a non interger acc number """
+        """
+        you get an error when you upload with an a non interger
+        acc number
+        """
 
         view = ClientAccountAPIView.as_view()
 
@@ -24,10 +27,14 @@ class TestSerializers(BaseTest):
         resp = view(request)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn(
-            'Your account number must be 10 digits and only intergers', str(resp.data))
+            'Your account number must be 10 digits and only intergers',
+            str(resp.data))
 
     def test_error_when_you_post_with_invalid_swift_code(self):
-        """ you get an error when you upload with an a non letter swift code """
+        """
+        you get an error when you upload with an a non
+        letter swift code
+        """
 
         view = ClientAccountAPIView.as_view()
 
