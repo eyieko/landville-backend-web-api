@@ -113,22 +113,41 @@ class TransactionServices:
         """
 
         data = {
-            'PBFPubKey': cls.rave_public_key,
-            'cardno': pay_data.get('cardno'),
-            'cvv': pay_data.get('cvv'),
-            'expirymonth': pay_data.get('expirymonth'),
-            'expiryyear': pay_data.get('expiryyear'),
-            'currency': 'NGN',
-            'country': pay_data.get('country', 'NG'),
-            'amount': pay_data.get('amount'),
-            'email': pay_data.get('email'),
-            'firstname': pay_data.get('firstname'),
-            'lastname': pay_data.get('lastname'),
-            'txRef': f'LANDVILLE-{datetime.datetime.now()}',
-            'redirect_url': TransactionServices.redirect_url,
+            'PBFPubKey':
+            cls.rave_public_key,
+            'cardno':
+            pay_data.get('cardno'),
+            'cvv':
+            pay_data.get('cvv'),
+            'expirymonth':
+            pay_data.get('expirymonth'),
+            'expiryyear':
+            pay_data.get('expiryyear'),
+            'currency':
+            'NGN',
+            'country':
+            pay_data.get('country', 'NG'),
+            'amount':
+            pay_data.get('amount'),
+            'email':
+            pay_data.get('email'),
+            'firstname':
+            pay_data.get('firstname'),
+            'lastname':
+            pay_data.get('lastname'),
+            'txRef':
+            f'LANDVILLE-{datetime.datetime.now()}',
+            'redirect_url':
+            TransactionServices.redirect_url,
             'meta': [{
                 'metaname': 'save_card',
                 'metavalue': pay_data.get('save_card')
+            }, {
+                'metaname': 'purpose',
+                'metavalue': pay_data.get('purpose')
+            }, {
+                'metaname': 'property_id',
+                'metavalue': pay_data.get('property_id')
             }]
         }
 

@@ -149,7 +149,6 @@ class TestClientAccountDetailsViews(BaseTest):
         force_authenticate(request, user=self.user1)
         view(request)
         account_number = 'djsdjshdsjdhskddkjwfsjkdfeghfjkas'
-
         request2 = self.factory.get(
             single_detail_url(account_number), format='json')
         force_authenticate(request2, user=self.user1)
@@ -300,6 +299,15 @@ class CardPaymentTest(BaseTest):
             'billingstate': 'NJ',
             'billingcountry': 'UK'
         }
+        self.save_card_meta = {'metaname': 'save_card', 'metavalue': 1}
+        self.not_save_card_meta = {'metaname': 'save_card', 'metavalue': 0}
+        self.purpose_meta = [{
+            'metaname': 'purpose',
+            'metavalue': 'Saving'
+        }, {
+            'metaname': 'property_id',
+            'metavalue': None
+        }]
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -400,7 +408,8 @@ class CardPaymentTest(BaseTest):
             'status': 'success',
             'data': {
                 'authurl': 'authurl',
-                'authModelUsed': 'NOAUTH_INTERNATIONAL'
+                'authModelUsed': 'NOAUTH_INTERNATIONAL',
+                'txRef': 'tetteeteteteet'
 
             }
         }
@@ -411,7 +420,8 @@ class CardPaymentTest(BaseTest):
             card_data['purpose'] = purpose
             resp = self.client.post(self.card_foreign_url, card_data)
             self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.data['message'], 'authurl')
+            self.assertEqual(resp.data.get('message'), 'authurl')
+            self.assertEqual(resp.data.get('txRef'), "tetteeteteteet")
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -425,7 +435,6 @@ class CardPaymentTest(BaseTest):
         }
 
         self.card_info.update(self.address_details)
-
         resp = self.client.post(self.card_foreign_url, self.card_info)
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.data.get('message'), None)
@@ -460,7 +469,6 @@ class CardPaymentTest(BaseTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(json_resp['cardno'], ['This field is required.'])
 
-    @skip('not implemented for now')
     def test_should_return_error_if_property_not_found(self):
         """
         Check if an error is returned if a property we are buying is not
@@ -499,11 +507,11 @@ class CardPaymentTest(BaseTest):
             'message': 'Charge Complete',
             'status_code': 200,
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}]}
+                'tx': {'txRef': 'sampletxref'}, 'meta': [self.save_card_meta]}
         }
         mock_verify.return_value = {
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+                'tx': {'txRef': 'sampletxref'}, 'meta': [self.save_card_meta],
                 'vbvmessage': 'somemessage', 'status': 'successful',
                 'custemail': 'email@email.com', 'card': {'expirymonth': '11',
                                                          'expiryyear': 22, 'last4digits': 1234,  # noqa
@@ -534,16 +542,28 @@ class CardPaymentTest(BaseTest):
             'message': 'Charge Complete',
             'status_code': 200,
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}]}
+                'tx': {'txRef': 'sampletxref'},
+                'meta': [self.not_save_card_meta]}
         }
         mock_verify.return_value = {
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}],
-                'vbvmessage': 'somemessage', 'status': 'successful',
-                'custemail': 'email@email.com', 'card': {
-                    'expirymonth': '11', 'expiryyear': 22,
-                    'last4digits': 1234, 'card_tokens':
-                        [{'embedtoken': 'sometoken'}], 'brand': 'somebrand'}}
+                'tx': {
+                    'txRef': 'sampletxref'
+                },
+                'meta': [self.not_save_card_meta],
+                'vbvmessage': 'somemessage',
+                'status': 'successful',
+                'custemail': 'email@email.com',
+                'card': {
+                    'expirymonth': '11',
+                    'expiryyear': 22,
+                    'last4digits': 1234,
+                    'card_tokens': [{
+                        'embedtoken': 'sometoken'
+                    }],
+                    'brand': 'somebrand'
+                }
+            }
         }
         data = {
             'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
@@ -602,9 +622,7 @@ class CardPaymentTest(BaseTest):
                 'tx': {
                     'txRef': 'sampletxref',
                 },
-                'meta': [{
-                    'metavalue': 0
-                }]
+                'meta': [self.not_save_card_meta]
             }
         }
 
@@ -642,13 +660,25 @@ class CardPaymentTest(BaseTest):
         international payment if card tokenization is requested.
         """
         mock_verify.return_value = {
+            'status': 'success',
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
-                'vbvmessage': 'somemessage', 'status': 'successful',
-                'custemail': 'email@email.com', 'card': {
-                    'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
-                    'card_tokens': [{'embedtoken': 'sometoken'}],
-                    'brand': 'somebrand'}}
+                'tx': {
+                    'txRef': 'sampletxref'
+                },
+                'meta': [self.save_card_meta] + self.purpose_meta,
+                'vbvmessage': 'somemessage',
+                'status': 'successful',
+                'custemail': 'email@email.com',
+                'card': {
+                    'expirymonth': '11',
+                    'expiryyear': 22,
+                    'last4digits': 1234,
+                    'card_tokens': [{
+                        'embedtoken': 'sometoken'
+                    }],
+                    'brand': 'somebrand'
+                }
+            }
         }
 
         resp = self.client.get(self.foreign_validate_url)
@@ -668,9 +698,7 @@ class CardPaymentTest(BaseTest):
                 'tx': {
                     'txRef': 'sampletxref'
                 },
-                'meta': [{
-                    'metavalue': 1
-                }],
+                'meta': [self.save_card_meta] + self.purpose_meta,
                 'status': 'error',
                 'vbvmessage': 'fake fake'
             },
@@ -679,7 +707,7 @@ class CardPaymentTest(BaseTest):
 
         resp = self.client.get(self.foreign_validate_url)
         self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json().get('message'), 'fake fake')
+        self.assertEqual(resp.json().get('message'), 'invalid transaction id')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
@@ -695,11 +723,14 @@ class CardPaymentTest(BaseTest):
             'message': 'Charge Complete',
             'status_code': 200,
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}]}
+                'tx': {'txRef': 'sampletxref'},
+                'meta': [self.not_save_card_meta]}
         }
         mock_verify.return_value = {
+            'status': 'success',
             'data': {
-                'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 0}],
+                'tx': {'txRef': 'sampletxref'},
+                'meta': [self.not_save_card_meta] + self.purpose_meta,
                 'vbvmessage': 'somemessage', 'status': 'successful',
                 'custemail': 'email@email.com', 'card': {
                     'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
@@ -720,6 +751,7 @@ class CardPaymentTest(BaseTest):
         that is succesful
         """
         mock_saved_card.return_value = {
+            'status': 'success',
             'data': {
                 'status': 'successful'
             }
@@ -839,21 +871,21 @@ class TestReturnAllMyDeposit(BaseTest):
         This test ensure that I can get all my deposit
         """
         amount_to_save = 100
-        savings = SavingsFactory.create(owner=self.user1)
+        savings = SavingsFactory.create(owner=self.user4)
         deposit, saving_updated = save_deposit('Saving',
                                                references,
                                                amount_to_save,
-                                               self.user1,
+                                               self.user4,
                                                'test test')
         request = self.factory.get(reverse("transactions:my_deposit"),
                                    format='json')
-        force_authenticate(request, user=self.user1)
+        force_authenticate(request, user=self.user4)
         view = RetrieveDepositsApiView.as_view()
         response = view(request, format='json')
         expected = Deposit.objects.select_related(
             'transaction', 'account').filter(
-                Q(transaction__buyer__id=self.user1.id) |
-                Q(account__owner__id=self.user1.id))
+                Q(transaction__buyer__id=self.user4.id) |
+                Q(account__owner__id=self.user4.id))
         serialized = DepositSerializer(expected, many=True)
         results = response.data.get('results')
         self.assertEqual(results, serialized.data)
@@ -863,7 +895,7 @@ class TestReturnAllMyDeposit(BaseTest):
             float(saving_updated.balance))
         self.assertEqual(float(results[0].get('amount')),
                          float(deposit.amount))
-        self.assertEqual(savings.owner.id, self.user1.id)
+        self.assertEqual(savings.owner.id, self.user4.id)
         self.assertIsInstance(results[0].get('references'), dict)
         self.assertEqual(results[0].get('references'),
                          json.loads(deposit.references))
@@ -891,3 +923,12 @@ class TestReturnAllMyDeposit(BaseTest):
         view = RetrieveDepositsApiView.as_view()
         response = view(request, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    @skip('not implemented now')
+    def test_client_admin_should_receive_all_deposit_for_his_company(self):
+        request = self.factory.get(reverse("transactions:my_deposit"),
+                                   format='json')
+        view = RetrieveDepositsApiView.as_view()
+        response = view(request, format='json')
+        force_authenticate(request, user=self.user1)
+        self.assertTrue(response)

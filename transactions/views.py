@@ -206,7 +206,6 @@ def card_foreign_payment(request):
     data = request.data
     user = request.user
     serializer = ForeignCardPaymentSerializer(data=data)
-    # property = None
     if serializer.is_valid():
         pay_data = {
             'cardno': serializer.validated_data.get('cardno'),
@@ -220,10 +219,10 @@ def card_foreign_payment(request):
             'firstname': user.first_name,
             'lastname': user.last_name,
         }
-        # purpose = str(serializer.validated_data.get('purpose'))
-        # property_id = serializer.validated_data.get('property_id')
-        # if purpose == 'Buying':
-        #     property = get_object_or_404(Property, pk=property_id)
+        purpose = str(serializer.validated_data.get('purpose'))
+        property_id = serializer.validated_data.get('property_id')
+        if purpose == 'Buying':
+            get_object_or_404(Property, pk=property_id)
         init_resp = TransactionServices.initiate_card_payment(pay_data)
         if init_resp.get('status') == 'error':
             return Response(
@@ -239,12 +238,16 @@ def card_foreign_payment(request):
             'billingcountry': serializer.validated_data.get('billingcountry'),
         }
         pay_data['auth_dict'] = auth_dict
+        pay_data['purpose'] = purpose
+        pay_data['property_id'] = property_id
         auth_resp = TransactionServices.authenticate_card_payment(pay_data)
         if auth_resp.get('status') == 'success':
             return Response(
-                {'message': auth_resp['data']['authurl']},
-                status=status.HTTP_200_OK
-            )
+                {
+                    'message': auth_resp['data']['authurl'],
+                    'txRef': auth_resp.get('data').get('txRef')
+                },
+                status=status.HTTP_200_OK)
         else:
             return Response(
                 {'message': auth_resp.get('message')},
@@ -364,8 +367,9 @@ def validate_payment(request):
                             status=status.HTTP_400_BAD_REQUEST)
     return Response({'message': resp['message']}, status=resp['status_code'])
 
-# should be a post method with purpose and property_id
+
 @api_view(['GET'])
+@permission_classes((IsAuthenticated, ))
 def foreign_card_validation_response(request):
     """
     Endpoint for handling foreign card validation response. It uses the
@@ -375,18 +379,25 @@ def foreign_card_validation_response(request):
     """
     resp = json.loads(request.query_params['response'])
     verify_resp = TransactionServices.verify_payment(resp['txRef'])
-
-    save_card = verify_resp['data']['meta'][0]['metavalue']
-    message = verify_resp['data']['vbvmessage']
-    if verify_resp.get('data').get('status') == 'successful':
-        if int(save_card) == 1:
+    user = request.user
+    if verify_resp.get('status') == 'success':
+        message = verify_resp['data']['vbvmessage']
+        meta_data = verify_resp.get('data').get('meta')
+        save_card = meta_data[0]['metavalue']
+        purpose = meta_data[1]['metavalue']
+        property_id = None
+        property = None
+        if purpose == 'Buying':
+            property_id = meta_data[2]['metavalue']
+            property = get_object_or_404(Property, pk=property_id)
+        if int(save_card):
             message += TransactionServices.save_card(verify_resp)
-        # data = verify_resp.get('data').get('tx')
-        # references = {k: v for k, v in data.items() if k.endswith('Ref')}
-        # amount = data.get('amount', 0)
-        # save_deposit(purpose, references, amount, user, property)
+        data = verify_resp.get('data')
+        references = {k: v for k, v in data.items() if k.endswith('ref')}
+        amount = data.get('amount', 0)
+        save_deposit(purpose, references, amount, user, property)
     else:
-        return Response({'message': message},
+        return Response({'message': verify_resp.get('message')},
                         status=status.HTTP_400_BAD_REQUEST)
 
     return Response({'message': message})
