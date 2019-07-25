@@ -87,7 +87,7 @@ class TransactionsSerializer(PropertySerializer):
         for transaction in transactions:
             data = {
                 "date": transaction.created_at,
-                "amount": transaction.amount_payed
+                "amount": transaction.amount_paid
             }
             deposits.append(data)
         return deposits
@@ -197,7 +197,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     """
     Transaction serializer inherit from modelSerializer
     """
-    balance = serializers.DecimalField(source='amount_payed',
+    balance = serializers.DecimalField(source='amount_paid',
                                        decimal_places=2,
                                        max_digits=10)
 

@@ -68,5 +68,5 @@ class BaseTest(APITestCase):
         property = PropertyFactory.create(client=client1)
         transaction = TransactionFactory.create(target_property=property,
                                                 buyer=user1,
-                                                amount_payed=90)
+                                                amount_paid=90)
         return transaction

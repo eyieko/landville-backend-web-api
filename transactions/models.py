@@ -21,8 +21,8 @@ class Transaction(BaseAbstractModel):
         User, on_delete=models.CASCADE, related_name='buyer')
     status = models.CharField(
         max_length=1, choices=STATUS_CHOICES, default='P')
-    amount_payed = models.DecimalField(decimal_places=2,
-                                       max_digits=14, default=0)
+    amount_paid = models.DecimalField(decimal_places=2,
+                                      max_digits=14, default=0)
     objects = models.Manager()
     active_objects = TransactionQuery.as_manager()
 

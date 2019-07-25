@@ -95,10 +95,10 @@ class TransactionQuery(CustomQuerySet):
         """return the total amount so far paid by a user for a property"""
         return self._active().filter(Q(buyer__pk=user.pk) & Q(
             target_property__pk=property_object.pk))\
-            .aggregate(Sum('amount_payed'))['amount_payed__sum']
+            .aggregate(Sum('amount_paid'))['amount_paid__sum']
 
     def client_total_amount(self, property_object):
         """return the total amount so far paid for a property"""
         return self._active().filter(Q(
             target_property__pk=property_object.pk))\
-            .aggregate(Sum('amount_payed'))['amount_payed__sum']
+            .aggregate(Sum('amount_paid'))['amount_paid__sum']

@@ -40,9 +40,9 @@ def save_deposit(purpose,
         transaction, created = Transaction.objects.\
             get_or_create(target_property=property,
                           buyer=user,
-                          defaults={'amount_payed': amount})
+                          defaults={'amount_paid': amount})
         if not created:
-            transaction.amount_payed += amount
+            transaction.amount_paid += amount
         deposit = Deposit(transaction=transaction,
                           references=json.dumps(references),
                           amount=amount,

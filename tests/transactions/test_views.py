@@ -263,7 +263,7 @@ class CardPaymentTest(BaseTest):
         self.transaction = TransactionFactory.\
             create(target_property=self.property,
                    buyer=self.auth_user,
-                   amount_payed=90)
+                   amount_paid=90)
         self.card_foreign_url = reverse('transactions:card_foreign')
         self.cardless_url = reverse('transactions:tokenized_card')
         self.card_validate_url = reverse('transactions:validate_card')
