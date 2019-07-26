@@ -31,11 +31,11 @@ class SocialValidation:
         try:
             id_info = id_token.verify_oauth2_token(id_token=access_token,
                                                    request=requests.Request(),
-                                                   audience=os.environ.get(
-                                                       'SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+
                                                    )
+
         except ValueError:
-            id_info = None
+            id_info=None
         return id_info
 
     @staticmethod
@@ -55,10 +55,11 @@ class SocialValidation:
         :return: Mapping[str, Any]: The decoded token
         """
         try:
-            graph = GraphAPI(access_token=access_token, version="3.1")
-            id_info = graph.request('/me?fields=id,name,email')
+            graph=GraphAPI(access_token=access_token, version="3.1")
+            id_info=graph.request(
+                '/me?fields=id,first_name,last_name,email,picture.type(large),address')
         except GraphAPIError:
-            id_info = None
+            id_info=None
 
         return id_info
 
@@ -78,16 +79,16 @@ class SocialValidation:
         :param access_token_secret:
         :return:
         """
-        url = 'https://api.twitter.com/1.1/account/verify_credentials.json'
+        url='https://api.twitter.com/1.1/account/verify_credentials.json'
         try:
-            twitter = OAuth1Session(client_key=os.environ.get('SOCIAL_AUTH_TWITTER_KEY'),
+            twitter=OAuth1Session(client_key=os.environ.get('SOCIAL_AUTH_TWITTER_KEY'),
                                     client_secret=os.environ.get(
                 'SOCIAL_AUTH_TWITTER_SECRET'),
                 resource_owner_key=access_token,
                 resource_owner_secret=access_token_secret
             )
-            response = twitter.get(f'{url}?include_email=true')
-            id_info = json.loads(response.text)
+            response=twitter.get(f'{url}?include_email=true')
+            id_info=json.loads(response.text)
         except:
-            id_info = None
+            id_info=None
         return id_info
