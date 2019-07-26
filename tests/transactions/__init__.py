@@ -62,8 +62,8 @@ class BaseTest(APITestCase):
         self.factory = APIRequestFactory()
         self.view2 = RetrieveUpdateDeleteAccountDetailsAPIView.as_view()
 
-    def create_transaction(self):
-        user1 = UserFactory.create(role='BY')
+    def create_transaction(self, user_role='BY'):
+        user1 = UserFactory.create(role=user_role)
         client1 = ClientFactory.create(client_admin=user1)
         property = PropertyFactory.create(client=client1)
         transaction = TransactionFactory.create(target_property=property,

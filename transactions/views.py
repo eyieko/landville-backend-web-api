@@ -436,16 +436,25 @@ class RetrieveDepositsApiView(ListAPIView):
         """
         This view should return a list of all the  deposits
         for the currently authenticated user.
+        if the user is a buyer he gets his own deposit
+        if the user is a client admin he get all deposit made for properties
+        belonging to his company
+        if he is a Landville admin he gets all deposits
         """
 
         user = self.request.user
         if user.is_authenticated:
-            if user.role != "LA":
+            if user.role == "BY":
                 query = Deposit.objects.select_related(
                     'transaction', 'account').filter(
                         Q(transaction__buyer__id=user.id) |
                         Q(account__owner__id=user.id))
-            else:
+            elif user.role == 'LA':
                 query = Deposit.objects.select_related(
                     'transaction', 'account').all()
+            elif user.role == 'CA':
+                query = Deposit.objects.select_related(
+                    'transaction',
+                    'transaction__target_property').filter(
+                    transaction__target_property__client_id=user.employer.id)
         return query

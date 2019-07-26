@@ -203,7 +203,7 @@ class Client(BaseAbstractModel):
         max_length=10, choices=APPROVAL_STATUS, default='pending')
 
     client_name = models.CharField(max_length=100, unique=True)
-    client_admin = models.ForeignKey(
+    client_admin = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='employer'
     )
     phone = models.CharField(max_length=17, unique=True)

@@ -20,7 +20,6 @@ from ..factories.transaction_factory import SavingsFactory
 from transactions.transaction_utils import save_deposit
 from .test_utils import references
 from django.db.models import Q
-from unittest import skip
 
 
 ACCOUNT_DETAIL_URL = reverse("transactions:all-accounts")
@@ -924,11 +923,24 @@ class TestReturnAllMyDeposit(BaseTest):
         response = view(request, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    @skip('not implemented now')
     def test_client_admin_should_receive_all_deposit_for_his_company(self):
+        transaction = self.create_transaction(user_role=self.user1.role)
+        deposit, saving_updated = save_deposit('Buying',
+                                               references,
+                                               1000,
+                                               self.user4,
+                                               transaction.target_property,
+                                               'test test')
         request = self.factory.get(reverse("transactions:my_deposit"),
                                    format='json')
+        force_authenticate(request, user=self.user1)
         view = RetrieveDepositsApiView.as_view()
         response = view(request, format='json')
-        force_authenticate(request, user=self.user1)
-        self.assertTrue(response)
+        expected = Deposit.objects.select_related(
+            'transaction', 'transaction__target_property').filter(
+                transaction__target_property__client_id=self.user1.employer.id)
+        serialized = DepositSerializer(expected, many=True)
+        print(serialized.data, 'vbs', expected)
+        results = response.data.get('results')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(results, serialized.data)
