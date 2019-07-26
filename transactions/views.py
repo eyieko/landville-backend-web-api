@@ -443,20 +443,19 @@ class RetrieveDepositsApiView(ListAPIView):
         """
 
         user = self.request.user
-        if user.is_authenticated:
-            if user.role == 'CA':
-                query = Deposit.objects.select_related(
-                    'transaction',
-                    'transaction__target_property')
-                query = query.filter(
-                    transaction__target_property__client_id=user.employer.
-                    first().id)
-            elif user.role == 'LA':
-                query = Deposit.objects.select_related('transaction',
-                                                       'account').all()
-            else:
-                query = Deposit.objects.select_related(
-                    'transaction', 'account').filter(
-                        Q(transaction__buyer__id=user.id)
-                        | Q(account__owner__id=user.id))
+        if user.role == 'CA':
+            query = Deposit.objects.select_related(
+                'transaction',
+                'transaction__target_property')
+            query = query.filter(
+                transaction__target_property__client_id=user.employer.
+                first().id)
+        elif user.role == 'LA':
+            query = Deposit.objects.select_related('transaction',
+                                                   'account').all()
+        else:
+            query = Deposit.objects.select_related(
+                'transaction', 'account').filter(
+                Q(transaction__buyer__id=user.id)
+                | Q(account__owner__id=user.id))
         return query
