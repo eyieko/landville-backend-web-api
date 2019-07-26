@@ -455,6 +455,8 @@ class RetrieveDepositsApiView(ListAPIView):
             elif user.role == 'CA':
                 query = Deposit.objects.select_related(
                     'transaction',
-                    'transaction__target_property').filter(
-                    transaction__target_property__client_id=user.employer.id)
+                    'transaction__target_property')
+                query = query.filter(
+                    transaction__target_property__client_id=user.employer.
+                    first().id)
         return query

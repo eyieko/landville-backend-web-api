@@ -124,7 +124,6 @@ class TestClientAccountDetailsViews(BaseTest):
     def test_get_one_account(self):
         """ test when viewing one specific account """
         view = ClientAccountAPIView.as_view()
-
         request = self.factory.post(
             ACCOUNT_DETAIL_URL, self.account_details, format='json')
         force_authenticate(request, user=self.user1)
@@ -136,7 +135,6 @@ class TestClientAccountDetailsViews(BaseTest):
         force_authenticate(request2, user=self.user4)
 
         res = self.view2(request2, account_number=account_number)
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_get_not_existing_account_details(self):
@@ -937,10 +935,12 @@ class TestReturnAllMyDeposit(BaseTest):
         view = RetrieveDepositsApiView.as_view()
         response = view(request, format='json')
         expected = Deposit.objects.select_related(
-            'transaction', 'transaction__target_property').filter(
-                transaction__target_property__client_id=self.user1.employer.id)
+            'transaction',
+            'transaction__target_property')
+        expected = expected.filter(
+            transaction__target_property__client_id=self.user1.employer.
+            first().id)
         serialized = DepositSerializer(expected, many=True)
-        print(serialized.data, 'vbs', expected)
         results = response.data.get('results')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(results, serialized.data)
