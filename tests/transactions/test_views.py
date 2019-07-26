@@ -656,32 +656,38 @@ class CardPaymentTest(BaseTest):
         An integrated test for the view method for validating card
         international payment if card tokenization is requested.
         """
-        mock_verify.return_value = {
-            'status': 'success',
-            'data': {
-                'tx': {
-                    'txRef': 'sampletxref'
-                },
-                'meta': [self.save_card_meta] + self.purpose_meta,
-                'vbvmessage': 'somemessage',
-                'status': 'successful',
-                'custemail': 'email@email.com',
-                'card': {
-                    'expirymonth': '11',
-                    'expiryyear': 22,
-                    'last4digits': 1234,
-                    'card_tokens': [{
-                        'embedtoken': 'sometoken'
-                    }],
-                    'brand': 'somebrand'
+        for purpose in ['Saving', 'Buying']:
+            self.purpose_meta[0]['metavalue'] = purpose
+            if purpose == 'Buying':
+                transaction = self.create_transaction()
+                self.purpose_meta[1]['metavalue'] = transaction\
+                    .target_property.id
+            mock_verify.return_value = {
+                'status': 'success',
+                'data': {
+                    'tx': {
+                        'txRef': 'sampletxref'
+                    },
+                    'meta': [self.save_card_meta] + self.purpose_meta,
+                    'vbvmessage': 'somemessage',
+                    'status': 'successful',
+                    'custemail': 'email@email.com',
+                    'card': {
+                        'expirymonth': '11',
+                        'expiryyear': 22,
+                        'last4digits': 1234,
+                        'card_tokens': [{
+                            'embedtoken': 'sometoken'
+                        }],
+                        'brand': 'somebrand'
+                    }
                 }
             }
-        }
 
-        resp = self.client.get(self.foreign_validate_url)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()['message'],
-                         'somemessage. Card details have been saved.')
+            resp = self.client.get(self.foreign_validate_url)
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()['message'],
+                             'somemessage. Card details have been saved.')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
