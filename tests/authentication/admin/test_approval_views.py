@@ -37,16 +37,20 @@ class TestApprovalStatusChange(TestCase):
         }, format="text/html")
         self.assertEqual(res.status_code, status.HTTP_302_FOUND)
 
-    def test_submit_notes_with_revoked_message_redirect(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_submit_notes_with_revoked_message_redirect(self, mock_email):
         """Test user is redirected after when they revoke an approval."""
+        mock_email.return_value = True
         res = self.client.post(self.approvals_url, {
             "notes": 'notes is here', "client": 'test@gmail.com',
             "status": 'revoked',
         }, format="text/html")
         self.assertEqual(res.status_code, status.HTTP_302_FOUND)
 
-    def test_submit_notes_with_reject_message_redirect(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_submit_notes_with_reject_message_redirect(self, mock_email):
         """Test user is redirected after when they reject an approval."""
+        mock_email.return_value = True
         res = self.client.post(self.approvals_url, {
             "notes": 'notes is here', "client": 'test@gmail.com',
             "status": 'rejected',

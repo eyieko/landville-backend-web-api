@@ -1,12 +1,17 @@
-from tests.authentication.client.test_base import BaseTest
+from unittest.mock import patch
+
 from authentication.models import User
+from tests.authentication.client.test_base import BaseTest
+
 
 class TestUtils(BaseTest):
-    
-    def set_token(self):
+
+    @patch('utils.tasks.send_email_notification.delay')
+    def set_token(self, mock_email):
         """
         Set a jwt token in Authorization headers during testing
         """
+        mock_email.return_value = True
         user_data = self.client.post(
             self.registration_url, self.new_user, format="json")
         user = User.objects.filter(email=user_data.data['data']['user']['email']).first()

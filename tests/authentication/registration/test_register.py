@@ -1,13 +1,18 @@
 """User registration tests."""
-from .test_base import BaseTest
+from unittest.mock import patch
+
 from rest_framework import status
+
+from tests.authentication.registration.test_base import BaseTest
 
 
 class UserRegistrationTest(BaseTest):
     """Contains user registration test methods."""
 
-    def test_user_should_register(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_user_should_register(self, mock_email):
         """Create an account."""
+        mock_email.return_value = True
         response = self.client.post(
             self.registration_url, self.new_user, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -20,8 +25,10 @@ class UserRegistrationTest(BaseTest):
         self.assertEqual(str(response.data["errors"]["email"][0]),
                          "Enter a valid email address.")
 
-    def test_user_should_not_register_with_a_taken_email(self):
+    @patch('utils.tasks.send_email_notification.delay')
+    def test_user_should_not_register_with_a_taken_email(self, mock_email):
         """Create an account with a taken email"""
+        mock_email.return_value = True
         self.client.post(
             self.registration_url, self.new_user, format="json")
         response = self.client.post(
