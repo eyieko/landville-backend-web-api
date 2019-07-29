@@ -76,6 +76,9 @@ class TestSerializers(BaseTest):
                           'This field is required.')
 
     def test_payment_serializer_raise_an_error_if_invalid_purpose(self):
+        """
+        tes if the serializer raise an error with data with invalid purpose
+        """
         invalid_data = self.data.copy()
         invalid_data['purpose'] = 'Espoir'
         serializer = CardPaymentSerializer(data=invalid_data)
@@ -85,18 +88,28 @@ class TestSerializers(BaseTest):
                       str(serializer.errors.get('purpose')[0]))
 
     def test_payment_serializer_works_when_purpose_valid(self):
+        """
+        test if the serializer works with valid data
+        """
         invalid_data = self.data.copy()
         invalid_data['purpose'] = 'Saving'
         serializer = CardPaymentSerializer(data=invalid_data)
         self.assertTrue(serializer.is_valid())
 
     def test_serializer_raise_an_error_if_no_property_id(self):
+        """
+        test if serializer raise an error id purpose is buying and the property
+        id is not found
+        """
         valid_data = self.data.copy()
         valid_data['purpose'] = 'Buying'
         serializer = CardPaymentSerializer(data=valid_data)
         self.assertFalse(serializer.is_valid())
 
     def test_payment_serializer_raise_an_error_if_invalid_property_id(self):
+        """
+        test if the serializer raise an error if data has invalid property id
+        """
         invalid_data = self.data.copy()
         invalid_data['purpose'] = 'Buying'
         invalid_data['property_id'] = 'Espoir'
@@ -107,6 +120,9 @@ class TestSerializers(BaseTest):
                           'A valid integer is required.')
 
     def test_payment_serializer_works_when_property_valid(self):
+        """
+        test if serializer work with valid property id
+        """
         valid_data = self.data.copy()
         valid_data['property_id'] = 1
         valid_data['purpose'] = 'Buying'
@@ -114,11 +130,17 @@ class TestSerializers(BaseTest):
         self.assertTrue(serializer.is_valid())
 
     def test_all_deposit_serializer_works(self):
+        """
+        test if get all deposit serializer works
+        """
         transaction = self.create_transaction()
         serialized_transaction_data = TransactionSerializer(transaction)
         self.assertIsNotNone(serialized_transaction_data)
 
     def test_pin_validation_serializer_failed(self):
+        """
+        test if pin validation serializer failed with no purpose
+        """
         serializer = PaymentValidationSerializer(data=self.otp_data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('purpose', serializer.errors.keys())
@@ -126,6 +148,9 @@ class TestSerializers(BaseTest):
                           'This field is required.')
 
     def test_pin_validation_serializer(self):
+        """
+        test if pin validation serializer works
+        """
         otp_data = self.otp_data.copy()
         otp_data['property_id'] = 1
         otp_data['purpose'] = 'Buying'
