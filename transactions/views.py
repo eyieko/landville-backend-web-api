@@ -28,8 +28,7 @@ from transactions.serializers import (
 )
 from transactions.transaction_services import TransactionServices
 from property.models import Property
-from transactions.transaction_utils import (save_deposit,)
-# from django.shortcuts import get_object_or_404
+from transactions.transaction_utils import save_deposit
 
 
 class ClientAccountAPIView(ListCreateAPIView):

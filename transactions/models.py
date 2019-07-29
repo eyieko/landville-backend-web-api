@@ -41,7 +41,7 @@ class Deposit(BaseAbstractModel):
                                 null=True)
     transaction = models.ForeignKey('Transaction',
                                     on_delete=models.CASCADE,
-                                    related_name='transaction',
+                                    related_name='deposits',
                                     default=None,
                                     blank=True,
                                     null=True)
