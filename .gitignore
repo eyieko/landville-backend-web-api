@@ -9,6 +9,7 @@ db.sqlite3
 # python_ dotenv
 .env
 venv/
+env/
 .venv/
 
 # Unit test / coverage reports
