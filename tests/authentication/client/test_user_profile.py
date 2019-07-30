@@ -1,9 +1,6 @@
 """User profile tests."""
-from tests.authentication.client.test_base import BaseTest
 from rest_framework import status
 from tests.utils.utils import TestUtils
-from tempfile import NamedTemporaryFile
-from unittest.mock import patch
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch, Mock
 from django.test.client import encode_multipart
@@ -26,7 +23,7 @@ class TestClientAdmin(TestUtils):
 
     def test_get_profile_when_not_logged_in(self):
         """
-        System should return an error when user tries to access 
+        System should return an error when user tries to access
         profile when not logged in
         """
         response = self.client.get(
@@ -54,7 +51,7 @@ class TestClientAdmin(TestUtils):
         self.set_token()
         image = NamedTemporaryFile(suffix='.jpg')
         mock_upload.return_value = {
-            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}
+            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}  # noqa
         data = self.updated_profile_with_image
         data['image'] = image
         content = encode_multipart('BoUnDaRyStRiNg', data)
@@ -76,7 +73,7 @@ class TestClientAdmin(TestUtils):
                           self.profile_with_image, format='json')
         image = NamedTemporaryFile(suffix='.jpg')
         mock_upload.return_value = {
-            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}
+            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}  # noqa
         data = self.updated_profile_with_image
         data['image'] = image
         content = encode_multipart('BoUnDaRyStRiNg', data)
@@ -91,7 +88,7 @@ class TestClientAdmin(TestUtils):
     @patch('authentication.views.uploader.upload')
     def test_return_no_url_when_image_is_uploaded(self, mock_upload):
         """
-        Test when upload function returns None instead of url 
+        Test when upload function returns None instead of url
         when picture is uploaded
         """
         self.set_token()
@@ -148,22 +145,27 @@ class TestClientAdmin(TestUtils):
 
     def test_update_user_profile_with_empty_city_field(self):
         """
-        Updating users own profile with empty City address should raise an error
+        Updating users own profile with empty City address
+        should raise an error
         """
         self.set_token()
         response = self.client.patch(
-            self.client_profile, self.updated_profile_with_empty_city_field, format="json")
+            self.client_profile, self.updated_profile_with_empty_city_field,
+            format="json")
         self.assertIn("City cannot be empty!",
                       str(response.data['errors']['address']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_without_security_answer_field(self):
         """
-        Updating users own profile without security answer field should raise an error
+        Updating users own profile without security answer field
+        should raise an error
         """
         self.set_token()
         response = self.client.patch(
-            self.client_profile, self.updated_profile_without_security_answer_field, format="json")
+            self.client_profile,
+            self.updated_profile_without_security_answer_field,
+            format="json")
         self.assertIn("Please provide an answer to the selected question",
                       str(response.data['errors']['security_answer']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -174,7 +176,8 @@ class TestClientAdmin(TestUtils):
         """
         self.set_token()
         response = self.client.patch(
-            self.client_profile, self.updated_profile_without_phone_field, format="json")
+            self.client_profile, self.updated_profile_without_phone_field,
+            format="json")
         self.assertEqual(response.data['data']['profile']['phone'], None)
         self.assertEqual(response.data['data']['message'],
                          "Profile updated successfully")
@@ -186,7 +189,8 @@ class TestClientAdmin(TestUtils):
         """
         self.set_token()
         response = self.client.patch(
-            self.client_profile, self.updated_profile_with_invalid_phonenumber, format="json")
+            self.client_profile, self.updated_profile_with_invalid_phonenumber,
+            format="json")
         self.assertIn("Phone number must be of the format +234 123 4567890",
                       str(response.data['errors']['phone']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -197,7 +201,8 @@ class TestClientAdmin(TestUtils):
         """
         self.set_token()
         response = self.client.patch(
-            self.client_profile, self.updated_profile_without_address_field, format="json")
+            self.client_profile, self.updated_profile_without_address_field,
+            format="json")
         self.assertEqual(response.data['data']['profile']['address'], {})
         self.assertEqual(response.data['data']['message'],
                          "Profile updated successfully")
@@ -213,3 +218,49 @@ class TestClientAdmin(TestUtils):
             self.client_profile, self.updated_profile, format="json")
         self.assertNotIn('security_question', response.data['data']['profile'])
         self.assertNotIn('security_answer', response.data['data']['profile'])
+
+    def test_that_users_can_delete_next_of_kin_contact(self):
+        """
+        Users should be able to delete their next of kin contact information
+        """
+
+        self.set_token()
+        # if the user passes an empty string, delete the contact information
+        payload = self.updated_profile.copy()
+        payload['next_of_kin_contact'] = ''
+        response = self.client.patch(
+            self.client_profile, payload, format="json")
+        self.assertEqual(response.data['data']
+                         ['profile']['next_of_kin_contact'], '')
+        self.assertEqual(response.data['data']['message'],
+                         "Profile updated successfully")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_that_users_can_update_next_of_kin_contact(self):
+        """
+        Users should be able to update their next of kin contact information
+        """
+
+        self.set_token()
+        payload = self.updated_profile.copy()
+        payload['next_of_kin_contact'] = 2347725678900
+        response = self.client.patch(
+            self.client_profile, payload, format="json")
+        self.assertEqual(response.data['data']
+                         ['profile']['next_of_kin_contact'], '2347725678900')
+        self.assertEqual(response.data['data']['message'],
+                         "Profile updated successfully")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_users_must_pass_valid_phone_number_for_next_of_kin_contact(self):
+        """
+        Users should be able to update their next of kin contact information
+        """
+
+        self.set_token()
+        payload = self.updated_profile.copy()
+        payload['next_of_kin_contact'] = 'clearly fake'
+        response = self.client.patch(
+            self.client_profile, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('next_of_kin_contact', response.data['errors'])

@@ -1,20 +1,12 @@
-from authentication.models import (
-    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
-
-import re
-
-from authentication.models import User, Client, UserProfile
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
+import cloudinary.uploader as uploader
 
-from rest_framework import serializers
-from rest_framework.exceptions import NotAuthenticated
-
-
+from authentication.models import (
+    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
 from authentication.signals import SocialAuthProfileUpdate
-
 from authentication.socialvalidators import SocialValidation
 from utils.password_generator import randomStringwithDigitsAndSymbols
 from utils import BaseUtils
@@ -22,7 +14,6 @@ from utils.resethandler import ResetHandler
 from authentication.validators import validate_phone_number
 from property.validators import validate_address
 from utils.media_handlers import CloudinaryResourceHandler
-import cloudinary.uploader as uploader
 
 Uploader = CloudinaryResourceHandler()
 
@@ -126,7 +117,8 @@ class GoogleAuthSerializer(serializers.Serializer):
         if id_info.get('picture'):
             id_info['user_profile_picture'] = id_info['picture']
 
-        # pass user information to signal to be added to profile after user is created
+        # pass user information to signal to be added to profile
+        # after user is created
         SocialAuthProfileUpdate.get_user_info(id_info)
 
         # create a new user if no new user exists
@@ -199,9 +191,11 @@ class FacebookAuthAPISerializer(serializers.Serializer):
         # Creates a new user because email is not associated
         # with any existing account in our app
 
-        # Sends user information to signal to be updated into profile after saving
+        # Sends user information to signal to be updated into
+        # profile after saving
         if id_info.get('picture'):
-            id_info['user_profile_picture'] = id_info['picture']['data']['url']
+            id_info['user_profile_picture'] = id_info[
+                'picture']['data']['url']
 
         SocialAuthProfileUpdate.get_user_info(id_info)
 
@@ -273,7 +267,8 @@ class TwitterAuthAPISerializer(serializers.Serializer):
             }
 
         if id_info.get('profile_image_url_https'):
-            id_info['user_profile_picture'] = id_info['profile_image_url_https']
+            id_info['user_profile_picture'] = id_info[
+                'profile_image_url_https']
 
         SocialAuthProfileUpdate.get_user_info(id_info)
 
@@ -405,8 +400,8 @@ class PasswordResetSerializer(serializers.ModelSerializer):
             link exists in our database. This prevents knowledge
             of which emails actually exist.
             """
-            message = 'If you have an account with us we have sent an email to \
-            reset your password'
+            message = ('If you have an account with us we have sent an email '
+                       'to reset your password')
             return {'message': message}
 
 
@@ -504,8 +499,6 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
     address = serializers.JSONField(validators=[validate_address])
     phone = serializers.CharField(
         validators=[validate_phone_number])
-    next_of_kin_contact = serializers.CharField(
-        validators=[validate_phone_number], required=False)
 
     class Meta:
         model = UserProfile
@@ -523,9 +516,20 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
         # Explicitly update the next of kin contact
         updated_next_of_kin_contact = validated_data.pop(
             'next_of_kin_contact', None)
-        instance.next_of_kin_contact = updated_next_of_kin_contact
+        if updated_next_of_kin_contact == '':
+            instance.next_of_kin_contact = updated_next_of_kin_contact
+        elif updated_next_of_kin_contact:
+            try:
+                validate_phone_number(updated_next_of_kin_contact)
+                instance.next_of_kin_contact = updated_next_of_kin_contact
+            except serializers.ValidationError as e:
+                raise serializers.ValidationError({
+                    'next_of_kin_contact':
+                    'Phone number must be of the format +234 123 4567890'
+                }) from e
 
-        # Remove the old profile image on cloundinary before it is updated with a new one
+        # Remove the old profile image on cloundinary
+        # before it is updated with a new one
         old_image = instance.image
         if old_image:
             public_image_id = Uploader.get_cloudinary_public_id(old_image)
@@ -538,15 +542,17 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
         """Validate user updated fields"""
 
         # validate presence of both designation and employer dependent fields
-        if 'designation' in data and not 'employer' in data:
+        if 'designation' in data and 'employer' not in data:
             raise serializers.ValidationError({
                 "employer": "Please provide an employer"
             })
 
         # validate fields that depend on each other
-        self.validate_dependent_fields(data, 'security_question', 'security_answer',
-                                       'Please provide an answer to the selected question',
-                                       'Please choose a question to answer')
+        self.validate_dependent_fields(
+            data, 'security_question', 'security_answer',
+            'Please provide an answer to the selected question',
+            'Please choose a question to answer'
+        )
 
         return data
 
@@ -570,7 +576,7 @@ class ReviewReplySerializer(serializers.ModelSerializer):
 
 
 class ClientReviewSerializer(serializers.ModelSerializer):
-    """ This handles serializing and deserializing of Client Review objects """
+    """This handles serializing and deserializing of Client Review objects"""
 
     reviewer = RegistrationSerializer(required=False)
     replies = serializers.SerializerMethodField()
