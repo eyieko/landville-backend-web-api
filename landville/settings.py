@@ -204,5 +204,5 @@ CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
 
 
 CORS_ORIGIN_WHITELIST = (
-    os.environ.get('CORS_WHITELIST'),
+    os.environ.get('CORS_WHITELIST').split(',')
 )
