@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'django_extensions',
-    'sendgrid',
     'cloudinary',
 
 
@@ -156,6 +155,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Email Configurations
 DOMAIN = os.environ.get('DOMAIN', '')
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
@@ -204,5 +204,5 @@ CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
 
 
 CORS_ORIGIN_WHITELIST = (
-    os.environ.get('CORS_WHITELIST'),
+    os.environ.get('CORS_WHITELIST').split(',')
 )
