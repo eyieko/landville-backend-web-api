@@ -1,6 +1,7 @@
 from utils.permissions import IsBuyerOrReadOnly, IsReviewer
 import cloudinary.uploader as uploader
 import jwt
+import os
 from django.conf import settings
 from utils import BaseUtils
 from authentication.renderer import UserJSONRenderer
@@ -11,7 +12,8 @@ from authentication.serializers import (
     LoginSerializer, ClientSerializer, ChangePasswordSerializer,
     ClientReviewSerializer, ReviewReplySerializer)
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from authentication.models import (
     User, Client, UserProfile, ClientReview, ReplyReview)
 from django.shortcuts import render, get_object_or_404
@@ -97,12 +99,12 @@ class EmailVerificationView(generics.GenericAPIView):
     """Verify the users email."""
 
     def get(self, request):
+        domain = os.environ.get('FRONT_END_LOGIN_URL')
         token, user_id = request.GET.get("token").split("~")
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
         except jwt.exceptions.DecodeError:
-            return self.sendResponse("verification link is invalid",
-                                     status.HTTP_400_BAD_REQUEST)
+            return HttpResponseRedirect(domain+'?verified_status=invalid_link')  # noqa
         except jwt.ExpiredSignatureError:
             url = generate_validation_url([request], user_id=user_id)
             user = User.objects.filter(id=user_id).first()
@@ -128,7 +130,7 @@ class EmailVerificationView(generics.GenericAPIView):
 
         user.is_verified = True
         user.save()
-        return self.sendResponse("Email has been verified")
+        return HttpResponseRedirect(domain)
 
     def sendResponse(self, message, status=status.HTTP_200_OK):
         return Response({
