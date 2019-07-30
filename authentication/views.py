@@ -427,12 +427,13 @@ class AddReasonView(View):
         messages.info(request, 'Client record has been updated')
         message = ''
         if status == "revoked":
-            message = 'Hey there,\n\nyour approval for LandVille was revoked\
-        ,for the following reason \n\n{}'.format(notes)
+            message = 'Hey there,\n\nyour approval for LandVille was revoked'\
+                ',for the following reason \n\n{}'                                                                                     .format(
+                    notes)
         elif status == 'rejected':
-            message = 'Hey there,\n\nyour application for LandVille was not ' \
+            message = 'Hey there,\n\nyour application for LandVille was not '\
                       'accepted\
-            ,for the following reason \n\n{}'.format(notes)
+            ,for the following reason \n\n{}'                                                                                                                                                                                    .format(notes)
         client = Client.objects.filter(client_admin=User.objects.filter(
             email=client[0]).first()).first()
         client.approval_status = status

@@ -5,10 +5,13 @@ from tempfile import NamedTemporaryFile
 from unittest.mock import patch, Mock
 from django.test.client import encode_multipart
 from cloudinary.api import Error
+from django.conf import settings
 
 
 class TestClientAdmin(TestUtils):
     '''Contains tests for the User profile'''
+    cloudinary_url = f'http://res.cloudinary.com/{settings.CLOUDINARY_CLOUD_NAME}/'
+    cloudinary_url += 'image/upload/v1561568984/xep5qlwc8.png'
 
     def test_get_user_profile(self):
         """
@@ -51,7 +54,7 @@ class TestClientAdmin(TestUtils):
         self.set_token()
         image = NamedTemporaryFile(suffix='.jpg')
         mock_upload.return_value = {
-            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}  # noqa
+            'url': self.cloudinary_url}
         data = self.updated_profile_with_image
         data['image'] = image
         content = encode_multipart('BoUnDaRyStRiNg', data)
@@ -63,17 +66,19 @@ class TestClientAdmin(TestUtils):
                          "Profile updated successfully")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @patch('utils.media_handlers.uploader.destroy')
     @patch('authentication.views.uploader.upload')
-    def test_update_existing_profile_picture(self, mock_upload):
+    def test_update_existing_profile_picture(self, mock_upload, mock_destroy):
         """
         Users should be able to update their profile picture
         """
         self.set_token()
+        mock_upload.return_value = {
+            'url': self.cloudinary_url
+        }
         self.client.patch(self.client_profile,
                           self.profile_with_image, format='json')
         image = NamedTemporaryFile(suffix='.jpg')
-        mock_upload.return_value = {
-            'url': 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png'}  # noqa
         data = self.updated_profile_with_image
         data['image'] = image
         content = encode_multipart('BoUnDaRyStRiNg', data)
@@ -145,27 +150,28 @@ class TestClientAdmin(TestUtils):
 
     def test_update_user_profile_with_empty_city_field(self):
         """
-        Updating users own profile with empty City address
-        should raise an error
+        Updating users own profile with empty City address should
+        raise an error
         """
         self.set_token()
-        response = self.client.patch(
-            self.client_profile, self.updated_profile_with_empty_city_field,
-            format="json")
+        response = self.client\
+            .patch(self.client_profile,
+                   self.updated_profile_with_empty_city_field,
+                   format="json")
         self.assertIn("City cannot be empty!",
                       str(response.data['errors']['address']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_update_user_profile_without_security_answer_field(self):
         """
-        Updating users own profile without security answer field
-        should raise an error
+        Updating users own profile without security answer
+        field should raise an error
         """
         self.set_token()
-        response = self.client.patch(
-            self.client_profile,
-            self.updated_profile_without_security_answer_field,
-            format="json")
+        response = self.client.\
+            patch(self.client_profile,
+                  self.updated_profile_without_security_answer_field,
+                  format="json")
         self.assertIn("Please provide an answer to the selected question",
                       str(response.data['errors']['security_answer']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -175,9 +181,10 @@ class TestClientAdmin(TestUtils):
         Updating users own profile without phone field
         """
         self.set_token()
-        response = self.client.patch(
-            self.client_profile, self.updated_profile_without_phone_field,
-            format="json")
+        response = self.\
+            client.patch(self.client_profile,
+                         self.updated_profile_without_phone_field,
+                         format="json")
         self.assertEqual(response.data['data']['profile']['phone'], None)
         self.assertEqual(response.data['data']['message'],
                          "Profile updated successfully")
@@ -188,9 +195,10 @@ class TestClientAdmin(TestUtils):
         Updating users own profile with an invalid phone number
         """
         self.set_token()
-        response = self.client.patch(
-            self.client_profile, self.updated_profile_with_invalid_phonenumber,
-            format="json")
+        response = self.\
+            client.patch(self.client_profile,
+                         self.updated_profile_with_invalid_phonenumber,
+                         format="json")
         self.assertIn("Phone number must be of the format +234 123 4567890",
                       str(response.data['errors']['phone']))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -200,9 +208,10 @@ class TestClientAdmin(TestUtils):
         Updating users own profile without address field
         """
         self.set_token()
-        response = self.client.patch(
-            self.client_profile, self.updated_profile_without_address_field,
-            format="json")
+        response = self.client\
+            .patch(self.client_profile,
+                   self.updated_profile_without_address_field,
+                   format="json")
         self.assertEqual(response.data['data']['profile']['address'], {})
         self.assertEqual(response.data['data']['message'],
                          "Profile updated successfully")
