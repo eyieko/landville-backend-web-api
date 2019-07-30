@@ -91,7 +91,6 @@ requests-oauthlib==1.2.0
 requirements-detector==0.6
 rsa==4.0
 ruamel.yaml==0.15.96
-sendgrid==6.0.5
 setoptconf==0.2.0
 six==1.12.0
 snowballstemmer==1.2.1
