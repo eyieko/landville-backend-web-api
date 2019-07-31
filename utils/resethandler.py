@@ -76,7 +76,7 @@ class ResetHandler:
         return (decoded_token, user)
 
     def send_password_reset_link(self, to_email, token):
-        domain = os.environ.get('DOMAIN')
+        domain = os.environ.get('FRONTEND_URL')
 
         payload = {
             "subject": "Reset your LandVille Password",
