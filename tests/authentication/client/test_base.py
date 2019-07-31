@@ -46,6 +46,10 @@ class BaseTest(APITestCase):
             "role": self.user.role
         }
 
+        self.client_with_empty_data = {
+            
+        }
+
         self.client_with_invalid_address = {
             "client_name": self.company.client_name + "i",
             "phone": "+234 805 9544607",
