@@ -19,14 +19,17 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Transaction',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
-                ('status', models.CharField(choices=[('S', 'SUCCESSFUL'), ('P', 'PENDING'), ('F', 'FAILED')], default='P', max_length=1)),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=14)),
-                ('buyer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='buyer', to=settings.AUTH_USER_MODEL)),
-                ('target_property', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='transactions', to='property.Property')),
+                ('status', models.CharField(choices=[
+                 ('S', 'SUCCESSFUL'), ('P', 'PENDING'), ('F', 'FAILED')], default='P', max_length=1)),
+                ('buyer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                            related_name='buyer', to=settings.AUTH_USER_MODEL)),
+                ('target_property', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                                      related_name='transactions', to='property.Property')),
             ],
             options={
                 'ordering': ['-created_at'],
@@ -36,12 +39,14 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Savings',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('balance', models.DecimalField(decimal_places=3, max_digits=14)),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='savings', to=settings.AUTH_USER_MODEL)),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                            related_name='savings', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['-created_at'],
@@ -51,13 +56,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Deposit',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('amount', models.DecimalField(decimal_places=2, max_digits=14)),
                 ('description', models.TextField(max_length=500)),
-                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='account', to='transactions.Savings')),
+                ('account', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                              related_name='account', to='transactions.Savings')),
             ],
             options={
                 'ordering': ['-created_at'],
@@ -67,15 +74,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ClientAccount',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True,
+                                        primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('bank_name', models.CharField(max_length=150)),
                 ('account_number', models.CharField(max_length=50)),
-                ('account_type', models.CharField(choices=[('CRA', 'CREDIT ACCOUNT'), ('CUR', 'CURRENT ACCOUNT'), ('SAV', 'SAVINGS ACCOUNT')], default='CRA', max_length=3)),
+                ('account_type', models.CharField(choices=[('CRA', 'CREDIT ACCOUNT'), (
+                    'CUR', 'CURRENT ACCOUNT'), ('SAV', 'SAVINGS ACCOUNT')], default='CRA', max_length=3)),
                 ('swift_code', models.CharField(max_length=50)),
-                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='account', to='authentication.Client')),
+                ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE,
+                                            related_name='account', to='authentication.Client')),
             ],
             options={
                 'ordering': ['-created_at'],

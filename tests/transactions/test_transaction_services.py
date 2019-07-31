@@ -1,7 +1,7 @@
 """Module of tests for TransactionServices helper class."""
 from django.test import TestCase
 from faker import Factory
-from unittest.mock import patch
+from mock import patch
 from transactions.transaction_services import TransactionServices
 from tests.factories.authentication_factory import UserFactory
 from authentication.models import User
@@ -128,11 +128,22 @@ class TestTransactionServices(TestCase):
         self.assertEqual(
             resp, '. Card details could not be saved. Try latter.')
 
-    def test_pay_with_saved_card_when_user_has_saved_card(self):
+    @patch('transactions.transaction_services.requests.post')
+    def test_pay_with_saved_card_when_user_has_saved_card(self,
+                                                          mock_post):
         """
         A unit test for the method that handles actual saving of card
         details.
         """
+        payload = {
+            "status": "success",
+            "message": "Charge success",
+            "data": {
+                "id": 124983,
+                "txRef": "MC_1522966555872",
+                "orderRef": None,
+                "flwRef": "FLW-M03K-3705232bce4536328b24d03579365e9f", }}
+        mock_post.return_value.json.return_value = payload
         test_user = UserFactory.create(card_info={
             'embedtoken': 'embedtoken',
             'card_number': '123456789',
@@ -140,7 +151,6 @@ class TestTransactionServices(TestCase):
             'card_brand': 'card_brand'
 
         })
-
         resp = TransactionServices.pay_with_saved_card(test_user, 1000)
         self.assertIn('data', resp)
 

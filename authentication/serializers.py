@@ -315,7 +315,6 @@ class LoginSerializer(serializers.Serializer):
         email = data.get("email", None)
         password = data.get("password", None)
         user = authenticate(username=email, password=password)
-
         if user is None:
             raise serializers.ValidationError({
                 "invalid": "invalid email and password combination"
