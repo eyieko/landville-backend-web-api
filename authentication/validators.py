@@ -7,6 +7,6 @@ def validate_phone_number(phone):
     p = re.compile(r'\+?\d{3}\s?\d{3}\s?\d{7}')
     q = re.compile(r'^.{10,16}$')
     if not (p.match(phone) and q.match(phone)):
-        raise serializers.ValidationError({
-            "errors": "Phone number must be of the format +234 123 4567890"
-        })
+        raise serializers.ValidationError(
+            "Phone number must be of the format +234 123 4567890"
+        )
