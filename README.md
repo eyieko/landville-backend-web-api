@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/landvilleng/landville-backend-web-api.svg?style=svg&circle-token=0b67e7bdea3b38a5b4be3154613c500fb0ba12db)](https://circleci.com/gh/landvilleng/landville-backend-web-api) [![Coverage Status](https://coveralls.io/repos/github/landvilleng/landville-backend-web-api/badge.svg?branch=develop&t=8IKdIj)](https://coveralls.io/github/landvilleng/landville-backend-web-api?branch=develop)
+<a href="https://codeclimate.com/github/landvilleng/landville-backend-web-api/maintainability"><img src="https://api.codeclimate.com/v1/badges/6ff3cfebdbf6655c3da0/maintainability" /></a>
 
 # landville-backend-web-api
 
@@ -49,10 +50,8 @@ Backend Repository for LandVille Project
 | GET    | api/v1/properties/enquiries/<enquiry_id>/          | get one enquiry                                          |
 | DELETE | api/v1/properties/:slug/resource                   | delete a cloudinary resource                             |
 | GET    | api/v1/auth/profile/                               | gets a profile of the loggedin user                      |
-
-| PATCH  | api/v1/auth/profile/                               | edits a profile of the loggedin user
-
-| GET    | api/v1/transactions/                               | get a users transaction details                          
+| PATCH  | api/v1/auth/profile/                               | edits a profile of the loggedin user                     |
+| GET    | api/v1/transactions/                               | get a users transaction details                          |
 
 ## API Documentation
 
@@ -64,14 +63,16 @@ The heroku link redirects direclty to our documentation With these documentation
 
 - Step by step instructions on how to get the code setup locally. This may include:
 
-    ### Description:
-- _Celery_ is a task queue with focus on real-time processing, while also supporting task scheduling.
-- _Redis_ is a message broker. This means it handles the queue of "messages" between Django and Celery.
+  ### Description:
+
+- *Celery* is a task queue with focus on real-time processing, while also supporting task scheduling.
+- *Redis* is a message broker. This means it handles the queue of "messages" between Django and Celery.
 - All two work together to make real-time magic.
 - This module contains the Celery application instance for this project, we take configuration from Django settings and use autodiscover_tasks to find task modules inside all packages listed in INSTALLED_APPS.
 
-    ### Installing requirements
-The settings file assumes that rabbitmq-server is running on localhost using the default ports.
+      ### Installing requirements
+
+  The settings file assumes that rabbitmq-server is running on localhost using the default ports.
 
 ### Dependencies
 
@@ -89,26 +90,21 @@ The settings file assumes that rabbitmq-server is running on localhost using
 - Activate your virtual environment using `source (virtualenv name)/bin/activate`
 - Create a new branch from the develop branch using the command `git checkout -b your_branch_name`
 - Install project requirements using `pip install -r requirements.txt`
-- To create a dot_env file `.env`,  run the command `cp .env_sample .env` so that the `.env_sample` file can be copied to `.env`.
-- Edit the `.env` file  with your own credentials. Eg : database username, password ,etc
-- Make sure you have `export REDIS_URL="redis://localhost:6379"` in your .env file. 
-(this allows the celery to connect with redis.)
+- To create a dot_env file `.env`, run the command `cp .env_sample .env` so that the `.env_sample` file can be copied to `.env`.
+- Edit the `.env` file with your own credentials. Eg : database username, password ,etc
+- Make sure you have `export REDIS_URL="redis://localhost:6379"` in your .env file.
+  (this allows the celery to connect with redis.)
 - Set your environement variable by running the following command `source .env`
 - Create a Postgres database with the name you put in the `.env` file
 - Run the command `python manage.py migrate` to create database tables
 - Download Redis
-    * Using Homebrew:  ```$ brew install redis```
-    * Start Redis server  ```$ brew services start redis ```
+  - Using Homebrew:  `$ brew install redis`
+  - Start Redis server  `$ brew services start redis`
 - Open & Test Redis:
-	```$ redis-server```
+  `$ redis-server`
 - Run worker:
-	```
-	$ celery -A yourproject worker -l info`
-	```
-	* example 
-	```
-	$ celery -A landville worker -l info
-	```
+  `` $ celery -A yourproject worker -l info` `` \* example
+  `$ celery -A landville worker -l info`
 - Run command `python manage.py runserver` to start the project
 
 ### Run The Service
