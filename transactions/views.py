@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 import json
+from django.db import IntegrityError
 from rest_framework import status
 from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
                                      ListCreateAPIView, ListAPIView)
@@ -356,17 +357,15 @@ def validate_payment(request):
             data = resp.get('data').get('tx')
             references = {k: v for k, v in data.items() if k.endswith('Ref')}
             amount = data.get('amount', 0)
-            save_deposit(purpose,
-                         references,
-                         amount,
-                         user,
-                         property)
+            save_deposit(purpose, references, amount, user, property)
+
         else:
             return Response({'message': verify_resp.get('message')},
                             status=status.HTTP_400_BAD_REQUEST)
     return Response({'message': resp['message']}, status=resp['status_code'])
 
 
+# todos if if a record with that transac reference exist don't save
 @api_view(['GET'])
 @permission_classes((IsAuthenticated, ))
 def foreign_card_validation_response(request):
@@ -394,7 +393,12 @@ def foreign_card_validation_response(request):
         data = verify_resp.get('data')
         references = {k: v for k, v in data.items() if k.endswith('ref')}
         amount = data.get('amount', 0)
-        save_deposit(purpose, references, amount, user, property)
+        try:
+            save_deposit(purpose, references, amount, user, property)
+        except IntegrityError:
+            message = "the transaction has already been validated"
+            return Response({'message': message},
+                            status=status.HTTP_409_CONFLICT)
     else:
         return Response({'message': verify_resp.get('message')},
                         status=status.HTTP_400_BAD_REQUEST)

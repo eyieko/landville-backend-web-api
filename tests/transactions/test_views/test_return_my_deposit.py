@@ -72,10 +72,10 @@ class TestReturnAllMyDeposit(BaseTest):
 
     def test_client_admin_should_receive_all_deposit_for_his_company(self):
         transaction = self.create_transaction(user_role=self.user1.role)
-        deposit, saving_updated = save_deposit('Buying', references, 1000,
-                                               self.user4,
-                                               transaction.target_property,
-                                               'test test')
+        save_deposit('Buying', references, 1000,
+                     self.user4,
+                     transaction.target_property,
+                     'test test')
         request = self.factory.get(reverse("transactions:my_deposit"),
                                    format='json')
         force_authenticate(request, user=self.user1)

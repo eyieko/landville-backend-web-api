@@ -1,4 +1,5 @@
 """Module of tests for views of transactions app."""
+import json
 from tests.transactions import BaseTest
 from django.urls import reverse
 from rest_framework.views import status
@@ -7,6 +8,7 @@ from unittest.mock import patch
 from tests.factories.authentication_factory import UserFactory, ClientFactory
 from tests.factories.transaction_factory import TransactionFactory
 from tests.factories.property_factory import PropertyFactory
+from django.db import IntegrityError
 
 
 def single_detail_url(account_number):
@@ -26,9 +28,6 @@ class CardPaymentTest(BaseTest):
         self.card_foreign_url = reverse('transactions:card_foreign')
         self.cardless_url = reverse('transactions:tokenized_card')
         self.card_validate_url = reverse('transactions:validate_card')
-        self.foreign_validate_url = reverse(
-            'transactions:validation_response'
-        ) + '?response={"txRef": "sometxref"}'  # noqa
         self.faker = Factory.create()
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {self.auth_user.token}')
@@ -329,41 +328,42 @@ class CardPaymentTest(BaseTest):
         An integrated test for the view method for validating card PIN
         payment if card tokenization is not requested.
         """
-        mock_validate.return_value = {
-            'message': 'Charge Complete',
-            'status_code': 200,
-            'data': {
-                'tx': {
-                    'txRef': 'sampletxref'
-                },
-                'meta': [self.not_save_card_meta]
-            }
-        }
-        mock_verify.return_value = {
-            'data': {
-                'tx': {
-                    'txRef': 'sampletxref'
-                },
-                'meta': [self.not_save_card_meta],
-                'vbvmessage': 'somemessage',
-                'status': 'successful',
-                'custemail': 'email@email.com',
-                'card': {
-                    'expirymonth': '11',
-                    'expiryyear': 22,
-                    'last4digits': 1234,
-                    'card_tokens': [{
-                        'embedtoken': 'sometoken'
-                    }],
-                    'brand': 'somebrand'
+        for index, purpose in enumerate(['Buying', 'Saving']):
+            references = 'sampletxref14{}'.format(index)
+            mock_validate.return_value = {
+                'message': 'Charge Complete',
+                'status_code': 200,
+                'data': {
+                    'tx': {
+                        'txRef': references
+                    },
+                    'meta': [self.not_save_card_meta]
                 }
             }
-        }
-        data = {
-            'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752ce',
-            'otp': 12345,
-        }
-        for purpose in ('Buying', 'Saving'):
+            mock_verify.return_value = {
+                'data': {
+                    'tx': {
+                        'txRef': references
+                    },
+                    'meta': [self.not_save_card_meta],
+                    'vbvmessage': 'somemessage',
+                    'status': 'successful',
+                    'custemail': 'email@email.com',
+                    'card': {
+                        'expirymonth': '11',
+                        'expiryyear': 22,
+                        'last4digits': 1234,
+                        'card_tokens': [{
+                            'embedtoken': 'sometoken'
+                        }],
+                        'brand': 'somebrand'
+                    }
+                }
+            }
+            data = {
+                'flwRef': 'FLW-MOCK-c189daaf7570c7522adaccd9e2f752c',
+                'otp': 12345,
+            }
             data['purpose'] = purpose
             if purpose == 'Buying':
                 transaction = self.create_transaction()
@@ -459,18 +459,17 @@ class CardPaymentTest(BaseTest):
         An integrated test for the view method for validating card
         international payment if card tokenization is requested.
         """
-        for purpose in ['Saving', 'Buying']:
+        for index, purpose in enumerate(['Saving', 'Buying']):
             self.purpose_meta[0]['metavalue'] = purpose
             if purpose == 'Buying':
                 transaction = self.create_transaction()
                 self.purpose_meta[1]['metavalue'] = transaction\
                     .target_property.id
+            txref = 'sampleRef45{}'.format(index)
             mock_verify.return_value = {
                 'status': 'success',
                 'data': {
-                    'tx': {
-                        'txRef': 'sampletxref'
-                    },
+                    'txref': txref,
                     'meta': [self.save_card_meta] + self.purpose_meta,
                     'vbvmessage': 'somemessage',
                     'status': 'successful',
@@ -486,8 +485,10 @@ class CardPaymentTest(BaseTest):
                     }
                 }
             }
-
-            resp = self.client.get(self.foreign_validate_url)
+            ref = json.dumps({'txRef': txref})
+            resp = self.client.get(
+                reverse('transactions:validation_response') +
+                '?response={}'.format(ref))
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp.json()['message'],
                              'somemessage. Card details have been saved.')
@@ -502,7 +503,7 @@ class CardPaymentTest(BaseTest):
         mock_verify.return_value = {
             'data': {
                 'tx': {
-                    'txRef': 'sampletxref'
+                    'txRef': 'sampletxref2'
                 },
                 'meta': [self.save_card_meta] + self.purpose_meta,
                 'status': 'error',
@@ -511,7 +512,9 @@ class CardPaymentTest(BaseTest):
             'message': 'invalid transaction id'
         }
 
-        resp = self.client.get(self.foreign_validate_url)
+        resp = self.client.get(
+            reverse('transactions:validation_response') +
+            '?response={"txRef": "sometxref2"}')
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(resp.json().get('message'), 'invalid transaction id')
 
@@ -530,7 +533,7 @@ class CardPaymentTest(BaseTest):
             'status_code': 200,
             'data': {
                 'tx': {
-                    'txRef': 'sampletxref'
+                    'txRef': 'sampletxref1'
                 },
                 'meta': [self.not_save_card_meta]
             }
@@ -539,7 +542,7 @@ class CardPaymentTest(BaseTest):
             'status': 'success',
             'data': {
                 'tx': {
-                    'txRef': 'sampletxref'
+                    'txRef': 'sampletxref2'
                 },
                 'meta': [self.not_save_card_meta] + self.purpose_meta,
                 'vbvmessage': 'somemessage',
@@ -557,7 +560,9 @@ class CardPaymentTest(BaseTest):
             }
         }
 
-        resp = self.client.get(self.foreign_validate_url)
+        resp = self.client.get(
+            reverse('transactions:validation_response') +
+            '?response={"txRef": "sometxref2"}')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()['message'], 'somemessage')
 
@@ -593,3 +598,53 @@ class CardPaymentTest(BaseTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             json_resp.get('errors').get('amount'), ['This field is required.'])
+
+    @patch('transactions.views.save_deposit')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.verify_payment')
+    @patch('transactions.transaction_services'
+           '.TransactionServices.validate_card_payment')
+    def test_validate_foreign_payment_failed_if_twice(self,
+                                                      mock_validate,
+                                                      mock_verify, mock_save):
+        """
+        test if it raise an error on when we validate twice a foreign payement
+        """
+        mock_validate.return_value = {
+            'message': 'Charge Complete',
+            'status_code': 200,
+            'data': {
+                'tx': {
+                    'txRef': 'sampletxref'
+                },
+                'meta': [self.not_save_card_meta]
+            }
+        }
+        mock_verify.return_value = {
+            'status': 'success',
+            'data': {
+                'tx': {
+                    'txRef': 'sampletxref'
+                },
+                'meta': [self.not_save_card_meta] + self.purpose_meta,
+                'vbvmessage': 'somemessage',
+                'status': 'successful',
+                'custemail': 'email@email.com',
+                'card': {
+                    'expirymonth': '11',
+                    'expiryyear': 22,
+                    'last4digits': 1234,
+                    'card_tokens': [{
+                        'embedtoken': 'sometoken'
+                    }],
+                    'brand': 'somebrand'
+                }
+            }
+        }
+        mock_save.side_effect = IntegrityError()
+        resp = self.client.get(
+            reverse('transactions:validation_response') +
+            '?response={"txRef": "sometxref"}')
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(resp.json()['message'],
+                         'the transaction has already been validated')

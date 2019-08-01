@@ -1,7 +1,9 @@
+import json
 from datetime import datetime
 from tests.transactions.test_models import TransactionTest, SavingsTest
 from transactions.transaction_utils import (save_deposit,)
 from ..factories.transaction_factory import TransactionFactory, SavingsFactory
+from django.db import IntegrityError
 
 references = {
     'txRef': '{}_LAND{}'.format('TAX', datetime.now()),
@@ -70,3 +72,18 @@ class TestDepositTransactionUtils(TransactionTest):
                                                 self.property1, 'test test')
         self.assertIsNotNone(deposit)
         self.assertEqual(new_transaction.amount_paid, self.amount)
+
+    def test_should_not_save_a_transaction_with_same_ref_twice(self):
+        """
+        test if a transaction amount is not updated when creating a new saving
+        """
+        deposit, _ = save_deposit('Buying', references,
+                                  self.amount, self.buyer1,
+                                  self.property1, 'test test')
+        with self.assertRaises(IntegrityError):
+            save_deposit('Buying',
+                         json.loads(deposit.references),
+                         self.amount,
+                         self.buyer1,
+                         self.property1,
+                         'test test')

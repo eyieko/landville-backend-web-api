@@ -46,7 +46,7 @@ class Deposit(BaseAbstractModel):
                                     blank=True,
                                     null=True)
     amount = models.DecimalField(decimal_places=2, max_digits=12)
-    references = JSONField(default=None, blank=False, null=False)
+    references = JSONField(default=None, blank=False, null=False, unique=True)
     description = models.TextField(max_length=500)
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()
