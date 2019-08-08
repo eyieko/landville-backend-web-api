@@ -46,11 +46,13 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_extensions',
     'cloudinary',
+    'ckeditor',
 
     # Landville apps
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
     'transactions.apps.TransactionsConfig',
+    'pages.apps.PagesConfig'
 ]
 
 MIDDLEWARE = [
