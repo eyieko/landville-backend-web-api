@@ -4,7 +4,7 @@ from django.conf import settings
 
 from rest_framework import authentication, exceptions
 
-from .models import User
+from .models import User, BlackList
 
 
 """Configure JWT Here"""
@@ -84,6 +84,12 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
         if not user.is_active:
             msg = 'Forbidden! This user has been deactivated.'
+            raise exceptions.AuthenticationFailed(msg)
+
+        token = BlackList.objects.filter(token=token).first()
+
+        if token:
+            msg = 'Session Expired.'
             raise exceptions.AuthenticationFailed(msg)
 
         return (user, token)

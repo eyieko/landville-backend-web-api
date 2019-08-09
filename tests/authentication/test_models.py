@@ -5,7 +5,9 @@ from authentication.models import Client
 from tests.factories.authentication_factory import (
     UserFactory, UserProfileFactory, ClientFactory, ClientReviewsFactory,
     ReplyReviewsFactory)
-from authentication.models import Client, User
+from authentication.models import Client, User, BlackList
+import mock
+from mock import patch
 
 
 class UserManagerTest(TransactionTestCase):
@@ -166,3 +168,18 @@ class ReplyReviewsModelTest(TestCase):
         self.assertEqual(
             str(self.reply),
             f'Review by {self.reviewer} on {self.reply.created_at}')
+
+
+class BlackListTest(TestCase):
+    """This class defines tests for blacklisted tokens """
+
+    @patch('django.db.models.query.QuerySet.delete')
+    def test_that_tokens_are_deleted_without_errors(self, mock_delete):
+        """
+        Test that delete is called for all tokens older than 24 hours
+        upon running a cron job
+        """
+
+        BlackList.delete_tokens_older_than_a_day()
+
+        mock_delete.assert_called()
