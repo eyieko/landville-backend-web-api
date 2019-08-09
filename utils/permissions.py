@@ -81,3 +81,13 @@ class IsBuyerOrReadOnly(BasePermission):
             request.user.is_authenticated and
             request.user.role == 'BY'
         )
+
+class IsAdmin(BasePermission):
+    """ check if its the Admin then allow to delete"""
+
+    def has_object_permission(self, request, view, obj):
+
+        user = request.user
+
+        if request.method == 'DELETE' and user.role == 'LA':
+            return True

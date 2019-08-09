@@ -1,4 +1,4 @@
-from utils.permissions import IsBuyerOrReadOnly, IsReviewer
+from utils.permissions import IsBuyerOrReadOnly, IsReviewer, IsAdmin
 import cloudinary.uploader as uploader
 import jwt
 import os
@@ -498,7 +498,7 @@ class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
      Handles request to view, delete or update a review
     """
     serializer_class = ClientReviewSerializer
-    permission_classes = (IsReviewer, IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsReviewer | IsAdmin, IsAuthenticatedOrReadOnly,)
     lookup_field = 'pk'
 
     def get_queryset(self):
@@ -540,7 +540,7 @@ class ReplyView(generics.GenericAPIView):
      Handles request to create, delete or update a reply on a review
     """
     serializer_class = ReviewReplySerializer
-    permission_classes = (IsReviewer, IsAuthenticated)
+    permission_classes = (IsReviewer | IsAdmin, IsAuthenticated,)
 
     def post(self, request, **kwargs):
         """ allow users add replies to reviews """
