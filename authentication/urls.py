@@ -1,12 +1,13 @@
 from django.urls import path
+
 from authentication.views import (
     RegistrationAPIView, EmailVerificationView,
     ClientCreateView, GoogleAuthAPIView,
     FacebookAuthAPIView, TwitterAuthAPIView,
     LoginAPIView, PasswordResetView, ProfileView,
     AddReasonView, ClientReviewsView, ReviewDetailView,
-    ReplyView, UserReviewsView, LogoutView
-)
+    ReplyView, UserReviewsView, LogoutView,
+    RetrieveUpdateDeleteClientView)
 
 app_name = 'authentication'
 
@@ -18,6 +19,8 @@ urlpatterns = [
     path('facebook/', FacebookAuthAPIView.as_view(), name='facebook'),
     path('twitter/', TwitterAuthAPIView.as_view(), name='twitter'),
     path("client/", ClientCreateView.as_view(), name="client"),
+    path("client/<int:id>/", RetrieveUpdateDeleteClientView.as_view(),
+         name="list-company"),
     path(
         "password-reset/", PasswordResetView.as_view(),
         name="password-reset"),
@@ -25,7 +28,8 @@ urlpatterns = [
     path("profile/", ProfileView.as_view(), name="profile"),
     path('<int:client_id>/reviews/',
          ClientReviewsView.as_view(), name='add-reviews'),
-    path('reviews/<int:pk>/', ReviewDetailView.as_view(), name='manage-reviews'),
+    path('reviews/<int:pk>/', ReviewDetailView.as_view(),
+         name='manage-reviews'),
     path('<int:client_id>/reviews/',
          ClientReviewsView.as_view(), name='add-reviews'),
     path(

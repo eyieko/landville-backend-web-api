@@ -1,11 +1,9 @@
-import re
-from authentication.models import (
-    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
-from rest_framework import serializers
+import cloudinary.uploader as uploader
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.contrib.auth import authenticate
-import cloudinary.uploader as uploader
+from rest_framework import serializers
+
 from authentication.models import (
     User, Client, UserProfile,
     ClientReview, ReplyReview,
@@ -13,13 +11,12 @@ from authentication.models import (
 )
 from authentication.signals import SocialAuthProfileUpdate
 from authentication.socialvalidators import SocialValidation
-from utils.password_generator import randomStringwithDigitsAndSymbols
-from utils import BaseUtils
-from utils.resethandler import ResetHandler
 from authentication.validators import validate_phone_number
 from property.validators import validate_address
+from utils import BaseUtils
 from utils.media_handlers import CloudinaryResourceHandler
-import cloudinary.uploader as uploader
+from utils.password_generator import randomStringwithDigitsAndSymbols
+from utils.resethandler import ResetHandler
 
 Uploader = CloudinaryResourceHandler()
 
@@ -115,7 +112,7 @@ class GoogleAuthSerializer(serializers.Serializer):
             return {
                 'token': user[0].token,
                 'user_exists': True,
-                'message': 'Welcome back '+id_info.get('name')
+                'message': 'Welcome back ' + id_info.get('name')
             }
 
         if id_info.get('picture'):
@@ -145,8 +142,8 @@ class GoogleAuthSerializer(serializers.Serializer):
         return {
             'token': new_user.token,
             'user_exists': False,
-            'message': 'Welcome to landville. '+first_name +
-            '. Ensure to edit your profile.'
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
         }
 
 
@@ -188,7 +185,7 @@ class FacebookAuthAPISerializer(serializers.Serializer):
             return {
                 'token': user[0].token,
                 'user_exists': True,
-                'message': 'Welcome back '+id_info.get('first_name')
+                'message': 'Welcome back ' + id_info.get('first_name')
             }
 
         # Creates a new user because email is not associated
@@ -220,8 +217,8 @@ class FacebookAuthAPISerializer(serializers.Serializer):
         return {
             'token': new_user.token,
             'user_exists': False,
-            'message': 'Welcome to landville. '+first_name +
-            '. Ensure to edit your profile.'
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
         }
 
 
@@ -266,7 +263,7 @@ class TwitterAuthAPISerializer(serializers.Serializer):
             return {
                 'token': user[0].token,
                 'user_exists': True,
-                'message': 'Welcome back '+id_info.get('name')
+                'message': 'Welcome back ' + id_info.get('name')
             }
 
         if id_info.get('profile_image_url_https'):
@@ -298,15 +295,15 @@ class TwitterAuthAPISerializer(serializers.Serializer):
         return {
             'token': new_user.token,
             'user_exists': False,
-            'message': 'Welcome to landville. '+first_name +
-            '. Ensure to edit your profile.'
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
         }
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
-        max_length=128, min_length=6, write_only=True,)
+        max_length=128, min_length=6, write_only=True, )
     token = serializers.CharField(read_only=True)
 
     def validate(self, data):
@@ -331,8 +328,9 @@ class LoginSerializer(serializers.Serializer):
 class ClientSerializer(serializers.ModelSerializer, BaseUtils):
     class Meta:
         model = Client
-        fields = ['client_name', 'phone', 'email', 'address', 'client_admin']
-        read_only_fields = ('is_deleted', 'is_published')
+        fields = ['id', 'client_name', 'phone', 'email', 'address',
+                  'client_admin']
+        read_only_fields = ('is_deleted', 'is_published', 'id')
 
     def validate(self, data):
         """Validate data before it gets saved."""
@@ -351,7 +349,6 @@ class ClientSerializer(serializers.ModelSerializer, BaseUtils):
 
         keys = ["State", "Street", "City"]
         for key in keys:
-
             self.validate_dictionary_keys(key, address, {
                 "address": "{} is required in address".format(key)
             })
@@ -409,7 +406,6 @@ class PasswordResetSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
-
     """Serialize actual changing of user password. """
     password = serializers.CharField(
         max_length=128,
@@ -417,7 +413,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={
             "min_length":
-            "Password should be at least {min_length} characters"
+                "Password should be at least {min_length} characters"
         }
     )
     confirm_password = serializers.CharField(
@@ -426,7 +422,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={
             "min_length":
-            "Password should be at least {min_length} characters"
+                "Password should be at least {min_length} characters"
         }
     )
     token = serializers.CharField()
@@ -528,7 +524,7 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
             except serializers.ValidationError as e:
                 raise serializers.ValidationError({
                     'next_of_kin_contact':
-                    'Phone number must be of the format +234 123 4567890'
+                        'Phone number must be of the format +234 123 4567890'
                 }) from e
 
         """ Remove the old profile image on Cloudinary
@@ -615,6 +611,7 @@ class BlackListSerializer(serializers.ModelSerializer):
     """
     Handle serializing and deserializing blacklist tokens
     """
+
     class Meta:
         model = BlackList
         fields = ('__all__')

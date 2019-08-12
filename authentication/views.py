@@ -1,41 +1,43 @@
-from utils.permissions import IsBuyerOrReadOnly, IsReviewer, IsAdmin
+import os
+
 import cloudinary.uploader as uploader
 import jwt
-import os
 from django.conf import settings
-from utils import BaseUtils
-from authentication.renderer import UserJSONRenderer
+from django.contrib import messages
+from django.forms.models import model_to_dict
+from django.http import Http404
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, get_object_or_404
+from django.views import View
 from rest_framework import authentication
+from rest_framework import (
+    generics,
+    status,
+)
+from rest_framework.exceptions import NotFound
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from authentication.authorization_helper import generate_validation_url
+from authentication.models import (
+    User, Client, UserProfile, ClientReview, ReplyReview)
+from authentication.permissions import (
+    IsClientAdmin,
+    IsProfileOwner,
+    IsOwnerOrAdmin)
+from authentication.renderer import UserJSONRenderer, ClientJSONRenderer
 from authentication.serializers import (
     GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
     ProfileSerializer, TwitterAuthAPISerializer, RegistrationSerializer,
     LoginSerializer, ClientSerializer, ChangePasswordSerializer,
     ClientReviewSerializer, ReviewReplySerializer, BlackListSerializer)
-from rest_framework.response import Response
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
-from authentication.models import (
-    User, Client, UserProfile, ClientReview, ReplyReview)
-from django.shortcuts import render, get_object_or_404
-from django.contrib import messages
-from django.forms.models import model_to_dict
-from django.http import HttpResponseRedirect
-from django.views import View
-from rest_framework import (
-    generics,
-    status,
-)
-from authentication.authorization_helper import generate_validation_url
-from authentication.permissions import (
-    IsClientAdmin,
-    IsProfileOwner,
-)
 from property.validators import validate_image
+from utils import BaseUtils
 from utils.media_handlers import CloudinaryResourceHandler
+from utils.permissions import IsBuyerOrReadOnly, IsReviewer, IsAdmin
 from utils.tasks import send_email_notification
-from django.http import Http404
-from authentication.models import BlackList
 
 Uploader = CloudinaryResourceHandler()
 
@@ -106,7 +108,8 @@ class EmailVerificationView(generics.GenericAPIView):
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
         except jwt.exceptions.DecodeError:
-            return HttpResponseRedirect(domain+'?verified_status=invalid_link')  # noqa
+            return HttpResponseRedirect(
+                domain + '?verified_status=invalid_link')  # noqa
         except jwt.ExpiredSignatureError:
             url = generate_validation_url([request], user_id=user_id)
             user = User.objects.filter(id=user_id).first()
@@ -219,11 +222,12 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
     Register new client company by client admin
     """
     serializer_class = ClientSerializer
-    renderer_classes = (UserJSONRenderer,)
+    renderer_classes = (ClientJSONRenderer,)
     permission_classes = (IsClientAdmin,)
 
     def get_queryset(self):
-        return Client.active_objects.filter(client_admin=self.request.user.pk)
+        user = self.request.user
+        return Client.active_objects.filter(client_admin=user.id)
 
     def get(self, request):
         serializer = self.serializer_class(self.get_queryset(), many=True)
@@ -261,18 +265,17 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+        serializer.save()
 
+        subject = "Landville client company review"
         company = serializer.validated_data['client_name']
         admin = serializer.validated_data['client_admin']
 
         recipient = list(
             User.active_objects.filter(role="LA").values_list('email',
                                                               flat=True))
-
-        serializer.save()
-
         payload = {
-            "subject": "Landville client company review",
+            "subject": subject,
             "recipient": recipient,
             "message": "",
             "text_body": "email/authentication/company_registration.txt",
@@ -285,20 +288,124 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         send_email_notification.delay(payload)
 
         response = {
-            "data": {
-                "client_company": serializer.data,
-                "message": "Your request to create a company has been\
-                    received, please wait for approval from landville admin."
-            }
+            "client_company": serializer.data,
+            "message": "Your request to create a company has been "
+                       "received, please wait for approval from landville "
+                       "admin."
         }
 
         return Response(response, status=status.HTTP_201_CREATED)
 
-    def check_client_admin_has_company(self, id_value):
+    @staticmethod
+    def check_client_admin_has_company(id_value):
         """
         Checks if client admin admin already has a company
         """
         return bool(Client.active_objects.filter(client_admin_id=id_value))
+
+    def patch(self, request):
+        """
+        Handle Update a user's company details once created.
+        :param request:
+        :return: company Details
+        """
+        data = request.data
+        company = self.get_queryset()
+        serializer = self.serializer_class(company[0], data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response = {
+            "client_company": serializer.data,
+            "message": "Successfully Updated client company details."
+        }
+
+        return Response(response, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        """
+        Handles deleting a client company
+        :param request:
+        :return:
+        """
+        company = self.get_queryset()
+        if not company:
+            return Response({"errors": "Client Company Does not exist"},
+                            status=status.HTTP_404_NOT_FOUND)
+        company[0].delete()
+        return Response("Company Deleted Successfully", status.HTTP_200_OK)
+
+
+class RetrieveUpdateDeleteClientView(APIView):
+    """
+    Handles viewing, updating and deleting of a
+    specific client company if authenticated as an admin
+    """
+    serializer_class = ClientSerializer
+    renderer_classes = (ClientJSONRenderer,)
+    permission_classes = (IsAuthenticated, IsOwnerOrAdmin,)
+
+    def get_object(self, request, company_id):
+        """
+        Handles retrieving client company
+
+        :param request:
+        :param company_id:
+        :return: Object
+        """
+        try:
+            company = Client.objects.get(id=company_id)
+            self.check_object_permissions(request, company)
+            return company
+        except Client.DoesNotExist:
+            raise NotFound(detail={"errors": "Client Company Does not exist"},
+                           code=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, **kwargs):
+        """
+        Handles retrieving a specific client company
+
+        :param request:
+        :param kwargs:
+        :return:
+        """
+        company = self.get_object(request, self.kwargs['id'])
+        serializer = self.serializer_class(company)
+        return Response({
+            "client_company": serializer.data,
+            "message": "You have retrieved your client company",
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request, **kwargs):
+        """
+        Handle Update a user's company details once created.
+        :param request:
+        :return: company Details
+        """
+        data = request.data
+
+        company = self.get_object(request, self.kwargs['id'])
+
+        serializer = self.serializer_class(company, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response = {
+            "client_company": serializer.data,
+            "message": "Successfully Update to company."
+        }
+
+        return Response(response, status=status.HTTP_200_OK)
+
+    def delete(self, request, **kwargs):
+        """
+        Handles deleting a client company
+        :param request:
+        :return:
+        """
+        company = self.get_object(request, self.kwargs['id'])
+        company.delete()
+        return Response("Company Deleted Successfully", status.HTTP_200_OK)
 
 
 class PasswordResetView(APIView):
@@ -649,7 +756,7 @@ class LogoutView(generics.CreateAPIView):
         return Response(
             {
                 'data':
-                {"message":  "Successfully logged out"}
+                    {"message": "Successfully logged out"}
             },
             status=status.HTTP_200_OK
         )
