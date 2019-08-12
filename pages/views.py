@@ -1,13 +1,15 @@
 from rest_framework.views import APIView
-from .models import Term
-from .serializers import PagesSerializer
+from pages.models import Term
+from pages.serializers import PagesSerializer
 from rest_framework.response import Response
+from rest_framework import status
 
 
 class TermsView(APIView):
+    """Handles sending terms and conditions to users."""
     serializer_class = PagesSerializer
 
     def get(self, request):
         terms = Term.objects.latest('last_updated_at')
         serializer = PagesSerializer(terms)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

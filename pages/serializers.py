@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Term
+from pages.models import Term
 
 
 class PagesSerializer(serializers.ModelSerializer):
