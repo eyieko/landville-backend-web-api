@@ -1,5 +1,6 @@
 import datetime
 from datetime import datetime as dt
+from django.utils.timezone import now
 
 from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import (
@@ -74,7 +75,6 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
          an enquiry for the property
          """
         user = request.user
-        enquirer_name = user.first_name + ' ' + user.last_name
         enquiry = request.data
 
         enquiring_property = Property. \
@@ -82,11 +82,12 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
                 slug=property_slug).first()
 
         if enquiring_property is None:
-            return Response({"errors": "we did not find the property"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"errors": "we did not find the property"},
+                            status=status.HTTP_404_NOT_FOUND)
         for user_enquiry in self.get_queryset():
 
-            if user_enquiry.target_property.slug == enquiring_property.slug and \
-                    user_enquiry.is_resolved is False:
+            if user_enquiry.target_property.slug == enquiring_property.slug\
+                    and user_enquiry.is_resolved is False:
                 return Response({
                     "errors": "enquiry for this property already exists"
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -285,7 +286,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         found_property = self.get_object()
 
         found_property.view_count += 1
-        found_property.last_viewed = datetime.datetime.now()
+        found_property.last_viewed = now()
         found_property.save()
         serializer = self.get_serializer(found_property)
         response = {
@@ -505,7 +506,7 @@ class TrendingPropertyView(generics.ListAPIView):
         """
 
         string_date = self.request.query_params.get('date', dt.strftime(
-            (dt.now() - datetime.timedelta(30)
+            (now() - datetime.timedelta(30)
              ).date(), '%Y-%m-%d'))
         date = dt.strptime(string_date, '%Y-%m-%d')
         city = self.request.query_params['city']

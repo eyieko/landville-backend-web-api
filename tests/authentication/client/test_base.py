@@ -4,6 +4,7 @@ from authentication.models import User
 from tests.factories.authentication_factory import (
     UserFactory, ClientFactory, ClientReviewsFactory, ReplyReviewsFactory)
 from rest_framework.test import APIRequestFactory
+from django.conf import settings
 
 
 class BaseTest(APITestCase):
@@ -125,7 +126,8 @@ class BaseTest(APITestCase):
             "email": self.company.email + "i",
             "address": {"City": "city", "State": "", "Street": "street"}
         }
-
+        self.cloudinary_url = f'http://res.cloudinary.com/{settings.CLOUDINARY_CLOUD_NAME}/'
+        self.cloudinary_url += 'image/upload/v1561568984/xep5qlwc8.png'
         self.updated_profile_with_image = {
             "phone": "2347725678900",
             "address":
@@ -265,11 +267,16 @@ class BaseTest(APITestCase):
 
         self.profile_with_image = {
             "phone": "2347725678900",
-            "address":
-            {"City": "Up state", "State": "New York", "Street": "Kigali"},
+            "address": {
+                "City": "Up state",
+                "State": "New York",
+                "Street": "Kigali"
+            },
             "user_level": "STARTER",
-            "image": 'http://res.cloudinary.com/landville/image/upload/v1561568984/xep5qlwc8.png',
-            "security_question": "What is the name of your favorite childhood friend",
+            "image":
+            self.cloudinary_url,
+            "security_question":
+            "What is the name of your favorite childhood friend",
             "security_answer": "Dave",
             'employer': "Andela",
             "designation": "DevOps Engineer",

@@ -1,12 +1,11 @@
 import re
-
-
+from authentication.models import (
+    User, Client, UserProfile, ClientReview, ReplyReview, PasswordResetToken)
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate
 import cloudinary.uploader as uploader
-
 from authentication.models import (
     User, Client, UserProfile,
     ClientReview, ReplyReview,
@@ -20,6 +19,7 @@ from utils.resethandler import ResetHandler
 from authentication.validators import validate_phone_number
 from property.validators import validate_address
 from utils.media_handlers import CloudinaryResourceHandler
+import cloudinary.uploader as uploader
 
 Uploader = CloudinaryResourceHandler()
 
@@ -94,14 +94,12 @@ class GoogleAuthSerializer(serializers.Serializer):
         Handles validating a request and decoding and getting user's info
         associated to an account on Google then authenticates the User
         : params access_token:
-        : rturn: user_token
+        : return: user_token
         """
-
         id_info = SocialValidation.google_auth_validation(
             access_token=data.get('access_token'))
-
         # check if data data retrieved once token decoded is empty
-        if id_info is None:
+        if not id_info:
             raise serializers.ValidationError('token is not valid')
 
         # check if a user exists after decoding the token in the payload
@@ -170,8 +168,7 @@ class FacebookAuthAPISerializer(serializers.Serializer):
             access_token=data.get('access_token'))
 
         # checks if the data retrieved once token is decoded is empty.
-        if id_info is None:
-
+        if not id_info:
             raise serializers.ValidationError('Token is not valid.')
 
         # Checks to see if there is a user id associated with
@@ -273,8 +270,8 @@ class TwitterAuthAPISerializer(serializers.Serializer):
             }
 
         if id_info.get('profile_image_url_https'):
-            id_info['user_profile_picture'] = id_info[
-                'profile_image_url_https']
+            profile_url_key = 'profile_image_url_https'
+            id_info['user_profile_picture'] = id_info[profile_url_key]
 
         SocialAuthProfileUpdate.get_user_info(id_info)
 
@@ -534,8 +531,8 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
                     'Phone number must be of the format +234 123 4567890'
                 }) from e
 
-        # Remove the old profile image on cloundinary
-        # before it is updated with a new one
+        """ Remove the old profile image on Cloudinary
+        before it is updated with a new one"""
         old_image = instance.image
         if old_image:
             public_image_id = Uploader.get_cloudinary_public_id(old_image)
@@ -554,11 +551,12 @@ class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
             })
 
         # validate fields that depend on each other
-        self.validate_dependent_fields(
-            data, 'security_question', 'security_answer',
-            'Please provide an answer to the selected question',
-            'Please choose a question to answer'
-        )
+        self.validate_dependent_fields(data,
+                                       'security_question',
+                                       'security_answer',
+                                       'Please provide an answer'
+                                       ' to the selected question',
+                                       'Please choose a question to answer')
 
         return data
 

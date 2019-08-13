@@ -7,7 +7,7 @@ from django.test.client import encode_multipart
 from rest_framework import status
 from rest_framework.test import force_authenticate
 from cloudinary.api import Error
-
+from utils.media_handlers import CloudinaryResourceHandler
 from tests.property import BaseTest
 from tests.factories.authentication_factory import UserFactory
 from property.views import (CreateAndListPropertyView,
@@ -34,6 +34,19 @@ def post_enquiry_url(property_slug):
 
 class PropertyViewTests(BaseTest):
     """This class defines tests for the different property views"""
+
+    def setUp(self):
+        super().setUp()
+        self.resource_handler = CloudinaryResourceHandler()
+        self.dummy_property = PropertyFactory.create(
+            image_others=[self.cloudinary_image_url1,
+                          self.cloudinary_image_url2],
+            video=self.cloudinary_video_url1,
+            client=self.client1)
+        self.video_id = self.resource_handler.\
+            get_cloudinary_public_id(self.dummy_property.video)
+        self.image_id = self.resource_handler.\
+            get_cloudinary_public_id(self.dummy_property.image_others[0])
 
     @patch('utils.media_handlers.uploader.upload')
     @patch('utils.media_handlers.uploader.upload_large')
@@ -193,8 +206,8 @@ class PropertyViewTests(BaseTest):
         view = CreateAndListPropertyView.as_view()
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data.get('results')), 5)
-        self.assertTrue(response.data.get('results')[0].get(
+        self.assertEqual(len(response.data.get('results')), 6)
+        self.assertTrue(response.data.get('results')[1].get(
             'is_published') and response.data.get('results')[2].get(
                 'is_published'))
 
@@ -463,28 +476,25 @@ class PropertyViewTests(BaseTest):
         self.assertFalse(response.data.get('data')['property']['is_published']
                          )
 
+    @patch('utils.media_handlers.uploader.destroy')
     @patch('utils.media_handlers.delete_resources')
     def test_that_client_admins_can_delete_images_and_video_for_property(
-            self, mock_delete):
+            self,  mock_delete_ressources,  mock_destroy):
         """Client admins should be able to delete images and video for
         their property"""
-
-        dummy_property = PropertyFactory.create(
-            image_others=[self.cloudinary_image_url1,
-                          self.cloudinary_image_url2],
-            video=self.cloudinary_video_url1,
-            client=self.client1)
-
         url = reverse('property:delete_cloudinary_resource', args=[
-                      dummy_property.slug])
-
+                      self.dummy_property.slug])
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {self.user1.token}')
-        update_data = {'image_others': [dummy_property.image_others[0]],
-                       'video': dummy_property.video}
+        update_data = {'image_others': [self.dummy_property.image_others[0]],
+                       'video': self.dummy_property.video}
         response = self.client.delete(
             url, update_data, format='json'
         )
+        mock_destroy.assert_called_once_with(self.image_id, invalidate=True)
+        mock_delete_ressources.assert_called_once_with(self.video_id,
+                                                       invalidate=True,
+                                                       resource_type='video')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data.get('data')[
                          'property']['image_others']), 1)
@@ -492,28 +502,25 @@ class PropertyViewTests(BaseTest):
                          'image_others'][0], self.cloudinary_image_url2)
         self.assertEqual(response.data.get('data')['property']['video'], None)
 
+    @patch('utils.media_handlers.uploader.destroy')
     @patch('utils.media_handlers.delete_resources')
     def test_that_landville_staff_can_delete_images_and_video_for_property(
-            self, mock_delete):
+            self, mock_delete_ressources, mock_destroy):
         """LandVille staff should be able to delete images and video for
         listed property"""
-
-        dummy_property = PropertyFactory.create(
-            image_others=[self.cloudinary_image_url1,
-                          self.cloudinary_image_url2],
-            video=self.cloudinary_video_url1,
-            client=self.client1)
-
         url = reverse('property:delete_cloudinary_resource', args=[
-                      dummy_property.slug])
-
+                      self.dummy_property.slug])
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {self.admin.token}')
-        update_data = {'image_others': [dummy_property.image_others[0]],
-                       'video': dummy_property.video}
+        update_data = {'image_others': [self.dummy_property.image_others[0]],
+                       'video': self.dummy_property.video}
         response = self.client.delete(
             url, update_data, format='json'
         )
+        mock_destroy.assert_called_once_with(self.image_id, invalidate=True)
+        mock_delete_ressources.assert_called_once_with(self.video_id,
+                                                       invalidate=True,
+                                                       resource_type='video')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data.get('data')[
                          'property']['image_others']), 1)
@@ -957,7 +964,6 @@ class TestEnquiryViews(BaseTest):
         test that only users can create a property enquiry
         """
 
-
         slug = self.property11.slug
 
         post_enquiry = self.factory.post(
@@ -974,7 +980,6 @@ class TestEnquiryViews(BaseTest):
         Test a user cannot be able to create an enquiry
         two times if the one he has created has not already been resolved
         """
-
 
         slug = self.property11.slug
 
@@ -999,7 +1004,6 @@ class TestEnquiryViews(BaseTest):
         A user cannnot be able to post a date that is in the past as the visit
         date
         """
-
 
         slug = self.property11.slug
 
@@ -1040,7 +1044,6 @@ class TestEnquiryViews(BaseTest):
 
     def test_user_can_delete_an_enquiry(self):
         """ test users/buyer can be able to delete an enquiry """
-
 
         slug = self.property11.slug
 
@@ -1086,12 +1089,10 @@ class TestEnquiryViews(BaseTest):
         self.assertEqual(up_res.status_code, status.HTTP_200_OK)
 
     def test_user_can_get_all_his_enquiries(self):
-        """ 
+        """
         test that a user gets an empty list when there are no enquiries
         posted
-
         """
-
         get_enquiry = self.factory.get(
             GET_ALL_ENQURIES_URL, format='json'
         )
@@ -1141,7 +1142,6 @@ class TestEnquiryViews(BaseTest):
     def test_landville_admin_can_be_able_to_get_one_one_enquiry(self):
         """ test landville admin can able to get one enquiry """
 
- 
         slug = self.property11.slug
 
         post_enquiry = self.factory.post(
@@ -1179,7 +1179,6 @@ class TestEnquiryViews(BaseTest):
 
     def test_client_admin_can_be_able_to_get_one_enquiry(self):
         """ test client admin cab be able to get a single enquiry """
-
 
         slug = self.property11.slug
 

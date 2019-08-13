@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 import os
 
+
 import django_heroku
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -206,7 +207,4 @@ django_heroku.settings(locals())
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
 
-
-CORS_ORIGIN_WHITELIST = (
-    os.environ.get('CORS_WHITELIST').split(',')
-)
+CORS_ORIGIN_WHITELIST = (os.environ.get('CORS_WHITELIST').split(','))
