@@ -5,7 +5,7 @@ from pages.models import Term
 
 
 class TermsTestBase(APITestCase):
-    """Tests if users can view terms and conditions. """
+    """Tests if users can access terms and conditions."""
 
     def setUp(self):
         self.terms_url = reverse("terms:terms")

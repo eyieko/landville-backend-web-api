@@ -1,9 +1,10 @@
 from django.db import models
 from ckeditor.fields import RichTextField
-# Create your models here.
 
 
 class Term(models.Model):
+    """Define behaviour and Properties of a Terms and Conditions Instance."""
+
     details = RichTextField(blank=True, null=True)
     last_updated_at = models.DateField(auto_now=True)
 
