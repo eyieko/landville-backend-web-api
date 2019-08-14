@@ -12,11 +12,11 @@ class PagesAdmin(admin.ModelAdmin):
     """
 
     def has_add_permission(self, request):
-        """"Ensure the admin cannot create new term Instances"""".
+        """Ensure the admin cannot create new term Instances."""
         return False
 
     def has_delete_permission(self, request, obj=None):
-        """"Ensure the admin cannot delete the existing Term Instance"""".
+        """Ensure the admin cannot delete the existing Term Instance."""
         return False
 
 
