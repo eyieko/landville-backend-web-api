@@ -350,12 +350,18 @@ class ProfileView(generics.GenericAPIView):
             user_object,
             fields=['id', 'email', 'first_name', 'last_name', 'role'])
 
+        card_info = model_to_dict(
+            user_object,
+            fields=['card_info']
+        )
+
         profile = UserProfile.objects.get(user=request.user)
         profile_data = model_to_dict(
             profile,
             exclude=['security_question', 'security_answer', 'is_deleted'])
 
         profile_data['user'] = user_data
+        profile_data['card_info'] = card_info
         data = {
             "data": {
                 "profile": profile_data
