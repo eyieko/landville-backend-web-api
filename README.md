@@ -32,7 +32,7 @@ Backend Repository for LandVille Project
 | GET    | /api/v1/transcations/account/<account_number>      | Get a single account details entry                       |
 | PUT    | /api/v1/transcations/account/<account_number>      | Update a single account detail entry                     |
 | DELETE | /api/v1/transcations/account/<account_number>      | Delete a single account detail entry                     |
-| POST   | /api/v1/transactions/tokenized-card/               | Make payment with tokenized card
+| POST   | /api/v1/transactions/tokenized-card/               | Make payment with tokenized card                         |
 | GET    | /api/v1/properties/                                | get all property                                         |
 | POST   | /api/v1/properties/                                | create a property page                                   |
 | GET    | /api/v1/properties/get/<slug>/                     | get specific property                                    |
@@ -48,7 +48,7 @@ Backend Repository for LandVille Project
 | GET    | api/v1/properties/enquiries/all/                   | get all your enquiries                                   |
 | GET    | api/v1/properties/enquiries/<enquiry_id>/          | get one enquiry                                          |
 | DELETE | api/v1/properties/:slug/resource                   | delete a cloudinary resource                             |
-| GET    | api/v1/auth/profile/                               | gets a profile of the loggedin user
+| GET    | api/v1/auth/profile/                               | gets a profile of the loggedin user                      |
 
 | PATCH  | api/v1/auth/profile/                               | edits a profile of the loggedin user
 
@@ -122,7 +122,7 @@ The settings file assumes that rabbitmq-server is running on localhost using
 ## Testing
 
 - To run tests without coverage run `python manage.py test`
-- To run tests with coverage run `coverage run --source='authentication/,property/,transactions/' manage.py test && coverage report`
+- To run tests with coverage run `coverage run --source='authentication/,property/,transactions/,pages/,' manage.py test && coverage report`
 
 ## Contribute
 
