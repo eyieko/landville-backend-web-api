@@ -68,6 +68,7 @@ class CardPaymentTest(BaseTest):
             'metaname': 'property_id',
             'metavalue': None
         }]
+        UserFactory.create(email='email@email.com')
 
     @patch('transactions.transaction_services'
            '.TransactionServices.initiate_card_payment')
@@ -306,7 +307,7 @@ class CardPaymentTest(BaseTest):
                         'embedtoken': 'sometoken'
                     }],  # noqa
                     'brand': 'somebrand'
-                }
+                },
             }
         }
 
@@ -410,7 +411,8 @@ class CardPaymentTest(BaseTest):
             'status': 'error',
             'data': {
                 'suggested_auth': 'NOAUTH_INTERNATIONAL',
-                'status': 'error'
+                'status': 'error',
+                'custemail': 'email@email.com'
             }
         }
         mock_validate.return_value = {
@@ -420,7 +422,8 @@ class CardPaymentTest(BaseTest):
                 'tx': {
                     'txRef': 'sampletxref',
                 },
-                'meta': [self.not_save_card_meta]
+                'meta': [self.not_save_card_meta],
+
             }
         }
 
@@ -483,14 +486,12 @@ class CardPaymentTest(BaseTest):
                             'embedtoken': 'sometoken'
                         }],
                         'brand': 'somebrand'
-                    }
+                    },
                 }
             }
 
             resp = self.client.get(self.foreign_validate_url)
-            self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp.json()['message'],
-                             'somemessage. Card details have been saved.')
+            self.assertEqual(resp.status_code, 302)
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
@@ -506,14 +507,14 @@ class CardPaymentTest(BaseTest):
                 },
                 'meta': [self.save_card_meta] + self.purpose_meta,
                 'status': 'error',
-                'vbvmessage': 'fake fake'
+                'vbvmessage': 'fake fake',
+                'custemail': 'email@email.com'
             },
             'message': 'invalid transaction id'
         }
 
         resp = self.client.get(self.foreign_validate_url)
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(resp.json().get('message'), 'invalid transaction id')
+        self.assertEqual(resp.status_code, 302)
 
     @patch('transactions.transaction_services'
            '.TransactionServices.verify_payment')
@@ -553,13 +554,12 @@ class CardPaymentTest(BaseTest):
                         'embedtoken': 'sometoken'
                     }],
                     'brand': 'somebrand'
-                }
+                },
             }
         }
 
         resp = self.client.get(self.foreign_validate_url)
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()['message'], 'somemessage')
+        self.assertEqual(resp.status_code, 302)
 
     @patch('transactions.transaction_services'
            '.TransactionServices.pay_with_saved_card')

@@ -1,10 +1,12 @@
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 import json
+import os
 from rest_framework import status
 from rest_framework.generics import (RetrieveUpdateDestroyAPIView,
                                      ListCreateAPIView, ListAPIView)
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework.permissions import (
@@ -29,6 +31,7 @@ from transactions.serializers import (
 from transactions.transaction_services import TransactionServices
 from property.models import Property
 from transactions.transaction_utils import save_deposit
+from authentication.models import User
 
 
 class ClientAccountAPIView(ListCreateAPIView):
@@ -315,7 +318,6 @@ def card_pin_payment(request):
 
 @swagger_auto_schema(method='post', request_body=PaymentValidationSerializer)
 @api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
 def validate_payment(request):
     """
     Endpoint for handling card payment validation. It gets transaction
@@ -325,7 +327,6 @@ def validate_payment(request):
     :return: JSON response
     """
     data = request.data
-    user = request.user
     flwref = data.get('flwRef')
     otp = data.get('otp')
     property = None
@@ -348,6 +349,8 @@ def validate_payment(request):
     else:
         txRef = resp['data']['tx']['txRef']
         verify_resp = TransactionServices.verify_payment(txRef)
+        email = verify_resp['data']['custemail']
+        user = User.objects.get(email=email)
         if verify_resp.get('data').get('status') == 'successful':
             save_card = verify_resp['data']['meta'][0]['metavalue']
             message = verify_resp['data']['vbvmessage']
@@ -368,7 +371,6 @@ def validate_payment(request):
 
 
 @api_view(['GET'])
-@permission_classes((IsAuthenticated, ))
 def foreign_card_validation_response(request):
     """
     Endpoint for handling foreign card validation response. It uses the
@@ -376,9 +378,12 @@ def foreign_card_validation_response(request):
     :param request: DRF request object
     :return: JSON response
     """
+    domain = os.environ.get('FRONT_END_URL')
+
     resp = json.loads(request.query_params['response'])
     verify_resp = TransactionServices.verify_payment(resp['txRef'])
-    user = request.user
+    email = verify_resp['data']['custemail']
+    user = User.objects.get(email=email)
     if verify_resp.get('status') == 'success':
         message = verify_resp['data']['vbvmessage']
         meta_data = verify_resp.get('data').get('meta')
@@ -395,11 +400,17 @@ def foreign_card_validation_response(request):
         references = {k: v for k, v in data.items() if k.endswith('ref')}
         amount = data.get('amount', 0)
         save_deposit(purpose, references, amount, user, property)
-    else:
-        return Response({'message': verify_resp.get('message')},
-                        status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({'message': message})
+    else:
+        return HttpResponseRedirect(
+            f"{domain}/international-payment/status/" +
+            f"?message={verify_resp.get('message')}&status=failure"
+        )
+
+    return HttpResponseRedirect(
+        f"{domain}/international-payment/status/"
+        + f"?message={message}&status=success"
+    )
 
 
 @swagger_auto_schema(method='post', request_body=CardlessPaymentSerializer)
