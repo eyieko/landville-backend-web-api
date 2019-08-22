@@ -60,7 +60,9 @@ class TransactionsSerializer(PropertySerializer):
                   'price',
                   'total_amount_paid',
                   'balance', 'deposits',
-                  'percentage_completion']
+                  'percentage_completion',
+                  'image_main',
+                  'address']
 
     def get_percentage_completion(self, obj):
         """
