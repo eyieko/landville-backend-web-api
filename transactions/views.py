@@ -378,7 +378,7 @@ def foreign_card_validation_response(request):
     :param request: DRF request object
     :return: JSON response
     """
-    domain = os.environ.get('FRONT_END_URL')
+    domain = os.environ.get('FRONT_END_INTPAYMENT_URL')
 
     resp = json.loads(request.query_params['response'])
     verify_resp = TransactionServices.verify_payment(resp['txRef'])
@@ -403,12 +403,12 @@ def foreign_card_validation_response(request):
 
     else:
         return HttpResponseRedirect(
-            f"{domain}/international-payment/status/" +
+            f"{domain}" +
             f"?message={verify_resp.get('message')}&status=failure"
         )
 
     return HttpResponseRedirect(
-        f"{domain}/international-payment/status/"
+        f"{domain}"
         + f"?message={message}&status=success"
     )
 
