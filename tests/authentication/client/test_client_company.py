@@ -28,6 +28,21 @@ class ClientCompanyTest(TestUtils):
     """Contains user registration test methods."""
 
     @patch('utils.tasks.send_email_notification.delay')
+    def test_create_client_company_with_no_data(self, mock_email):
+        """
+        Create a client company with empty data(object)
+        """
+        self.set_token()
+        response = self.client.post(
+            self.client_url, self.client_with_empty_data, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn(
+            "This field is required.",
+            str(response.data)
+        )
+
+    @patch('utils.tasks.send_email_notification.delay')
     def test_create_client_company_with_invalid_phone_number(self, mock_email):
         """
         Create a client company account with invalid phone number.

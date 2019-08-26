@@ -254,15 +254,12 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
 
     def post(self, request):
         data = request.data
-        data["client_admin"] = request.user.id
-        data["client_name"] = self.remove_redundant_spaces(data["client_name"])
-
         if self.check_client_admin_has_company(request.user.id):
             return Response(
                 {'error': 'You cannot be admin of more than one client'},
                 status.HTTP_403_FORBIDDEN
             )
-
+        data["client_admin"] = request.user.id
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
