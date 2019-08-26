@@ -1,15 +1,16 @@
 """User registration tests."""
-from unittest.mock import (
-    patch,
-)
-from rest_framework import status
-from tests.utils.utils import TestUtils
+from unittest.mock import patch
+
 from django.urls import reverse
-from authentication.views import (
-    ReplyView, ReviewDetailView, ClientReviewsView, UserReviewsView)
+from rest_framework import status
 from rest_framework.test import force_authenticate
-from tests.factories.authentication_factory import (
-    ClientReviewsFactory, ReplyReviewsFactory)
+
+from authentication.models import Client
+from authentication.views import (ClientReviewsView, ReplyView,
+                                  ReviewDetailView, UserReviewsView)
+from tests.factories.authentication_factory import (ClientReviewsFactory,
+                                                    ReplyReviewsFactory)
+from tests.utils.utils import TestUtils
 
 
 def client_review_url(client_id):
@@ -200,6 +201,34 @@ class ClientCompanyTest(TestUtils):
         self.assertIn("You have retrieved your client company",
                       str(response.data))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_clients_list_unauthenticated(self):
+        """Get clients when user is not authenticated."""
+        response = self.client.get(
+            self.clients_list_url, format="json")
+        self.assertIn("Please log in to proceed.",
+                      str(response.data))
+
+    def test_get_clients_list(self):
+        """Get clients when user is authenticated."""
+        self.set_token()
+        self.client.post(
+            self.client_url, self.valid_client_data, format="json")
+        response = self.client.get(
+            self.clients_list_url, format="json")
+        self.assertIn("You have retrieved all clients",
+                      str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_empty_clients_list(self):
+        """Retrieve clients list when no company is created"""
+        self.set_token()
+        Client.objects.all().delete()
+        response = self.client.get(
+            self.clients_list_url, format="json")
+        self.assertIn("There are no clients at the moment.",
+                      str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     @patch('utils.tasks.send_email_notification.delay')
     def test_create_client_company_with_address_with_empty_street(self,

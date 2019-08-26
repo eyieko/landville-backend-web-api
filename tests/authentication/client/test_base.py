@@ -14,6 +14,7 @@ class BaseTest(APITestCase):
         self.client = APIClient()
         self.registration_url = reverse("auth:register")
         self.client_url = reverse("auth:client")
+        self.clients_list_url = reverse("auth:clients")
         self.client_profile = reverse("auth:profile")
         self.login_url = reverse("auth:login")
         self.user = UserFactory.create()

@@ -7,7 +7,7 @@ from authentication.views import (
     LoginAPIView, PasswordResetView, ProfileView,
     AddReasonView, ClientReviewsView, ReviewDetailView,
     ReplyView, UserReviewsView, LogoutView,
-    RetrieveUpdateDeleteClientView)
+    RetrieveUpdateDeleteClientView, ClientListView)
 
 app_name = 'authentication'
 
@@ -19,6 +19,7 @@ urlpatterns = [
     path('facebook/', FacebookAuthAPIView.as_view(), name='facebook'),
     path('twitter/', TwitterAuthAPIView.as_view(), name='twitter'),
     path("client/", ClientCreateView.as_view(), name="client"),
+    path("clients/", ClientListView.as_view(), name="clients"),
     path("client/<int:id>/", RetrieveUpdateDeleteClientView.as_view(),
          name="list-company"),
     path(

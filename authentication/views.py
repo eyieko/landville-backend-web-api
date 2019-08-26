@@ -333,6 +333,37 @@ class ClientCreateView(generics.GenericAPIView, BaseUtils):
         return Response("Company Deleted Successfully", status.HTTP_200_OK)
 
 
+class ClientListView(generics.GenericAPIView):
+    """
+    Return a list of registered clients
+    """
+    serializer_class = ClientSerializer
+    renderer_classes = (ClientJSONRenderer,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        """ Returns all active client companies  """
+
+        return Client.active_objects.all()
+
+    def get(self, request):
+        """ Handles retrieving all existing client companies """
+
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+        if not serializer.data:
+            response = {
+                "message": "There are no clients at the moment."
+            }
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response = {
+                "client_companies": serializer.data,
+                "message": "You have retrieved all clients",
+            }
+            status_code = status.HTTP_200_OK
+        return Response(response, status=status_code)
+
+
 class RetrieveUpdateDeleteClientView(APIView):
     """
     Handles viewing, updating and deleting of a

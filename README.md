@@ -23,6 +23,7 @@ Backend Repository for LandVille Project
 | POST   | /api/v1/auth/twitter/                              | user signs in through twitter                            |
 | POST   | /api/v1/auth/facebook/                             | user signs in through facebook                           |
 | POST   | /api/v1/auth/client/                               | application for client company                           |
+| GET    | /api/v1/auth/clients/                              | Fetch all client companies                               |
 | POST   | /api/v1/auth/password-reset/                       | user gets a reset password link                          |
 | POST   | /api/v1/pay/card-pin/                              | initiate payment with local Nigerian cards, with PIN     |
 | POST   | /api/v1/pay/card-foreign/                          | initiate payment with foreign cards                      |
