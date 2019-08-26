@@ -285,7 +285,7 @@ def card_pin_payment(request):
             'save_card': serializer.validated_data.get('save_card'),
             'email': user.email,
             'firstname': user.first_name,
-            'lastname': user.last_name,
+            'lastname': user.last_name
         }
         init_resp = TransactionServices.initiate_card_payment(pay_data)
         if init_resp.get('status') == 'error':
