@@ -31,7 +31,7 @@ class DepositTest(TestCase):
         self.savings1 = SavingsFactory.create(owner=self.user1)
 
     def test_that_the_string_representation_works(self):
-        deposit = DepositFactory.create(account=self.savings1)
+        deposit = DepositFactory.create()
         self.assertEqual(
             str(deposit), f'{deposit.amount} amount deposit for {deposit.account}')
 

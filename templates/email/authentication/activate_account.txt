@@ -1,0 +1,11 @@
+WELCOME
+
+{{ username }}
+
+Thanks for signing up with Landville!
+Verify your Account. If you haven't Done so already, please confirm that you want to use this address as your Constant Contact account.
+
+Once you are verified, you can now start using services offered by Landville.
+
+Verify Account
+{{ url }}

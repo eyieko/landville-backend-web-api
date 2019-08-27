@@ -10,6 +10,9 @@ settings.json
 db.sqlite3
 # python_ dotenv
 .env
+venv/
+.venv/
+
 # Unit test / coverage reports
 .coverage
 .DS_Store
@@ -18,3 +21,18 @@ htmlcov/
 .idea/
 staticfiles/
 htmlcov/
+# celery task
+celerybeat-schedule
+dump.rdb
+
+# atomic commit message template
+
+commit-message-template.md
+# celery task
+celerybeat-schedule
+dump.rdb
+
+# atomic commit message template
+
+commit-message-template.md
+

@@ -1,7 +1,7 @@
 from django.db import models
-
+from django.contrib.postgres.fields import JSONField
 from utils.models import BaseAbstractModel
-from utils.managers import CustomQuerySet, ClientAccountQuery
+from utils.managers import CustomQuerySet, ClientAccountQuery, TransactionQuery
 from property.models import Property
 from authentication.models import User, Client
 
@@ -21,22 +21,33 @@ class Transaction(BaseAbstractModel):
         User, on_delete=models.CASCADE, related_name='buyer')
     status = models.CharField(
         max_length=1, choices=STATUS_CHOICES, default='P')
-
+    amount_paid = models.DecimalField(decimal_places=2,
+                                      max_digits=14, default=0)
     objects = models.Manager()
-    active_objects = CustomQuerySet.as_manager()
+    active_objects = TransactionQuery.as_manager()
 
     def __str__(self):
         return f'{self.status} transaction for {self.target_property}'
 
 
 class Deposit(BaseAbstractModel):
-    """This class defines the Deposit model for all Savings"""
+    """This class defines the Deposit model for all Savings and transaction"""
 
-    account = models.ForeignKey(
-        'Savings', on_delete=models.CASCADE, related_name='account')
-    amount = models.DecimalField(decimal_places=3, max_digits=12)
+    account = models.ForeignKey('Savings',
+                                on_delete=models.CASCADE,
+                                related_name='account',
+                                default=None,
+                                blank=True,
+                                null=True)
+    transaction = models.ForeignKey('Transaction',
+                                    on_delete=models.CASCADE,
+                                    related_name='deposits',
+                                    default=None,
+                                    blank=True,
+                                    null=True)
+    amount = models.DecimalField(decimal_places=2, max_digits=12)
+    references = JSONField(default=None, blank=False, null=False)
     description = models.TextField(max_length=500)
-
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()
 
@@ -47,9 +58,9 @@ class Deposit(BaseAbstractModel):
 class Savings(BaseAbstractModel):
     """This class defines the Savings model"""
 
-    owner = models.ForeignKey(
+    owner = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name='savings')
-    balance = models.DecimalField(decimal_places=3, max_digits=14)
+    balance = models.DecimalField(decimal_places=2, max_digits=14)
 
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()

@@ -1,24 +1,45 @@
 import datetime
 from datetime import datetime as dt
-from rest_framework import generics, status
-from rest_framework.response import Response
-from django.utils.datastructures import MultiValueDictKeyError
-from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils.timezone import now
 
-from property.models import Property, BuyerPropertyList, PropertyEnquiry
-from property.serializers import (
-    PropertySerializer, BuyerPropertyListSerializer, PropertyEnquirySerializer)
-from utils.media_handlers import CloudinaryResourceHandler
-from property.renderers import PropertyJSONRenderer, PropertyEnquiryJSONRenderer
-from utils.permissions import (
-    ReadOnly, IsClientAdmin, CanEditProperty, IsBuyer, IsOwner)
+from django.utils.datastructures import MultiValueDictKeyError
+from rest_framework import (
+    generics,
+    status,
+)
+from rest_framework.parsers import (
+    FormParser,
+    MultiPartParser,
+)
+from rest_framework.permissions import (
+    IsAuthenticated
+)
+from rest_framework.response import Response
 
 from property.filters import PropertyFilter
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated)
-from authentication.models import User
-
-from utils.emailHelper import EmailHelper
+from property.models import (
+    BuyerPropertyList,
+    Property,
+    PropertyEnquiry,
+)
+from property.renderers import (
+    PropertyEnquiryJSONRenderer,
+    PropertyJSONRenderer,
+)
+from property.serializers import (
+    BuyerPropertyListSerializer,
+    PropertyEnquirySerializer,
+    PropertySerializer,
+)
+from utils.media_handlers import CloudinaryResourceHandler
+from utils.permissions import (
+    CanEditProperty,
+    IsBuyer,
+    IsClientAdmin,
+    IsOwner,
+    ReadOnly,
+)
+from utils.tasks import send_email_notification
 
 
 class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
@@ -54,7 +75,6 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
          an enquiry for the property
          """
         user = request.user
-        enquirer_name = user.first_name + ' ' + user.last_name
         enquiry = request.data
 
         enquiring_property = Property. \
@@ -62,11 +82,12 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
                 slug=property_slug).first()
 
         if enquiring_property is None:
-            return Response({"errors": "we did not find the property"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"errors": "we did not find the property"},
+                            status=status.HTTP_404_NOT_FOUND)
         for user_enquiry in self.get_queryset():
 
-            if user_enquiry.target_property.slug == enquiring_property.slug and \
-                    user_enquiry.is_resolved is False:
+            if user_enquiry.target_property.slug == enquiring_property.slug\
+                    and user_enquiry.is_resolved is False:
                 return Response({
                     "errors": "enquiry for this property already exists"
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -84,13 +105,33 @@ class ListCreateEnquiryAPIView(generics.ListCreateAPIView):
             f'{enquiring_property.title} Property owned by '
             f'{enquiring_property.client}'
         }
-        message = [
-            request,
-            user.email,
-            enquiring_property.client.email,
-            enquiring_property
-        ]
-        EmailHelper.send_enquirer_email(message)
+        payload1 = {
+            "subject": "Landville Property Enquiry",
+            "recipient": [user.email],
+            "text_body": "email/authentication/base_email.txt",
+            "html_body": "email/authentication/base_email.html",
+            "context": {
+                'title': "Hey there,",
+                'message': "You are receiving this because you have enquired "
+                           "about a property at Landville, a representative"
+                           " from the Client will get to you soon. Thanks "
+                           "for using Landville"
+            }
+        }
+        payload2 = {
+            "subject": "Landville Property Enquiry",
+            "recipient": [enquiring_property.client.email],
+            "text_body": "email/authentication/base_email.txt",
+            "html_body": "email/authentication/base_email.html",
+            "context": {
+                'title': "Hey there,",
+                'message': f"Hey {enquiring_property.client.client_name}, "
+                f"somebody is enquiring about your property at LandVille, "
+                f"kindly log into Landville get to know about the enquiry"
+            }
+        }
+        send_email_notification.delay(payload1)
+        send_email_notification.delay(payload2)
         return Response(response, status=status.HTTP_201_CREATED)
 
 
@@ -245,7 +286,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         found_property = self.get_object()
 
         found_property.view_count += 1
-        found_property.last_viewed = datetime.datetime.now()
+        found_property.last_viewed = now()
         found_property.save()
         serializer = self.get_serializer(found_property)
         response = {
@@ -465,7 +506,7 @@ class TrendingPropertyView(generics.ListAPIView):
         """
 
         string_date = self.request.query_params.get('date', dt.strftime(
-            (dt.now() - datetime.timedelta(30)
+            (now() - datetime.timedelta(30)
              ).date(), '%Y-%m-%d'))
         date = dt.strptime(string_date, '%Y-%m-%d')
         city = self.request.query_params['city']

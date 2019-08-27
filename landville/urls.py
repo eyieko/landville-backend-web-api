@@ -70,5 +70,9 @@ urlpatterns = [
     path('api/v1/properties/',
          include(('property.urls', 'property'), namespace='property')),
     path('api/v1/transactions/',
-         include('transactions.urls', namespace='transactions'))
+         include('transactions.urls', namespace='transactions')),
+    path('api/v1/terms/', include(('pages.urls', 'terms'), namespace='terms')),
 ]
+
+handler404 = 'landville.views.error_404'
+handler500 = 'utils.views.error_500'

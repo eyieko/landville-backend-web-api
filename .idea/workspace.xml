@@ -2,7 +2,116 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="022c5ee2-a262-4bd5-8b15-4211f1cd3ac2" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/authentication/authorization_helper.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/authentication/signals.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/authentication/validators.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/landville/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/migrations/0001_initial.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/migrations/0002_auto_20190812_1244.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/serializers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/urls.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/activate_account.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/activate_account.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/base_email.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/base_email.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/company_registration.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/email/authentication/company_registration.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/authentication/client/test_user_profile.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/authentication/login/test_logout.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/pages/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/pages/test_admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/pages/test_base.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/pages/test_terms_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/pages/test_views.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/test_error_handlers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_views/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_views/test_card_payment.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_views/test_client_accounts_details.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_views/test_return_my_deposit.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/transactions/test_views/test_transcations.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/utils/test_error_handlers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/utils/test_tasks.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/transactions/transaction_utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/celery.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/cron_jobs.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/tasks.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.circleci/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.circleci/config.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env_sample" beforeDir="false" afterPath="$PROJECT_DIR$/.env_sample" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.flake8" beforeDir="false" afterPath="$PROJECT_DIR$/.flake8" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Procfile" beforeDir="false" afterPath="$PROJECT_DIR$/Procfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/apps.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/apps.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/auth_exception_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/exception_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/backends.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/backends.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/email_helper.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/migrations/0001_initial.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/permissions.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/permissions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/renderer.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/renderer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/socialvalidators.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/socialvalidators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/templates/password_reset.html" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/templates/password_reset.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/authentication/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/authentication/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/landville/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/landville/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/landville/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/landville/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/landville/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/landville/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/manage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/property/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/property/migrations/0001_initial.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/property/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/property/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/property/validators.py" beforeDir="false" afterPath="$PROJECT_DIR$/property/validators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/property/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/property/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/admin/test_approval_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/admin/test_approval_views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/admin/test_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/admin/test_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/admin/test_forms.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/admin/test_forms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/client/test_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/client/test_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/client/test_client_company.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/client/test_client_company.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/login/test_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/login/test_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/login/test_custom_exception.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/login/test_custom_exception.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/login/test_login.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/login/test_login.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/registration/test_register.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/registration/test_register.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/registration/test_verify.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/registration/test_verify.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_base.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_jwt_authentication.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_jwt_authentication.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_passwordreset.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_passwordreset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_social.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_social.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/authentication/test_social_serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/authentication/test_social_serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/factories/authentication_factory.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/factories/authentication_factory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/factories/transaction_factory.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/factories/transaction_factory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/property/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/property/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/property/test_renderers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/property/test_renderers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/property/test_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/property/test_views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/transactions/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/transactions/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/transactions/test_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/transactions/test_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/transactions/test_serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/transactions/test_serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/transactions/test_transaction_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/transactions/test_transaction_services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/transactions/test_views.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/utils/test_managers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils/test_managers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/utils/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/utils/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/migrations/0001_initial.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/transaction_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/transaction_services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/transactions/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/transactions/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/emailHelper.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/managers.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/managers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/permissions.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/permissions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/resethandler.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/resethandler.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,19 +122,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/property/serializers.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="23" column="46" selection-start-line="23" selection-start-column="46" selection-end-line="23" selection-end-column="46" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/property/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2910">
-              <caret line="214" selection-start-line="214" selection-end-line="214" />
+            <state relative-caret-position="3795">
+              <caret line="255" selection-start-line="255" selection-end-line="255" />
             </state>
           </provider>
         </entry>
@@ -35,7 +135,7 @@
           <provider selected="true" editor-type-id="text-editor" />
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/property/models.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="237">
@@ -47,11 +147,20 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="345">
+              <caret line="23" column="13" lean-forward="true" selection-start-line="23" selection-start-column="13" selection-end-line="23" selection-end-column="13" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/authentication/models.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2505">
-              <caret line="181" column="62" selection-start-line="181" selection-start-column="62" selection-end-line="181" selection-end-column="62" />
+            <state relative-caret-position="3375">
+              <caret line="225" column="62" selection-start-line="225" selection-start-column="62" selection-end-line="225" selection-end-column="62" />
             </state>
           </provider>
         </entry>
@@ -79,8 +188,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/managers.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="315">
-              <caret line="21" column="6" selection-start-line="21" selection-start-column="6" selection-end-line="21" selection-end-column="6" />
+            <state relative-caret-position="375">
+              <caret line="25" column="6" selection-start-line="25" selection-start-column="6" selection-end-line="25" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -99,8 +208,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils/__init__.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="10" column="10" selection-end-line="25" />
+            <state relative-caret-position="150">
+              <caret line="11" column="10" selection-end-line="50" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -131,8 +240,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/.env" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -146,7 +255,17 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="ProjectPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="landville-backend-web-api" type="b2602c69:ProjectViewProjectNode" />
+              <item name="landville-backend-web-api" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -218,16 +337,18 @@
       <workItem from="1562423456216" duration="285000" />
       <workItem from="1563041999162" duration="277000" />
       <workItem from="1563188231769" duration="1000" />
+      <workItem from="1566907275670" duration="182000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="22623000" />
+    <option name="totallyTimeSpent" value="22805000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.21816881" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22103004" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -298,13 +419,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1260">
           <caret line="103" column="20" selection-start-line="103" selection-start-column="20" selection-end-line="103" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="18" selection-start-line="18" selection-end-line="18" />
         </state>
       </provider>
     </entry>
@@ -406,8 +520,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/property/views.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2910">
-          <caret line="214" selection-start-line="214" selection-end-line="214" />
+        <state relative-caret-position="3795">
+          <caret line="255" selection-start-line="255" selection-end-line="255" />
         </state>
       </provider>
     </entry>
@@ -416,8 +530,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/authentication/models.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2505">
-          <caret line="181" column="62" selection-start-line="181" selection-start-column="62" selection-end-line="181" selection-end-column="62" />
+        <state relative-caret-position="3375">
+          <caret line="225" column="62" selection-start-line="225" selection-start-column="62" selection-end-line="225" selection-end-column="62" />
         </state>
       </provider>
     </entry>
@@ -439,8 +553,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/utils/managers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="21" column="6" selection-start-line="21" selection-start-column="6" selection-end-line="21" selection-end-column="6" />
+        <state relative-caret-position="375">
+          <caret line="25" column="6" selection-start-line="25" selection-start-column="6" selection-end-line="25" selection-end-column="6" />
         </state>
       </provider>
     </entry>
@@ -455,8 +569,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/utils/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="10" column="10" selection-end-line="25" />
+        <state relative-caret-position="150">
+          <caret line="11" column="10" selection-end-line="50" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
@@ -470,6 +584,13 @@
           <folding>
             <element signature="e#0#28#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="23" column="13" lean-forward="true" selection-start-line="23" selection-start-column="13" selection-end-line="23" selection-end-column="13" />
         </state>
       </provider>
     </entry>

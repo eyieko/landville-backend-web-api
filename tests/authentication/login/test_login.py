@@ -23,7 +23,7 @@ class LoginTest(BaseTest):
             "password": "Password~!Z1"
         }, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIsNotNone(response.data["invalid"])
+        self.assertIsNotNone(response.data['errors']["invalid"])
 
     def test_should_fail_with_an_unverified_email(self):
         self.user.is_verified = False
@@ -33,4 +33,4 @@ class LoginTest(BaseTest):
             "password": "Password~!Z"
         }, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIsNotNone(response.data["user"])
+        self.assertIsNotNone(response.data['errors']["user"])

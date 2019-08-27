@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 import os
+
+
 import django_heroku
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -24,8 +26,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG')
-
+DEBUG = eval(os.environ.get('DEBUG'))
 ALLOWED_HOSTS = [os.environ.get('ALLOWED_HOSTS')]
 
 # Application definition
@@ -40,21 +41,26 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # third party django extensions
+    'corsheaders',
     'rest_framework',
     'drf_yasg',
     'django_extensions',
-    'sendgrid',
     'cloudinary',
+    'ckeditor',
+
     # Landville apps
     'authentication.apps.AuthenticationConfig',
     'property.apps.PropertyConfig',
     'transactions.apps.TransactionsConfig',
+    'pages.apps.PagesConfig'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -69,7 +75,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'authentication.backends.JWTAuthentication',),
     'EXCEPTION_HANDLER':
-    'authentication.auth_exception_handler.custom_exception_handler',
+    'utils.exception_handler.custom_exception_handler',
     'NON_FIELD_ERRORS_KEY': 'errors',
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
@@ -85,6 +91,10 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     )
 }
+
+
+# for all scheduled tasks
+SCHEDULER_AUTOSTART = True
 
 TEMPLATES = [
     {
@@ -158,8 +168,16 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_PORT = os.environ.get('EMAIL_PORT', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '')
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+
+# Celery settings
+BROKER_URL = os.environ.get('REDIS_URL')
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
@@ -180,6 +198,7 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Extra places for collectstatic to find static files.
 STATICFILES_DIRS = (
@@ -189,3 +208,5 @@ django_heroku.settings(locals())
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+
+CORS_ORIGIN_WHITELIST = (os.environ.get('CORS_WHITELIST').split(','))

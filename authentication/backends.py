@@ -4,14 +4,14 @@ from django.conf import settings
 
 from rest_framework import authentication, exceptions
 
-from .models import User
+from .models import User, BlackList
 
 
 """Configure JWT Here"""
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-    auth_header_prefix = 'Bearer'.lower() #bearer
+    auth_header_prefix = 'Bearer'.lower()  # bearer
 
     def authenticate(self, request):
         """
@@ -67,11 +67,11 @@ class JWTAuthentication(authentication.BaseAuthentication):
         """
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
-        
+
         except jwt.ExpiredSignatureError:
             msg = 'Your token has expired, please log in again.'
             raise exceptions.AuthenticationFailed(msg)
-        
+
         except Exception as e:
             msg = str(e)
             raise exceptions.AuthenticationFailed(msg)
@@ -84,6 +84,12 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
         if not user.is_active:
             msg = 'Forbidden! This user has been deactivated.'
+            raise exceptions.AuthenticationFailed(msg)
+
+        token = BlackList.objects.filter(token=token).first()
+
+        if token:
+            msg = 'Session Expired.'
             raise exceptions.AuthenticationFailed(msg)
 
         return (user, token)

@@ -5,7 +5,11 @@ from transactions.views import (
     RetrieveUpdateDeleteAccountDetailsAPIView,
     card_pin_payment,
     card_foreign_payment,
-    validate_payment
+    validate_payment,
+    RetreiveTransactionsAPIView,
+    foreign_card_validation_response,
+    tokenized_card_payment,
+    RetrieveDepositsApiView
 )
 
 app_name = 'transactions'
@@ -16,6 +20,14 @@ urlpatterns = [
          RetrieveUpdateDeleteAccountDetailsAPIView.as_view(),
          name="single-account"),
     path('card-pin/', card_pin_payment, name='card_pin'),
-    path('card-foreign/', card_foreign_payment, name='card_foreign'),
-    path('validate-card/', validate_payment, name='validate_card')
+    path('', RetreiveTransactionsAPIView.as_view(), name='transactions'),
+    path('card-foreign/',
+         card_foreign_payment,
+         name='card_foreign'),
+    path('validate-card/', validate_payment, name='validate_card'),
+    path('', RetreiveTransactionsAPIView.as_view(), name='transactions'),
+    path('rave-response/', foreign_card_validation_response,
+         name='validation_response'),
+    path('tokenized-card/', tokenized_card_payment, name='tokenized_card'),
+    path('my-deposit/', RetrieveDepositsApiView.as_view(), name='my_deposit')
 ]

@@ -1,4 +1,4 @@
-from django.db.models import QuerySet, Q
+from django.db.models import QuerySet, Q, Sum
 
 
 class CustomQuerySet(QuerySet):
@@ -17,6 +17,10 @@ class CustomQuerySet(QuerySet):
     def all_objects(self):
         """Return all objects that haven't been soft deleted"""
         return self._active()
+
+    def all_approved(self):
+        """ return client companies that are approved"""
+        return self._active().filter(approval_status='approved')
 
 
 class PropertyQuery(CustomQuerySet):
@@ -81,4 +85,20 @@ class ClientAccountQuery(CustomQuerySet):
     def client_admin_has_client(self, client_admin_id):
         """check if client Admin has an Client Account
         if not do not enable him/her to submit account details"""
-        return self._active().filter(client_admin_id=id)
+        return self._active().filter(owner_id=client_admin_id)
+
+
+class TransactionQuery(CustomQuerySet):
+    """Queryset used by the Transactions model"""
+
+    def total_amount(self, user, property_object):
+        """return the total amount so far paid by a user for a property"""
+        return self._active().filter(Q(buyer__pk=user.pk) & Q(
+            target_property__pk=property_object.pk))\
+            .aggregate(Sum('amount_paid'))['amount_paid__sum']
+
+    def client_total_amount(self, property_object):
+        """return the total amount so far paid for a property"""
+        return self._active().filter(Q(
+            target_property__pk=property_object.pk))\
+            .aggregate(Sum('amount_paid'))['amount_paid__sum']

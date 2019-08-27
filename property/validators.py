@@ -1,10 +1,8 @@
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.conf import settings
+from django.core.validators import URLValidator
 from rest_framework.exceptions import ValidationError
-
-import pytz
-import datetime
+from django.utils import timezone
 
 
 def validate_address(address):
@@ -122,13 +120,11 @@ def validate_visit_date(visit_date):
     """
 
     # lets pick todays date and compare it with the visit date
-    today = datetime.datetime.now()
+    today = timezone.now()
     # By default, the datetime object is naive in Python,
     # so you need to make both of them(today and date
     # scheduled for visit) either naive or
     # aware datetime objects
-    utc = pytz.UTC
-    today = utc.localize(today)
     if visit_date < today:
         raise ValidationError({
             "visit_date": "You cannot put a date in the past"

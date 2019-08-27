@@ -13,6 +13,8 @@ class BaseTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.login_url = reverse("auth:login")
+        self.logout_url = reverse("auth:logout")
+        self.client_profile = reverse("auth:profile")
         self.user = User.objects.create_user(first_name="Firstname", email="spanish@test.com",
                                              last_name="LastName",
                                              password="Password~!Z")

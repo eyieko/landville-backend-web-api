@@ -1,11 +1,13 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import (
+    admin,
+    messages,
+)
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from django.contrib import messages
-from authentication.email_helper import EmailHelper
-from authentication.models import User, Client, UserProfile
+from authentication.models import User, Client, UserProfile, ClientReview
 from django.http import HttpResponseRedirect
+from utils.tasks import send_email_notification
 
 
 class UserCreationForm(forms.ModelForm):
@@ -52,7 +54,7 @@ class UserChangeForm(forms.ModelForm):
         # Regardless of what the user provides, return the initial value.
         # This is done here, rather than on the field, because the
         # field does not have access to the initial value
-        return self.initial["password"]
+        return self.initial.get('password')
 
 
 class UserAdmin(BaseUserAdmin):
@@ -70,7 +72,11 @@ class UserAdmin(BaseUserAdmin):
         ('Personal info', {
          'fields': ('email', 'first_name', 'last_name', 'username')}),
         ('Permissions', {
-         'fields': ('is_superuser', 'is_staff', 'groups', 'user_permissions')}),
+         'fields': (
+             'is_superuser',
+             'is_staff',
+             'groups',
+             'user_permissions')}),
         ('User Roles', {
             'fields': ('is_active', 'role', 'is_verified')
         }),
@@ -80,7 +86,9 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2')}
+            'fields': ('email', 'first_name', 'last_name',
+                       'password1', 'password2'
+                       )}
          ),
     )
     search_fields = ('email', 'first_name', 'last_name', 'username'),
@@ -106,21 +114,33 @@ class ClientAdmin(admin.ModelAdmin):
 
     def response_post_save_change(self, request, obj):
         """
-        Figure out where to redirect after the 'Save' button has been pressed 
+        Figure out where to redirect after the 'Save' button has been pressed
         when editing an existing object.
         """
         if obj.approval_status == 'approved':
-            message = "Hey there,\n\nyour application was accepted, you may now start listing property"
-            data = {
+            message = "Hey there,\n\nyour application was accepted, you may " \
+                      "now start listing property"
+            payload = {
                 "subject": "LandVille Application Status",
-                "body": message, "email": obj.client_admin.email
+                "recipient": [obj.client_admin.email],
+                "text_body": "email/authentication/base_email.txt",
+                "html_body": "email/authentication/base_email.html",
+                "context": {
+                    'title': "Hey there,",
+                    'message': message
+                }
             }
-            EmailHelper.send_an_email(data=data, from_approval=True)
+            send_email_notification.delay(payload)
             return self._response_post_save(request, obj)
         else:
-            messages.info(request, message="Please add a reason for your action in the text box below")
-            return HttpResponseRedirect("/api/v1/auth/admin/notes/?status={}&client={}".format(obj.approval_status, obj.client_admin.email))
+            messages.info(request,
+                          message="Please add a reason for your action in "
+                                  "the text box below")
+            return HttpResponseRedirect(
+                "/api/v1/auth/admin/notes/?status={}&client={}".format(
+                    obj.approval_status, obj.client_admin.email))
 
 
 admin.site.register(Client, ClientAdmin)
 admin.site.register(UserProfile)
+admin.site.register(ClientReview)

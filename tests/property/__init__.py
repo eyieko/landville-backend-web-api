@@ -54,7 +54,8 @@ class BaseTest(APITestCase):
         self.property_no_images = PropertyFactory.create(
             client=self.client2, image_others=[], video=None)
 
-        self.property3 = PropertyFactory.create(client=self.client2)
+        self.property3 = PropertyFactory.create(client=self.client2,
+                                                video='https//:ardomvs.com')
         self.buyerpropertylist = BuyerPropertyListFactory.create(
             buyer=self.buyer1, listed_property=self.property2)
         self.property_data = {
@@ -68,23 +69,27 @@ class BaseTest(APITestCase):
             "image_main": self.property2.image_main,
             "purchase_plan": self.property2.purchase_plan
         }
-        self.property5 = PropertyFactory.create(client=self.client2,
-                                                address={"City": "Lagos",
-                                                         "State":
-                                                         "Greater Lagos",
-                                                         "Street":
-                                                         "Lagos St"},
-                                                view_count=4,
-                                                is_published=True)
+        self.property5 = PropertyFactory.create(
+            client=self.client2,
+            address={
+                "City": "Lagos",
+                "State": "Greater Lagos",
+                "Street": "Lagos St"
+            },
+            view_count=4,
+            is_published=True,
+            video='https//:ardomvideos4.com')
 
-        self.property6 = PropertyFactory.create(client=self.client2,
-                                                address={"City": "Lagos",
-                                                         "State":
-                                                         "Greater Lagos",
-                                                         "Street":
-                                                         "Lagos St"},
-                                                view_count=10,
-                                                is_published=True)
+        self.property6 = PropertyFactory.create(
+            client=self.client2,
+            address={
+                "City": "Lagos",
+                "State": "Greater Lagos",
+                "Street": "Lagos St"
+            },
+            view_count=10,
+            is_published=True,
+            video='https//:ardomvideo5.com')
 
         self.enquiry_data = {
             "enquiry_id": "we-love-landville-we-love-landville",

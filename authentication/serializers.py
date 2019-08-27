@@ -1,16 +1,24 @@
-import re
-
+import cloudinary.uploader as uploader
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.contrib.auth import authenticate
 from rest_framework import serializers
-from rest_framework.exceptions import NotAuthenticated
 
-from authentication.models import User, Client, PasswordResetToken
+from authentication.models import (
+    User, Client, UserProfile,
+    ClientReview, ReplyReview,
+    PasswordResetToken, BlackList,
+)
+from authentication.signals import SocialAuthProfileUpdate
 from authentication.socialvalidators import SocialValidation
-from utils.password_generator import randomStringwithDigitsAndSymbols
+from authentication.validators import validate_phone_number
+from property.validators import validate_address
 from utils import BaseUtils
+from utils.media_handlers import CloudinaryResourceHandler
+from utils.password_generator import randomStringwithDigitsAndSymbols
 from utils.resethandler import ResetHandler
+
+Uploader = CloudinaryResourceHandler()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -71,31 +79,24 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return password1 == password2
 
 
-class GoogleAuthSerializer(serializers.ModelSerializer):
+class GoogleAuthSerializer(serializers.Serializer):
     """
     Handle serialization and deserialization of User objects
     """
 
     access_token = serializers.CharField()
 
-    class Meta:
-        model = User
-        fields = ['access_token']
-
-    @staticmethod
-    def validate_access_token(access_token):
+    def validate(self, data):
         """
         Handles validating a request and decoding and getting user's info
         associated to an account on Google then authenticates the User
         : params access_token:
-        : rturn: user_token
+        : return: user_token
         """
-
         id_info = SocialValidation.google_auth_validation(
-            access_token=access_token)
-
+            access_token=data.get('access_token'))
         # check if data data retrieved once token decoded is empty
-        if id_info is None:
+        if not id_info:
             raise serializers.ValidationError('token is not valid')
 
         # check if a user exists after decoding the token in the payload
@@ -108,7 +109,18 @@ class GoogleAuthSerializer(serializers.ModelSerializer):
 
         # if the user exists,return the user token
         if user:
-            return user[0].token
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back ' + id_info.get('name')
+            }
+
+        if id_info.get('picture'):
+            id_info['user_profile_picture'] = id_info['picture']
+
+        # pass user information to signal to be added to profile
+        # after user is created
+        SocialAuthProfileUpdate.get_user_info(id_info)
 
         # create a new user if no new user exists
         first_and_second_name = id_info.get('name').split()
@@ -123,24 +135,24 @@ class GoogleAuthSerializer(serializers.ModelSerializer):
 
         new_user = User.objects.create_user(**payload)
         new_user.is_verified = True
-        new_user.is_active = False
+
         new_user.social_id = user_id
         new_user.save()
 
-        return new_user.token
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
+        }
 
 
-class FacebookAuthAPISerializer(serializers.ModelSerializer):
+class FacebookAuthAPISerializer(serializers.Serializer):
     """Handles serialization and deserialization of User objects."""
 
     access_token = serializers.CharField()
 
-    class Meta:
-        model = User
-        fields = ['access_token']
-
-    @staticmethod
-    def validate_access_token(access_token):
+    def validate(self, data):
         """
         Handles validating the request token by decoding and getting
         user_info associated
@@ -150,10 +162,10 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         : return: user_token
         """
         id_info = SocialValidation.facebook_auth_validation(
-            access_token=access_token)
+            access_token=data.get('access_token'))
 
         # checks if the data retrieved once token is decoded is empty.
-        if id_info is None:
+        if not id_info:
             raise serializers.ValidationError('Token is not valid.')
 
         # Checks to see if there is a user id associated with
@@ -170,13 +182,26 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         # Returns the user token showing that the user has been
         # registered before and existing in our database.
         if user:
-            return user[0].token
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back ' + id_info.get('first_name')
+            }
 
         # Creates a new user because email is not associated
         # with any existing account in our app
-        first_and_second_name = id_info.get('name').split()
-        first_name = first_and_second_name[0]
-        second_name = first_and_second_name[1]
+
+        # Sends user information to signal to be updated into
+        # profile after saving
+        if id_info.get('picture'):
+            id_info['user_profile_picture'] = id_info[
+                'picture']['data']['url']
+
+        SocialAuthProfileUpdate.get_user_info(id_info)
+
+        # first_and_second_name = id_info.get('name').split()
+        first_name = id_info.get('first_name')
+        second_name = id_info.get('last_name')
         payload = {
             'email': id_info.get('email'),
             'first_name': first_name,
@@ -189,18 +214,19 @@ class FacebookAuthAPISerializer(serializers.ModelSerializer):
         new_user.social_id = user_id
         new_user.save()
 
-        return new_user.token
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
+        }
 
 
-class TwitterAuthAPISerializer(serializers.ModelSerializer):
+class TwitterAuthAPISerializer(serializers.Serializer):
     """Handles serialization and deserialization of User objects."""
 
     access_token = serializers.CharField()
     access_token_secret = serializers.CharField()
-
-    class Meta:
-        model = User
-        fields = ['access_token', 'access_token_secret']
 
     def validate(self, data):
         """
@@ -214,6 +240,7 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
         id_info = SocialValidation.twitter_auth_validation(
             access_token=data.get('access_token'),
             access_token_secret=data.get('access_token_secret'))
+
         # Check if there is an error message in the id_info validation body
         if 'errors' in id_info:
             raise serializers.ValidationError(
@@ -233,7 +260,17 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
         # Returns the user token showing that the user has been
         # registered before and existing in our database.
         if user:
-            return {"token": user[0].token}
+            return {
+                'token': user[0].token,
+                'user_exists': True,
+                'message': 'Welcome back ' + id_info.get('name')
+            }
+
+        if id_info.get('profile_image_url_https'):
+            profile_url_key = 'profile_image_url_https'
+            id_info['user_profile_picture'] = id_info[profile_url_key]
+
+        SocialAuthProfileUpdate.get_user_info(id_info)
 
         # Creates a new user because email is not associated
         # with any existing account in our app
@@ -247,31 +284,38 @@ class TwitterAuthAPISerializer(serializers.ModelSerializer):
             'password': randomStringwithDigitsAndSymbols()
         }
 
-        new_user = User.objects.create_user(**payload)
-        new_user.is_verified = True
-        new_user.social_id = user_id
-        new_user.save()
+        try:
+            new_user = User.objects.create_user(**payload)
+            new_user.is_verified = True
+            new_user.social_id = user_id
+            new_user.save()
+        except ValidationError:
+            raise serializers.ValidationError('Error While creating User.')
 
-        return {"token": new_user.token}
+        return {
+            'token': new_user.token,
+            'user_exists': False,
+            'message': 'Welcome to landville. ' + first_name +
+                       '. Ensure to edit your profile.'
+        }
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
-        max_length=128, min_length=6, write_only=True,)
+        max_length=128, min_length=6, write_only=True, )
     token = serializers.CharField(read_only=True)
 
     def validate(self, data):
         email = data.get("email", None)
         password = data.get("password", None)
         user = authenticate(username=email, password=password)
-
         if user is None:
-            raise NotAuthenticated({
+            raise serializers.ValidationError({
                 "invalid": "invalid email and password combination"
             })
         if not user.is_verified:
-            raise NotAuthenticated({
+            raise serializers.ValidationError({
                 "user": "Your email is not verified,please vist your mail box"
             })
         user = {
@@ -284,30 +328,27 @@ class LoginSerializer(serializers.Serializer):
 class ClientSerializer(serializers.ModelSerializer, BaseUtils):
     class Meta:
         model = Client
-        fields = ['client_name', 'phone', 'email', 'address', 'client_admin']
-        read_only_fields = ('is_deleted', 'is_published')
+        fields = ['id', 'client_name', 'phone', 'email', 'address',
+                  'client_admin']
+        read_only_fields = ('is_deleted', 'is_published', 'id')
 
     def validate(self, data):
         """Validate data before it gets saved."""
         phone = data.get("phone")
         address = data.get("address")
-        p = re.compile(r'\+?\d{3}\s?\d{3}\s?\d{7}')
-        q = re.compile(r'^.{10,16}$')
 
-        if not (p.match(phone) and q.match(phone)):
-            raise serializers.ValidationError({
-                "phone": "Phone number must be of the format +234 123 4567890"
-            })
+        self.validate_phone_number(phone)
 
         # Validate the type of address
         self.validate_data_instance(
-            address, dict, {
-                "address": ("Company address should contain State, "
-                            "City and Street details")})
+            address, dict,
+            {
+                "address": "Company address should contain State, City and\
+                    Street"
+            })
 
         keys = ["State", "Street", "City"]
         for key in keys:
-
             self.validate_dictionary_keys(key, address, {
                 "address": "{} is required in address".format(key)
             })
@@ -324,7 +365,7 @@ class ClientSerializer(serializers.ModelSerializer, BaseUtils):
 
 class PasswordResetSerializer(serializers.ModelSerializer):
     """Handles serialization and deserialization of email
-     where password reset link will be sent."""
+    where password reset link will be sent."""
     email = serializers.EmailField(required=True)
 
     class Meta:
@@ -339,8 +380,8 @@ class PasswordResetSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """ validate user input. """
         email = data.get('email')
-        message = ('If you have an account with us we have sent '
-                   'an email to reset your password')
+        message = 'If you have an account with us we have sent an email to\
+            reset your password'
         reset_handler = ResetHandler()
 
         try:
@@ -359,11 +400,12 @@ class PasswordResetSerializer(serializers.ModelSerializer):
             link exists in our database. This prevents knowledge
             of which emails actually exist.
             """
+            message = ('If you have an account with us we have sent an email '
+                       'to reset your password')
             return {'message': message}
 
 
 class ChangePasswordSerializer(serializers.ModelSerializer):
-
     """Serialize actual changing of user password. """
     password = serializers.CharField(
         max_length=128,
@@ -371,7 +413,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={
             "min_length":
-            "Password should be at least {min_length} characters"
+                "Password should be at least {min_length} characters"
         }
     )
     confirm_password = serializers.CharField(
@@ -380,7 +422,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
         write_only=True,
         error_messages={
             "min_length":
-            "Password should be at least {min_length} characters"
+                "Password should be at least {min_length} characters"
         }
     )
     token = serializers.CharField()
@@ -402,8 +444,8 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
             """ we then check is it is valid """
             if not user_token.is_valid:
                 raise serializers.ValidationError({
-                    "token": ("This token is no longer valid, "
-                              "please get a new one")
+                    "token": "This token is no longer valid, please get a \
+                    new one"
                 })
 
         except PasswordResetToken.DoesNotExist:
@@ -423,10 +465,9 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
                     password, confirm_password):
                 """
                 check if password and confirm passwords do match.
-                no need to create another function since we already
-                have one inside our RegistrationSerializer
-                class above
-                 """
+                no need to create another function since we already have one
+                inside our RegistrationSerializer class above
+                """
                 raise serializers.ValidationError({
                     "error": "passwords do not match"
                 })
@@ -449,3 +490,128 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
             })
 
         return {"message": "password has been changed successfully"}
+
+
+class ProfileSerializer(serializers.ModelSerializer, BaseUtils):
+    """Serializer to serialize the user profile data"""
+    user = RegistrationSerializer()
+    address = serializers.JSONField(validators=[validate_address])
+    phone = serializers.CharField(
+        validators=[validate_phone_number])
+
+    class Meta:
+        model = UserProfile
+        exclude = ('is_deleted',)
+        read_only_fields = ('user', 'updated_at', 'created_at',
+                            'user_level')
+        extra_kwargs = {
+            'security_question': {'write_only': True},
+            'security_answer': {'write_only': True}
+        }
+
+    def update(self, instance, validated_data):
+        """Update the user profile"""
+
+        # Explicitly update the next of kin contact
+        updated_next_of_kin_contact = validated_data.pop(
+            'next_of_kin_contact', None)
+        if updated_next_of_kin_contact == '':
+            instance.next_of_kin_contact = updated_next_of_kin_contact
+        elif updated_next_of_kin_contact:
+            try:
+                validate_phone_number(updated_next_of_kin_contact)
+                instance.next_of_kin_contact = updated_next_of_kin_contact
+            except serializers.ValidationError as e:
+                raise serializers.ValidationError({
+                    'next_of_kin_contact':
+                        'Phone number must be of the format +234 123 4567890'
+                }) from e
+
+        """ Remove the old profile image on Cloudinary
+        before it is updated with a new one"""
+        old_image = instance.image
+        if old_image:
+            public_image_id = Uploader.get_cloudinary_public_id(old_image)
+            uploader.destroy(public_image_id, invalidate=True)
+
+        instance.save()
+        return super().update(instance, validated_data)
+
+    def validate(self, data):
+        """Validate user updated fields"""
+
+        # validate presence of both designation and employer dependent fields
+        if 'designation' in data and 'employer' not in data:
+            raise serializers.ValidationError({
+                "employer": "Please provide an employer"
+            })
+
+        # validate fields that depend on each other
+        self.validate_dependent_fields(data,
+                                       'security_question',
+                                       'security_answer',
+                                       'Please provide an answer'
+                                       ' to the selected question',
+                                       'Please choose a question to answer')
+
+        return data
+
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    """ This handles serializing and deserializing of Replies' objects """
+
+    reviewer = RegistrationSerializer(required=False)
+
+    class Meta:
+        model = ReplyReview
+        fields = (
+            'id',
+            'reply',
+            'review',
+            'created_at',
+            'reviewer'
+        )
+        read_only_fields = ('id', 'createdAt', 'reviewer',
+                            'review', 'is_deleted')
+
+
+class ClientReviewSerializer(serializers.ModelSerializer):
+    """This handles serializing and deserializing of Client Review objects"""
+
+    reviewer = RegistrationSerializer(required=False)
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ClientReview
+        fields = ('id', 'created_at', 'updated_at', 'review',
+                  'reviewer', 'client', 'replies')
+        read_only_fields = ('id', 'createdAt', 'reviewer',
+                            'replies', 'is_deleted')
+
+    def get_replies(self, obj):
+        """ returns all replies that are not soft deleted """
+
+        replies = ReplyReview.active_objects.all_objects().filter(
+            review__pk=obj.pk)
+        data = ReviewReplySerializer(replies, many=True)
+        return data.data
+
+    def update(self, instance, validated_data):
+        """
+        read-only fields cannot be updated
+        """
+        for key, value in validated_data.copy().items():
+            if key in self.Meta.read_only_fields:
+                validated_data.pop(key)
+        instance.save()
+        return super().update(instance, validated_data)
+
+
+class BlackListSerializer(serializers.ModelSerializer):
+    """
+    Handle serializing and deserializing blacklist tokens
+    """
+
+    class Meta:
+        model = BlackList
+        fields = ('__all__')

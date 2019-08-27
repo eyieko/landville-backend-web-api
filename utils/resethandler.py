@@ -1,16 +1,18 @@
-from datetime import datetime, timedelta
-from urllib import parse
 import os
+from datetime import (
+    datetime,
+    timedelta,
+)
+
 import jwt
 from django.conf import settings
 from rest_framework import exceptions
 
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.contrib.sites.shortcuts import get_current_site
-
-from authentication.models import User, PasswordResetToken
+from authentication.models import (
+    PasswordResetToken,
+    User,
+)
+from utils.tasks import send_email_notification
 
 
 class ResetHandler:
@@ -74,12 +76,16 @@ class ResetHandler:
         return (decoded_token, user)
 
     def send_password_reset_link(self, to_email, token):
-        domain = os.environ.get('DOMAIN')
-        html_content = render_to_string('password_reset.html',
-                                        {'token': token, 'domain': domain})
-        subject = 'Reset your LandVille Password'
-        from_email = settings.EMAIL_HOST_USER
-        msg = EmailMessage(subject, html_content, from_email, [to_email])
-        msg.content_subtype = 'html'
-        msg.mixed_subtype = 'related'
-        msg.send()
+        domain = os.environ.get('FRONTEND_URL')
+
+        payload = {
+            "subject": "Reset your LandVille Password",
+            "recipient": [to_email],
+            "text_body": "password_reset.html",
+            "html_body": "password_reset.html",
+            "context": {
+                'token': token,
+                'domain': domain
+            }
+        }
+        send_email_notification.delay(payload)

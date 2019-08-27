@@ -5,6 +5,7 @@ from rest_framework.exceptions import ErrorDetail
 
 from tests.property import BaseTest
 from property.serializers import PropertySerializer
+from property.renderers import PropertyJSONRenderer
 
 
 class PropertyJSONRendererTest(BaseTest):
@@ -107,4 +108,11 @@ class TestPropertyEnquiryRender(BaseTest):
         rendered_data = self.enquiry_renderer.render(dict_data)
 
         expected_data = b'{"errors":"This error should be properly rendered"}'
+        self.assertEqual(rendered_data, expected_data)
+
+    def test_non_dictionary_is_rendered_correctly(self):
+        data = "Not dictionary"
+        renderer = PropertyJSONRenderer()
+        rendered_data = renderer.render(data=data)
+        expected_data = '{"data": {"property": "Not dictionary"}}'
         self.assertEqual(rendered_data, expected_data)

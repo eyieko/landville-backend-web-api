@@ -1,18 +1,15 @@
-from datetime import datetime, timedelta
-import jwt
 
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import (
-    AbstractUser, BaseUserManager, PermissionsMixin)
+    AbstractUser, BaseUserManager)
 from django.contrib.postgres.fields import JSONField
 from django.core.serializers.json import DjangoJSONEncoder
-from django.conf import settings
 from datetime import datetime, timedelta
 import jwt
 from utils.models import BaseAbstractModel
 from utils.managers import CustomQuerySet
 from django.conf import settings
+from fernet_fields import EncryptedTextField
 
 
 class UserManager(BaseUserManager):
@@ -21,7 +18,14 @@ class UserManager(BaseUserManager):
     only be created when all non-nullable fields are populated.
     """
 
-    def create_user(self, first_name=None, last_name=None, email=None, password=None, role='BY'):
+    def create_user(
+            self,
+            first_name=None,
+            last_name=None,
+            email=None,
+            password=None,
+            role='BY'
+    ):
         """
         Create and return a `User` with an email, first name, last name and
         password.
@@ -39,14 +43,18 @@ class UserManager(BaseUserManager):
         if not password:
             raise TypeError('Users must have a password.')
 
-        user = self.model(first_name=first_name, last_name=last_name, email=self.normalize_email(
-            email), username=self.normalize_email(email))
+        user = self.model(
+            first_name=first_name,
+            last_name=last_name,
+            email=self.normalize_email(email),
+            username=self.normalize_email(email))
         user.set_password(password)
         user.role = role
         user.save()
         return user
 
-    def create_superuser(self, first_name=None, last_name=None, email=None, password=None):
+    def create_superuser(
+            self, first_name=None, last_name=None, email=None, password=None):
         """Create a `User` who is also a superuser"""
         if not first_name:
             raise TypeError('Superusers must have a first name.')
@@ -82,6 +90,10 @@ class User(AbstractUser, BaseAbstractModel):
 
     username = models.CharField(
         null=True, blank=True, max_length=100, unique=True)
+    card_info = JSONField(
+        verbose_name='tokenized card details',
+        encoder=DjangoJSONEncoder, default=dict
+    )
     email = models.EmailField(unique=True)
     role = models.CharField(
         verbose_name='user role', max_length=2, choices=USER_ROLES,
@@ -134,28 +146,60 @@ class User(AbstractUser, BaseAbstractModel):
         return token.decode('utf-8')
 
 
+class BlackList(BaseAbstractModel):
+    """
+    This class defines black list model.
+    Tokens of logged out users are stored here.
+    """
+
+    token = models.CharField(max_length=200, unique=True)
+
+    @staticmethod
+    def delete_tokens_older_than_a_day():
+        """
+        This method deletes tokens older than one day
+        """
+        past_24 = datetime.now() - timedelta(hours=24)
+
+        BlackList.objects.filter(created_at__lt=past_24).delete()
+
+
 class UserProfile(BaseAbstractModel):
     """This class defines a Profile model for all Users"""
 
     LEVEL_CHOICES = (
-        ('S', 'STARTER'),
-        ('B', 'BUYER'),
-        ('I', 'INVESTOR')
+        ('STARTER', 'STARTER'),
+        ('BUYER', 'BUYER'),
+        ('INVESTOR', 'INVESTOR')
     )
-
+    QUESTION_CHOICES = (
+        ('What is the name of your favorite childhood friend',
+         'What is the name of your favorite childhood friend'),
+        ('What was your childhood nickname',
+         'What was your childhood nickname'),
+        ('In what city or town did your mother and father meet',
+         'In what city or town did your mother and father meet')
+    )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=17, unique=True)
+    phone = models.CharField(max_length=17, null=True, blank=False)
     address = JSONField(
-        verbose_name='physical address', encoder=DjangoJSONEncoder
+        verbose_name='physical address',
+        encoder=DjangoJSONEncoder, default=dict
     )
     user_level = models.CharField(
-        verbose_name='user level', max_length=1, default='S',
+        verbose_name='user level', max_length=20, default='STARTER',
         choices=LEVEL_CHOICES
     )
     image = models.URLField(null=True, blank=True)
-    security_question = models.TextField(null=True, blank=True)
-    security_answer = models.CharField(
-        max_length=100, null=True, blank=True)
+    security_question = models.CharField(
+        max_length=255, null=True, blank=False, choices=QUESTION_CHOICES)
+    security_answer = EncryptedTextField(null=True)
+    employer = models.CharField(max_length=255, null=True, blank=True)
+    designation = models.CharField(max_length=255, blank=True, null=True)
+    next_of_kin = models.CharField(max_length=255, blank=True, null=True)
+    next_of_kin_contact = models.CharField(
+        max_length=17, blank=True, null=True)
+    bio = models.TextField(blank=True, max_length=255)
 
     objects = models.Manager()
     active_objects = CustomQuerySet.as_manager()
@@ -192,9 +236,42 @@ class Client(BaseAbstractModel):
     def __str__(self):
         return self.client_name
 
+
 class PasswordResetToken(models.Model):
     """This class creates a Password Reset Token model."""
 
     token = models.CharField(max_length=400)
     created = models.DateTimeField(auto_now=True)
     is_valid = models.BooleanField(default=True)
+
+
+class ClientReview(BaseAbstractModel):
+    """This class defines the model for the client reviews"""
+
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviewer')
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name='reviewed_client')
+    review = models.TextField()
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return f'Review by {self.reviewer} on {self.created_at}'
+
+
+class ReplyReview(BaseAbstractModel):
+    """This class defines the model for the replies to the client's reviews"""
+
+    review = models.ForeignKey(
+        ClientReview, on_delete=models.CASCADE, related_name='replies')
+    reply = models.TextField()
+    reviewer = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reply')
+
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
+    def __str__(self):
+        return f'Review by {self.reviewer} on {self.created_at}'
