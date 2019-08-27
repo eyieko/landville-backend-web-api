@@ -8,7 +8,8 @@ omit = */tests/*,
  */wsgi.py,
  */apps.py,
  manage.py,
- fabfile.py
+ fabfile.py,
+ load_fixtures.py
 source = .
 
 [report]

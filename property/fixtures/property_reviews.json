@@ -1,0 +1,67 @@
+[
+    {
+        "model": "property.PropertyReview",
+        "pk": 1,
+        "fields": {
+            "created_at": "2019-08-14 08:28:01.889154+00",
+            "updated_at": "2019-08-23 13:23:25.816693+00",
+            "is_deleted": false,
+            "comment": "I hate to say it but Ilove it so much",
+            "is_published": true,
+            "reviewer_id": 3,
+            "target_property_id": 1
+        }
+    },
+    {
+        "model": "property.PropertyReview",
+        "pk": 2,
+        "fields": {
+            "created_at": "2019-08-17 08:28:01.889154+00",
+            "updated_at": "2019-08-25 13:23:25.816693+00",
+            "is_deleted": false,
+            "comment": "It's such an awesome place",
+            "is_published": true,
+            "reviewer_id": 3,
+            "target_property_id": 2
+        }
+    },
+    {
+        "model": "property.PropertyReview",
+        "pk": 3,
+        "fields": {
+            "created_at": "2019-08-18 08:28:01.889154+00",
+            "updated_at": "2019-08-24 13:23:25.816693+00",
+            "is_deleted": false,
+            "comment": "This is heaven on earth",
+            "is_published": true,
+            "reviewer_id": 3,
+            "target_property_id": 3
+        }
+    },
+    {
+        "model": "property.PropertyReview",
+        "pk": 4,
+        "fields": {
+            "created_at": "2019-08-17 08:28:01.889154+00",
+            "updated_at": "2019-08-21 13:23:25.816693+00",
+            "is_deleted": false,
+            "comment": "I can't like it more",
+            "is_published": true,
+            "reviewer_id": 3,
+            "target_property_id": 4
+        }
+    },
+    {
+        "model": "property.PropertyReview",
+        "pk": 5,
+        "fields": {
+            "created_at": "2019-08-10 08:28:01.889154+00",
+            "updated_at": "2019-08-14 13:23:25.816693+00",
+            "is_deleted": false,
+            "comment": "This is great place to be",
+            "is_published": true,
+            "reviewer_id": 3,
+            "target_property_id": 5
+        }
+    }
+]

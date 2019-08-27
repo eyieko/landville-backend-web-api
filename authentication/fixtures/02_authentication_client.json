@@ -1,0 +1,17 @@
+[
+    {
+        "model": "authentication.Client",
+        "pk": 1,
+        "fields": {
+            "created_at": "2019-08-16 08:09:08.149707+00",
+            "updated_at": "2019-08-16 08:09:08.149739+00",
+            "is_deleted": false,
+            "approval_status": "approved",
+            "client_name":"client investments Company",
+            "phone": "+254 7808780187",
+            "email": "clients.company@gmail.com",
+            "address": {"City": "kampala", "State": "kamwokya", "Street": "mulago"},
+            "client_admin_id": 2
+        }
+    }
+]
