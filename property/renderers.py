@@ -29,6 +29,7 @@ class PropertyJSONRenderer(JSONRenderer):
             ).title()
             client = instance.client
             client_data = {
+                'id': client.id,
                 'client_name': client.client_name,
                 'phone': client.phone,
                 'email': client.email,
