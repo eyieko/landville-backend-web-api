@@ -609,8 +609,8 @@ class ClientReviewsView(generics.ListCreateAPIView):
         queryset = ClientReview.active_objects.all_objects().filter(
             client=client)
         if queryset:
-            return queryset
-        else:
+            return queryset	
+        else:	
             raise Http404
 
     def create(self, request, *args, **kwargs):

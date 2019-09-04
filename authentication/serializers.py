@@ -28,6 +28,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField()
     role = serializers.ChoiceField(
         choices=[('CA', 'Client Admin'), ('BY', 'Buyer')])
+    image = serializers.CharField(read_only=True, source='userprofile.image')
 
     password = serializers.CharField(
         max_length=128,
@@ -49,7 +50,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["email", "first_name", "last_name",
-                  "password", "confirmed_password", "role"]
+                  "password", "confirmed_password", "role", "image"]
 
     def validate(self, data):
         """Validate data before it gets saved."""

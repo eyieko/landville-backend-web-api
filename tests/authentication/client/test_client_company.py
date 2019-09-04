@@ -456,7 +456,7 @@ class ClientCompanyTest(TestUtils):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_cannot_get_deleted_reviews(self):
-        """ user cannot get reviews that have been deleted """
+        """ user cannot get reviews that have been deleted"""
 
         client_id = self.company1.pk
         view = ClientReviewsView.as_view()
