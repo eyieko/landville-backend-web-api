@@ -21,3 +21,11 @@ class IsProfileOwner(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user == obj.user
+
+
+class IsCardOwner(BasePermission):
+    """allow only card own to delete saved card"""
+
+    def has_object_permission(self, request, view, obj):
+        user = request.user
+        return request.user.id == obj.user_id

@@ -31,7 +31,7 @@ from transactions.serializers import (
 from transactions.transaction_services import TransactionServices
 from property.models import Property
 from transactions.transaction_utils import save_deposit
-from authentication.models import User
+from authentication.models import User, CardInfo
 
 
 class ClientAccountAPIView(ListCreateAPIView):
@@ -416,7 +416,7 @@ def foreign_card_validation_response(request):
 @swagger_auto_schema(method='post', request_body=CardlessPaymentSerializer)
 @api_view(['POST'])
 @permission_classes((IsAuthenticated, ))
-def tokenized_card_payment(request):
+def tokenized_card_payment(request, **kwargs):
     """
     Endpoint for handling payment using tokenized cards. The user makes
     payment without providing card details
@@ -427,8 +427,9 @@ def tokenized_card_payment(request):
     user = request.user
     serializer = CardlessPaymentSerializer(data=data)
     if serializer.is_valid():
+        card = get_object_or_404(CardInfo, id=kwargs.get('saved_card_id'))
         amount = serializer.validated_data.get('amount')
-        resp = TransactionServices.pay_with_saved_card(user, amount)
+        resp = TransactionServices.pay_with_saved_card(user, amount, card)
         return Response(
             {'message': resp.get('data').get('status')},
             status=resp.get('data').get('status_code')
@@ -436,8 +437,6 @@ def tokenized_card_payment(request):
     else:
         return Response({'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
-
-
 class RetrieveDepositsApiView(ListAPIView):
     serializer_class = DepositSerializer
     permission_classes = (IsAuthenticated, )

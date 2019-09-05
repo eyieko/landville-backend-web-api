@@ -7,7 +7,8 @@ import datetime
 import base64
 from Cryptodome.Cipher import DES3
 from urllib.parse import urljoin
-from authentication.models import User
+from authentication.models import User, CardInfo
+from authentication.serializers import CardInfoSerializer
 
 
 class TransactionServices:
@@ -214,7 +215,7 @@ class TransactionServices:
         card_expiry = f"{verify_resp['data']['card']['expirymonth']}/" \
             f"{verify_resp['data']['card']['expiryyear']}"
         card_info = {
-            'embedtoken': embedtoken,
+            'embed_token': embedtoken,
             'card_number': f'*********{card_number}',
             'card_expiry': card_expiry,
             'card_brand': card_brand
@@ -224,15 +225,31 @@ class TransactionServices:
         if verify_resp['data']['status'] == 'successful' \
                 and int(save_card) == 1:
             try:
-                user = User.active_objects.filter(email=email)
-                user.update(card_info=card_info)
-                message = '. Card details have been saved.'
+                user = User.objects.filter(email=email).first()
+                user_count = CardInfo.objects.filter(user=user).count()
+                if user_count >= 3:
+                    message = ' Card details could not be saved.\
+                        could not save more than 3 cards .'
+                else:
+                    message = TransactionServices.save_new_card(
+                        card_info, card_number, user
+                        )
             except:  # noqa
                 message = '. Card details could not be saved. Try latter.'
             return message
 
+    def save_new_card(card_info, card_number, user):
+        card = CardInfo.objects.filter(card_number=f'*********{card_number}')
+        if card:
+            return '. Card already saved.'
+        else:
+            serializer = CardInfoSerializer
+            serialized_data = serializer(data=card_info)
+            serialized_data.is_valid(raise_exception=True)
+            serialized_data.save(user=user)
+            return '. Card details have been saved.'
     @classmethod
-    def pay_with_saved_card(cls, user, amount):
+    def pay_with_saved_card(cls, user, amount, card):
         """
         A service method for payment with card tokens
         :param user: The user making the payment
@@ -242,7 +259,7 @@ class TransactionServices:
         data = {
             'currency': 'NGN',
             'SECKEY': cls.rave_secret_key,
-            'token': user.card_info.get('embedtoken'),
+            'token': card.embed_token,
             'country': 'NG',
             'amount': amount,
             'email': user.email,
@@ -250,13 +267,6 @@ class TransactionServices:
             'lastname': user.last_name,
             'txRef': f'LANDVILLE-{datetime.datetime.now()}'
         }
-
-        if data['token'] is None:
-            return {
-                'data': {
-                    'status_code': 400,
-                    'status': 'You do not have a saved card'
-                }}
         endpoint = urljoin(os.getenv('RAVE_URL'),
                            'flwv3-pug/getpaidx/api/tokenized/charge')
         headers = {'content-type': 'application/json'}

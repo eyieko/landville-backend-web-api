@@ -90,10 +90,6 @@ class User(AbstractUser, BaseAbstractModel):
 
     username = models.CharField(
         null=True, blank=True, max_length=100, unique=True)
-    card_info = JSONField(
-        verbose_name='tokenized card details',
-        encoder=DjangoJSONEncoder, default=dict
-    )
     email = models.EmailField(unique=True)
     role = models.CharField(
         verbose_name='user role', max_length=2, choices=USER_ROLES,
@@ -145,6 +141,13 @@ class User(AbstractUser, BaseAbstractModel):
 
         return token.decode('utf-8')
 
+
+class CardInfo(BaseAbstractModel):
+    embed_token = models.CharField(unique=True, max_length=300)
+    card_number = models.CharField(unique=True, max_length=20)
+    card_expiry = models.CharField(max_length=6)
+    card_brand = models.CharField(max_length=100)
+    user = models.ForeignKey(User,  on_delete=models.CASCADE,  null=True)
 
 class BlackList(BaseAbstractModel):
     """

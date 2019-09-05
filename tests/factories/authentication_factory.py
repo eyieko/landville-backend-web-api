@@ -2,7 +2,7 @@ import factory
 from faker import Faker
 
 from authentication.models import User, UserProfile, Client, \
-    PasswordResetToken, ClientReview, ReplyReview
+    PasswordResetToken, ClientReview, ReplyReview, CardInfo
 
 
 fake = Faker()
@@ -84,3 +84,18 @@ class ReplyReviewsFactory(factory.DjangoModelFactory):
     review = factory.SubFactory(ClientReviewsFactory)
     reviewer = factory.SubFactory(UserFactory)
     reply = fake.sentences()
+
+
+class CardInfoFactory(factory.DjangoModelFactory):
+    """This class will create cards"""
+
+    class Meta:
+        model = CardInfo
+
+    embed_token = fake.text()
+    card_number = fake.credit_card_number(card_type=None)
+    card_expiry = fake.credit_card_expire(
+        start="now", end="+10y", date_format="%m/%y"
+        )
+    card_brand = fake.word()
+    user_id = factory.SubFactory(UserFactory)

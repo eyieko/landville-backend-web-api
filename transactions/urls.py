@@ -28,6 +28,8 @@ urlpatterns = [
     path('', RetreiveTransactionsAPIView.as_view(), name='transactions'),
     path('rave-response/', foreign_card_validation_response,
          name='validation_response'),
-    path('tokenized-card/', tokenized_card_payment, name='tokenized_card'),
+    path(
+         'tokenized-card/<int:saved_card_id>',
+         tokenized_card_payment, name='tokenized_card'),
     path('my-deposit/', RetrieveDepositsApiView.as_view(), name='my_deposit')
 ]

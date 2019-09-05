@@ -4,7 +4,8 @@ from django.urls import reverse
 from rest_framework.views import status
 from faker import Factory
 from unittest.mock import patch
-from tests.factories.authentication_factory import UserFactory, ClientFactory
+from tests.factories.authentication_factory import UserFactory, \
+    ClientFactory, CardInfoFactory
 from tests.factories.transaction_factory import TransactionFactory
 from tests.factories.property_factory import PropertyFactory
 
@@ -17,6 +18,7 @@ class CardPaymentTest(BaseTest):
     def setUp(self):
         self.card_pin_url = reverse('transactions:card_pin')
         self.auth_user = UserFactory(is_verified=True)
+        self.card = CardInfoFactory.create(user_id=self.auth_user.id)
         self.land_client = ClientFactory.create(client_admin=self.auth_user)
         self.property = PropertyFactory.create(client=self.land_client)
         self.transaction = TransactionFactory.\
@@ -24,7 +26,9 @@ class CardPaymentTest(BaseTest):
                    buyer=self.auth_user,
                    amount_paid=90)
         self.card_foreign_url = reverse('transactions:card_foreign')
-        self.cardless_url = reverse('transactions:tokenized_card')
+        self.cardless_url = reverse(
+            'transactions:tokenized_card', args=[self.card.id]
+            )
         self.card_validate_url = reverse('transactions:validate_card')
         self.foreign_validate_url = reverse(
             'transactions:validation_response'

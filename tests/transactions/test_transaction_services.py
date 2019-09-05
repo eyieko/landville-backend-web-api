@@ -3,8 +3,8 @@ from django.test import TestCase
 from faker import Factory
 from mock import patch
 from transactions.transaction_services import TransactionServices
-from tests.factories.authentication_factory import UserFactory
-from authentication.models import User
+from tests.factories.authentication_factory import UserFactory, CardInfoFactory
+from authentication.models import User, CardInfo
 
 
 class TestTransactionServices(TestCase):
@@ -108,7 +108,7 @@ class TestTransactionServices(TestCase):
         resp = TransactionServices.save_card(payload)
         self.assertEqual(resp, '. Card details have been saved.')
 
-    @patch('transactions.transaction_services.User.active_objects.filter')
+    @patch('transactions.transaction_services.User.objects.filter')
     def test_save_card_with_exception(self, mock_filter):
         """
         A unit test for what happened if the user requests that
@@ -125,6 +125,7 @@ class TestTransactionServices(TestCase):
         mock_filter.side_effect = User.DoesNotExist
 
         resp = TransactionServices.save_card(payload)
+
         self.assertEqual(
             resp, '. Card details could not be saved. Try latter.')
 
@@ -144,25 +145,9 @@ class TestTransactionServices(TestCase):
                 "orderRef": None,
                 "flwRef": "FLW-M03K-3705232bce4536328b24d03579365e9f", }}
         mock_post.return_value.json.return_value = payload
-        test_user = UserFactory.create(card_info={
-            'embedtoken': 'embedtoken',
-            'card_number': '123456789',
-            'card_expiry': '11/22',
-            'card_brand': 'card_brand'
+        test_user = UserFactory.create()
+        card = CardInfoFactory.create(user_id=test_user.id)
 
-        })
-        resp = TransactionServices.pay_with_saved_card(test_user, 1000)
+        resp = TransactionServices.pay_with_saved_card(test_user, 1000, card)
         self.assertIn('data', resp)
 
-    def test_pay_with_saved_card_when_user_has_no_saved_card(self):
-        """
-        A unit test for the method that handles actual saving of card
-        details.
-        """
-        test_user = UserFactory.create(card_info={})
-
-        resp = TransactionServices.pay_with_saved_card(test_user, 1000)
-        self.assertEqual(resp['data']['status_code'], 400)
-        self.assertEqual(
-            resp['data']['status'], 'You do not have a saved card'
-        )
