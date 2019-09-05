@@ -1,0 +1,49 @@
+[
+    {
+        "model": "authentication.User",
+        "pk": 1,
+        "fields": {
+            "first_name": "Admin",
+            "last_name": "Landville",
+            "email": "landville@gmail.com",
+            "username": "landadmin",
+            "password": "pbkdf2_sha256$150000$lEnEKVAnd0w6$OFmBWql/XYZYF+3XIfjnabpLjBvpUXRVSPtDa8UkglI=",
+            "role": "LA",
+            "created_at": "2019-08-12 12:17:49.0337+03",
+            "updated_at": "2019-08-12 12:17:49.0337+03",
+            "is_verified": true,
+            "is_staff": true,
+            "is_superuser": true
+        }
+    },
+    {
+        "model": "authentication.User",
+        "pk": 2,
+        "fields": {
+            "first_name": "Client",
+            "last_name": "CAdmin",
+            "email": "clientadmin@gmail.com",
+            "username": "clientadmin",
+            "password": "pbkdf2_sha256$150000$lEnEKVAnd0w6$OFmBWql/XYZYF+3XIfjnabpLjBvpUXRVSPtDa8UkglI=",
+            "role": "CA",
+            "created_at": "2019-08-12 12:17:49.0337+03",
+            "updated_at": "2019-08-12 12:17:49.0337+03",
+            "is_verified": true
+        }
+    },
+    {
+        "model": "authentication.User",
+        "pk": 3,
+        "fields": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "johndoe@gmail.com",
+            "username": "johndoe",
+            "password": "pbkdf2_sha256$150000$lEnEKVAnd0w6$OFmBWql/XYZYF+3XIfjnabpLjBvpUXRVSPtDa8UkglI=",
+            "role": "BY",
+            "created_at": "2019-08-12 12:17:49.0337+03",
+            "updated_at": "2019-08-12 12:17:49.0337+03",
+            "is_verified": true
+        }
+    }
+]
