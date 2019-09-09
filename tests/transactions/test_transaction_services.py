@@ -108,7 +108,7 @@ class TestTransactionServices(TestCase):
         resp = TransactionServices.save_card(payload)
         self.assertEqual(resp, '. Card details have been saved.')
 
-    @patch('transactions.transaction_services.User.objects.filter')
+    @patch('transactions.transaction_services.User.active_objects.filter')
     def test_save_card_with_exception(self, mock_filter):
         """
         A unit test for what happened if the user requests that
@@ -150,4 +150,22 @@ class TestTransactionServices(TestCase):
 
         resp = TransactionServices.pay_with_saved_card(test_user, 1000, card)
         self.assertIn('data', resp)
+
+    def test_save_already_saved_card(self):
+        """
+        A unit test for what happened if the user requests to
+        save already saved card
+        """
+        payload = {'data': {
+            'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+            'vbvmessage': 'somemessage', 'status': 'successful',
+            'custemail': 'email@email.com', 'card': {
+                'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
+                'card_tokens': [{'embedtoken': 'sometoken'}],
+                'brand': 'somebrand'}}
+        }
+
+        resp = TransactionServices.save_card(payload)
+        resp = TransactionServices.save_card(payload)
+        self.assertEqual(resp, '. Card already saved.')
 

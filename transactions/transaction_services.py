@@ -225,7 +225,7 @@ class TransactionServices:
         if verify_resp['data']['status'] == 'successful' \
                 and int(save_card) == 1:
             try:
-                user = User.objects.filter(email=email).first()
+                user = User.active_objects.filter(email=email).first()
                 user_count = CardInfo.objects.filter(user=user).count()
                 if user_count >= 3:
                     message = ' Card details could not be saved.\
@@ -234,7 +234,7 @@ class TransactionServices:
                     message = TransactionServices.save_new_card(
                         card_info, card_number, user
                         )
-            except:  # noqa
+            except Exception as E:  # noqa
                 message = '. Card details could not be saved. Try latter.'
             return message
 

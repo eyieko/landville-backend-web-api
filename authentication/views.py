@@ -815,7 +815,7 @@ class SavedCardsListView(generics.GenericAPIView):
         else:
             response = {
                 "data": {
-                    "saved_card(s)": serializer.data,
+                    "saved_cards": serializer.data,
                     "message": "Cards retrieved",
                 }
             }
@@ -838,7 +838,6 @@ class DeleteSavedCardView(generics.GenericAPIView):
         """
         try:
             card = CardInfo.objects.get(id=card_info_id)
-            self.check_object_permissions(request, card)
             return card
         except CardInfo.DoesNotExist:
             raise NotFound(detail={"errors": "Card not saved"},
