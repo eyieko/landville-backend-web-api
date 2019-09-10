@@ -2,7 +2,8 @@ from rest_framework.test import APIClient, APITestCase
 from django.urls import reverse
 from authentication.models import User
 from tests.factories.authentication_factory import (
-    UserFactory, ClientFactory, ClientReviewsFactory, ReplyReviewsFactory)
+    UserFactory, ClientFactory, ClientReviewsFactory,
+    ReplyReviewsFactory, CardInfoFactory)
 from rest_framework.test import APIRequestFactory
 from django.conf import settings
 
@@ -49,7 +50,7 @@ class BaseTest(APITestCase):
         }
 
         self.client_with_empty_data = {
-            
+
         }
 
         self.client_with_invalid_address = {
@@ -300,3 +301,11 @@ class BaseTest(APITestCase):
             "reply": "i have reviewed this client"
         }
         self.factory = APIRequestFactory()
+        self.saved_card_url = reverse("auth:saved-cards")
+        self.saved_card = CardInfoFactory.create(user_id=self.user.id)
+        self.saved_card2 = CardInfoFactory.create(
+            user_id=self.user1.id,
+            embed_token='sometoken',
+            card_number=12345
+        )
+

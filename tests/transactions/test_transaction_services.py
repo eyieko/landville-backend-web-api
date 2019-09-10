@@ -169,3 +169,21 @@ class TestTransactionServices(TestCase):
         resp = TransactionServices.save_card(payload)
         self.assertEqual(resp, '. Card already saved.')
 
+    @patch('transactions.transaction_services.CardInfo.objects')
+    def test_saved_more_than_3_cards(self, mock):
+        """
+        A unit test for what happened if the user saves more
+        than 3 cards
+        """
+        mock.filter.return_value.count.return_value = 3
+        payload = {'data': {
+            'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+            'vbvmessage': 'somemessage', 'status': 'successful',
+            'custemail': 'email@email.com', 'card': {
+                'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
+                'card_tokens': [{'embedtoken': 'sometoken'}],
+                'brand': 'somebrand'}}
+        }
+
+        resp = TransactionServices.save_card(payload)
+        self.assertEqual(resp, ' could not save more than 3 cards .')

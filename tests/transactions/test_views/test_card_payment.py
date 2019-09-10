@@ -8,6 +8,8 @@ from tests.factories.authentication_factory import UserFactory, \
     ClientFactory, CardInfoFactory
 from tests.factories.transaction_factory import TransactionFactory
 from tests.factories.property_factory import PropertyFactory
+from authentication.models import CardInfo
+from transactions.views import (ClientAccountAPIView)
 
 
 def single_detail_url(account_number):
@@ -18,7 +20,13 @@ class CardPaymentTest(BaseTest):
     def setUp(self):
         self.card_pin_url = reverse('transactions:card_pin')
         self.auth_user = UserFactory(is_verified=True)
+        self.user2 = UserFactory()
         self.card = CardInfoFactory.create(user_id=self.auth_user.id)
+        self.card2 = CardInfoFactory.create(
+            user_id=self.user2.id,
+            embed_token='sometoken',
+            card_number=12345,
+        )
         self.land_client = ClientFactory.create(client_admin=self.auth_user)
         self.property = PropertyFactory.create(client=self.land_client)
         self.transaction = TransactionFactory.\
@@ -28,12 +36,18 @@ class CardPaymentTest(BaseTest):
         self.card_foreign_url = reverse('transactions:card_foreign')
         self.cardless_url = reverse(
             'transactions:tokenized_card', args=[self.card.id]
-            )
+        )
+        self.cardless_url2 = reverse(
+            'transactions:tokenized_card', args=[self.card.id]
+        )
         self.card_validate_url = reverse('transactions:validate_card')
         self.foreign_validate_url = reverse(
             'transactions:validation_response'
         ) + '?response={"txRef": "sometxref"}'  # noqa
         self.faker = Factory.create()
+        self.amount_to_pay = {
+            'amount': 20000
+        }
         self.client.credentials(
             HTTP_AUTHORIZATION=f'Bearer {self.auth_user.token}')
         self.card_info = {
@@ -597,3 +611,13 @@ class CardPaymentTest(BaseTest):
         self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             json_resp.get('errors').get('amount'), ['This field is required.'])
+
+    def test_cardless_payments_with_unexesting_card(self):
+        """
+        An integrated test for the view method for payment with tokenized card
+        that doesn't exist
+        """
+
+        CardInfo.objects.all().delete()
+        resp = self.client.post(self.cardless_url2, self.amount_to_pay)
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

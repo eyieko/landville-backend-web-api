@@ -419,15 +419,22 @@ def foreign_card_validation_response(request):
 def tokenized_card_payment(request, **kwargs):
     """
     Endpoint for handling payment using tokenized cards. The user makes
-    payment without providing card details
-    :param request: DRF request object
+    payment by providing saved card ID
+    :param request:
+    :param saved_card_id:
     :return: JSON response
     """
     data = request.data
     user = request.user
     serializer = CardlessPaymentSerializer(data=data)
     if serializer.is_valid():
-        card = get_object_or_404(CardInfo, id=kwargs.get('saved_card_id'))
+        try:
+            card = CardInfo.objects.get(id=kwargs.get('saved_card_id'))
+        except CardInfo.DoesNotExist:
+            return Response(
+                {'errors':
+                 'The card you specified does not exist, try a different card'},
+                status=status.HTTP_404_NOT_FOUND)
         amount = serializer.validated_data.get('amount')
         resp = TransactionServices.pay_with_saved_card(user, amount, card)
         return Response(
@@ -437,6 +444,8 @@ def tokenized_card_payment(request, **kwargs):
     else:
         return Response({'errors': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
+
+
 class RetrieveDepositsApiView(ListAPIView):
     serializer_class = DepositSerializer
     permission_classes = (IsAuthenticated, )

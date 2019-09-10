@@ -228,13 +228,12 @@ class TransactionServices:
                 user = User.active_objects.filter(email=email).first()
                 user_count = CardInfo.objects.filter(user=user).count()
                 if user_count >= 3:
-                    message = ' Card details could not be saved.\
-                        could not save more than 3 cards .'
+                    message = ' could not save more than 3 cards .'
                 else:
                     message = TransactionServices.save_new_card(
                         card_info, card_number, user
-                        )
-            except Exception as E:  # noqa
+                    )
+            except:  # noqa
                 message = '. Card details could not be saved. Try latter.'
             return message
 
@@ -248,6 +247,7 @@ class TransactionServices:
             serialized_data.is_valid(raise_exception=True)
             serialized_data.save(user=user)
             return '. Card details have been saved.'
+
     @classmethod
     def pay_with_saved_card(cls, user, amount, card):
         """

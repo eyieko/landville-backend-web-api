@@ -840,7 +840,7 @@ class DeleteSavedCardView(generics.GenericAPIView):
             card = CardInfo.objects.get(id=card_info_id)
             return card
         except CardInfo.DoesNotExist:
-            raise NotFound(detail={"errors": "Card not saved"},
+            raise NotFound(detail={"errors": "Card not found"},
                            code=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, **kwargs):
@@ -851,4 +851,6 @@ class DeleteSavedCardView(generics.GenericAPIView):
         """
         card = self.get_object(request, self.kwargs['id'])
         card.delete()
-        return Response("Card Deleted Successfully", status.HTTP_200_OK)
+        return Response({
+            "message": "Card Deleted Successfully"
+        }, status=status.HTTP_200_OK)
