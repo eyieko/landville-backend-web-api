@@ -827,6 +827,101 @@ class PropertyViewTests(BaseTest):
         response = view(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @patch('utils.media_handlers.uploader.upload')
+    def test_that_building_properties_must_have_bedrooms_and_bathrooms(
+            self, mock_upload):
+        """
+        Creating a building with no bedrooms and bathrooms should return 400
+        """
+
+        temp_main_image = NamedTemporaryFile(suffix='.jpeg')
+
+        mock_upload.return_value = {'url': 'http://www.upload.com/'}
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.user1.token}')
+
+        data = self.property_data
+        data['image_main'] = temp_main_image
+        data['bathrooms'], data['bedrooms'] = 0, 1
+        content = encode_multipart('BoUnDaRyStRiNg', data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        res = self.client.post(self.create_list_url, content,
+                               content_type=content_type)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data['bathrooms'], data['bedrooms'] = 1, 0
+        content = encode_multipart('BoUnDaRyStRiNg', data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        res = self.client.post(self.create_list_url, content,
+                               content_type=content_type)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        temp_main_image.close()
+
+    def test_updating_building_properties_must_have_bedrooms_and_bathrooms(
+            self):
+        """
+        Updating a building with no bedrooms/bathrooms should return 400
+        """
+
+        url = reverse('property:single_property', args=[self.property11.slug])
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.admin.token}')
+        update_data = self.property_update
+        update_data.pop('image_others')
+
+        update_data['bedrooms'] = 0
+        update_data['bathrooms'] = 0
+        content = encode_multipart('BoUnDaRyStRiNg', update_data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        response = self.client.patch(
+            url, content, content_type=content_type
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch('utils.media_handlers.uploader.upload')
+    def test_that_empty_plots_should_not_have_rooms(self, mock_upload):
+        """
+        Creating empty plots with rooms should return 400
+        """
+
+        temp_main_image = NamedTemporaryFile(suffix='.jpeg')
+
+        mock_upload.return_value = {'url': 'http://www.upload.com/'}
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.user1.token}')
+
+        data = self.property_data
+        data['property_type'] = 'E'
+        data['image_main'] = temp_main_image
+        content = encode_multipart('BoUnDaRyStRiNg', data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        res = self.client.post(self.create_list_url, content,
+                               content_type=content_type)
+        temp_main_image.close()
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_updating_empty_plots_should_not_have_rooms(self):
+        """
+        Updating a empty plot with bedrooms/bathrooms should return 400
+        """
+
+        url = reverse('property:single_property', args=[self.property11.slug])
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {self.admin.token}')
+        update_data = self.property_update
+        update_data.pop('image_others')
+
+        update_data['property_type'] = 'E'
+        content = encode_multipart('BoUnDaRyStRiNg', update_data)
+        content_type = 'multipart/form-data; boundary=BoUnDaRyStRiNg'
+        response = self.client.patch(url, content, content_type=content_type)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class BuyerPropertyListTest(BaseTest):
     """

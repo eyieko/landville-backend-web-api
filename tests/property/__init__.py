@@ -67,7 +67,9 @@ class BaseTest(APITestCase):
             "price": self.property2.price,
             "lot_size": self.property2.lot_size,
             "image_main": self.property2.image_main,
-            "purchase_plan": self.property2.purchase_plan
+            "purchase_plan": self.property2.purchase_plan,
+            "bedrooms": self.property2.bedrooms,
+            "bathrooms": self.property2.bathrooms
         }
         self.property5 = PropertyFactory.create(
             client=self.client2,
@@ -121,7 +123,7 @@ class BaseTest(APITestCase):
         self.get_buyer_list_url = reverse('property:get_buyer_list')
 
         self.property_update = {
-            "price": 99999999.99, "bathrooms": 3, "garages": 4,
+            "price": 99999999.99, "bathrooms": 3, "garages": 4, "bedrooms": 2,
             "title": "Updated Super Lot", "image_others": [
                 "http://www.example.com", "http://wwww.dopest.house"]
         }
