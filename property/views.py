@@ -148,10 +148,10 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
 
     @staticmethod
     def validate_building_rooms(data):
-        if not data.get('property_type') or data.get('property_type') == 'B':
-            if not data.get('bathrooms') or data.get('bathrooms') == '0':
+        if data.get('property_type') in ('B', None):
+            if data.get('bathrooms') in ('0', None):
                 return False
-            elif not data.get('bedrooms') or data.get('bedrooms') == '0':
+            elif data.get('bedrooms') in ('0', None):
                 return False
             else:
                 return True
