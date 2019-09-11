@@ -354,15 +354,17 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         payload.pop('client', None)
         obj = self.get_object()
 
-        if not CreateAndListPropertyView.validate_building_rooms(payload):
-            return Response(
-                {'error': 'A building must have at least one bathroom and '
-                          'bedroom'}, status=status.HTTP_400_BAD_REQUEST)
+        if payload.get('bathrooms') or payload.get('bedrooms'):
+            if not CreateAndListPropertyView.validate_building_rooms(payload):
+                return Response({
+                    'error': 'A building must have at least one bathroom and '
+                             'bedroom'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not CreateAndListPropertyView.validate_empty_plot_rooms(payload):
-            return Response(
-                {'error': 'Empty plots must not have any bedrooms, bathrooms '
-                          'or garages'}, status=status.HTTP_400_BAD_REQUEST)
+            if not CreateAndListPropertyView.validate_empty_plot_rooms(payload):
+                return Response({
+                    'error': 'Empty plots must not have any bedrooms, '
+                             'bathrooms or garages'},
+                    status=status.HTTP_400_BAD_REQUEST)
 
         # update main image
         updated_main_image = Uploader.upload_image_from_request(request)
