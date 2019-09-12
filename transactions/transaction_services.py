@@ -8,7 +8,7 @@ import base64
 from Cryptodome.Cipher import DES3
 from urllib.parse import urljoin
 from authentication.models import User, CardInfo
-from authentication.serializers import CardInfoSerializer
+from transactions.serializers import CardInfoSerializer
 
 
 class TransactionServices:
@@ -226,19 +226,20 @@ class TransactionServices:
                 and int(save_card) == 1:
             try:
                 user = User.active_objects.filter(email=email).first()
-                user_count = CardInfo.objects.filter(user=user).count()
-                if user_count >= 3:
+                card_count = CardInfo.active_objects.all_objects().filter(user=user).count()
+                if card_count >= 3:
                     message = ' could not save more than 3 cards .'
                 else:
                     message = TransactionServices.save_new_card(
                         card_info, card_number, user
                     )
-            except:  # noqa
+            except Exception as e:  # noqa
                 message = '. Card details could not be saved. Try latter.'
             return message
 
     def save_new_card(card_info, card_number, user):
-        card = CardInfo.objects.filter(card_number=f'*********{card_number}')
+        card = CardInfo.active_objects.all_objects().filter(
+            card_number=f'*********{card_number}')
         if card:
             return '. Card already saved.'
         else:

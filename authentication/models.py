@@ -147,7 +147,11 @@ class CardInfo(BaseAbstractModel):
     card_number = models.CharField(unique=True, max_length=20)
     card_expiry = models.CharField(max_length=6)
     card_brand = models.CharField(max_length=100)
-    user = models.ForeignKey(User,  on_delete=models.CASCADE,  null=True)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    
+    objects = models.Manager()
+    active_objects = CustomQuerySet.as_manager()
+
 
 class BlackList(BaseAbstractModel):
     """

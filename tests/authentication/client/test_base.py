@@ -301,11 +301,12 @@ class BaseTest(APITestCase):
             "reply": "i have reviewed this client"
         }
         self.factory = APIRequestFactory()
-        self.saved_card_url = reverse("auth:saved-cards")
+        self.saved_card_url = reverse("transactions:saved-cards")
         self.saved_card = CardInfoFactory.create(user_id=self.user.id)
         self.saved_card2 = CardInfoFactory.create(
             user_id=self.user1.id,
             embed_token='sometoken',
             card_number=12345
         )
+
 

@@ -34,7 +34,9 @@ Backend Repository for LandVille Project
 | GET    | /api/v1/transcations/account/<account_number>      | Get a single account details entry                       |
 | PUT    | /api/v1/transcations/account/<account_number>      | Update a single account detail entry                     |
 | DELETE | /api/v1/transcations/account/<account_number>      | Delete a single account detail entry                     |
-| POST   | /api/v1/transactions/tokenized-card/<saved_card_id>| Make payment with tokenized card                         |
+| POST   | /api/v1/transactions/tokenized-card/<saved_card_id> | Make payment with tokenized card  
+| GET   | /api/v1/transactions/saved-cards/                  | Get a user's saved cards  
+| DELETE   | /api/v1/transactions/saved-cards/<saved_card_id> | Delete specific saved card |
 | GET    | /api/v1/properties/                                | get all property                                         |
 | POST   | /api/v1/properties/                                | create a property page                                   |
 | GET    | /api/v1/properties/get/<slug>/                     | get specific property                                    |

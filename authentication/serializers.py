@@ -7,7 +7,7 @@ from rest_framework import serializers
 from authentication.models import (
     User, Client, UserProfile,
     ClientReview, ReplyReview,
-    PasswordResetToken, BlackList, CardInfo
+    PasswordResetToken, BlackList
 )
 from authentication.signals import SocialAuthProfileUpdate
 from authentication.socialvalidators import SocialValidation
@@ -617,12 +617,3 @@ class BlackListSerializer(serializers.ModelSerializer):
         model = BlackList
         fields = ('__all__')
 
-
-class CardInfoSerializer(serializers.ModelSerializer):
-    """
-    Handle serializing and deserializing  of card info
-    """
-
-    class Meta:
-        model = CardInfo
-        fields = ('__all__')

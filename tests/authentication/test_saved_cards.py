@@ -8,7 +8,7 @@ from rest_framework.test import force_authenticate
 
 from tests.utils.utils import TestUtils
 from authentication.models import CardInfo
-from authentication.views import (DeleteSavedCardView, SavedCardsListView)
+from transactions.views import (DeleteSavedCardView, SavedCardsListView)
 from tests.factories.authentication_factory import (CardInfoFactory)
 
 
@@ -39,7 +39,7 @@ class SavedCardsTest(TestUtils):
         """ can delete their saved card """
 
         view = DeleteSavedCardView.as_view()
-        url = reverse("auth:saved-card", args=[self.saved_card.id])
+        url = reverse("transactions:saved-card", args=[self.saved_card.id])
         response = self.factory.delete(url)
         force_authenticate(response, user=self.user)
         res = view(response, id=self.saved_card.id)
@@ -47,14 +47,14 @@ class SavedCardsTest(TestUtils):
         self.assertEqual('Card Deleted Successfully', res.data['message'])
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    @patch('transactions.transaction_services.CardInfo.objects.get')
+    @patch('transactions.transaction_services.CardInfo.active_objects.all_objects')
     def test_cannot_delete_others_saved_card(self, mock_filter):
         """ can delete others saved card """
 
         mock_filter.side_effect = CardInfo.DoesNotExist
 
         view = DeleteSavedCardView.as_view()
-        url = reverse("auth:saved-card", args=[self.saved_card2.id])
+        url = reverse("transactions:saved-card", args=[self.saved_card2.id])
         response = self.factory.delete(url)
         force_authenticate(response, user=self.user)
         resp = view(response, id=self.saved_card2.id)

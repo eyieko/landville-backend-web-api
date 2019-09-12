@@ -18,6 +18,7 @@ from utils.client_permissions import IsownerOrReadOnly, IsClient
 from transactions.models import (ClientAccount,
                                  Client,
                                  Deposit)
+from authentication.permissions import IsCardOwner
 from transactions.renderer import AccountDetailsJSONRenderer
 from transactions.serializers import (
     ClientAccountSerializer,
@@ -26,12 +27,14 @@ from transactions.serializers import (
     PinCardPaymentSerializer,
     ForeignCardPaymentSerializer,
     PaymentValidationSerializer,
-    CardlessPaymentSerializer
+    CardlessPaymentSerializer,
+    CardInfoSerializer
 )
 from transactions.transaction_services import TransactionServices
 from property.models import Property
 from transactions.transaction_utils import save_deposit
 from authentication.models import User, CardInfo
+from rest_framework.exceptions import NotFound
 
 
 class ClientAccountAPIView(ListCreateAPIView):
@@ -429,7 +432,9 @@ def tokenized_card_payment(request, **kwargs):
     serializer = CardlessPaymentSerializer(data=data)
     if serializer.is_valid():
         try:
-            card = CardInfo.objects.get(id=kwargs.get('saved_card_id'))
+            card = CardInfo.objects.get(
+                id=kwargs.get('saved_card_id')
+            )
         except CardInfo.DoesNotExist:
             return Response(
                 {'errors':
@@ -477,3 +482,66 @@ class RetrieveDepositsApiView(ListAPIView):
                 Q(transaction__buyer__id=user.id)
                 | Q(account__owner__id=user.id))
         return query
+
+
+class SavedCardsListView(generics.GenericAPIView):
+    """get all a  cards for authenticated user"""
+
+    permission_classes = (IsAuthenticated,)
+    serializer_class = CardInfoSerializer
+    def get_queryset(self):
+
+        user = self.request.user
+        return CardInfo.active_objects.all_objects().filter(user_id=user.id)
+
+    def get(self, request):
+        serializer = self.serializer_class(self.get_queryset(), many=True)
+        if not serializer.data:
+            response = {
+                "data": {
+                    "message": "You don't have any card saved"
+                }
+            }
+            status_code = status.HTTP_404_NOT_FOUND
+        else:
+            response = {
+                "data": {
+                    "saved_cards": serializer.data,
+                    "message": "Cards retrieved",
+                }
+            }
+            status_code = status.HTTP_200_OK
+        return Response(response, status=status_code)
+
+
+class DeleteSavedCardView(generics.GenericAPIView):
+    """ Remove existing card """
+
+    permission_classes = (IsAuthenticated, IsCardOwner)
+
+    def get_object(self, request, card_info_id):
+        """
+        Handles getting a specific card
+
+        :param request:
+        :param user_id:
+        :return: Object
+        """
+        try:
+            card = CardInfo.active_objects.all_objects().get(id=card_info_id)
+            return card
+        except CardInfo.DoesNotExist:
+            raise NotFound(detail={"errors": "Card not found"},
+                           code=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, **kwargs):
+        """
+        Handles removing a saved card
+        :param request:
+        :return:
+        """
+        card = self.get_object(request, self.kwargs['id'])
+        card.soft_delete()
+        return Response({
+            "message": "Card Deleted Successfully"
+        }, status=status.HTTP_200_OK)

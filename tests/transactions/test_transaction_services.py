@@ -25,6 +25,14 @@ class TestTransactionServices(TestCase):
             'amount': 20000.00,
             'pin': 1111
         }
+        self.payload = {'data': {
+            'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
+            'vbvmessage': 'somemessage', 'status': 'successful',
+            'custemail': 'email@email.com', 'card': {
+                'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
+                'card_tokens': [{'embedtoken': 'sometoken'}],
+                'brand': 'somebrand'}}
+        }
 
     @patch('transactions.transaction_services.requests.post')
     def test_initiate_payment(self, mock_post):
@@ -156,34 +164,7 @@ class TestTransactionServices(TestCase):
         A unit test for what happened if the user requests to
         save already saved card
         """
-        payload = {'data': {
-            'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
-            'vbvmessage': 'somemessage', 'status': 'successful',
-            'custemail': 'email@email.com', 'card': {
-                'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
-                'card_tokens': [{'embedtoken': 'sometoken'}],
-                'brand': 'somebrand'}}
-        }
 
-        resp = TransactionServices.save_card(payload)
-        resp = TransactionServices.save_card(payload)
+        resp = TransactionServices.save_card(self.payload)
+        resp = TransactionServices.save_card(self.payload)
         self.assertEqual(resp, '. Card already saved.')
-
-    @patch('transactions.transaction_services.CardInfo.objects')
-    def test_saved_more_than_3_cards(self, mock):
-        """
-        A unit test for what happened if the user saves more
-        than 3 cards
-        """
-        mock.filter.return_value.count.return_value = 3
-        payload = {'data': {
-            'tx': {'txRef': 'sampletxref'}, 'meta': [{'metavalue': 1}],
-            'vbvmessage': 'somemessage', 'status': 'successful',
-            'custemail': 'email@email.com', 'card': {
-                'expirymonth': '11', 'expiryyear': 22, 'last4digits': 1234,
-                'card_tokens': [{'embedtoken': 'sometoken'}],
-                'brand': 'somebrand'}}
-        }
-
-        resp = TransactionServices.save_card(payload)
-        self.assertEqual(resp, ' could not save more than 3 cards .')

@@ -22,19 +22,18 @@ from rest_framework.views import APIView
 
 from authentication.authorization_helper import generate_validation_url
 from authentication.models import (
-    User, Client, UserProfile, ClientReview, ReplyReview, CardInfo)
+    User, Client, UserProfile, ClientReview, ReplyReview)
 from authentication.permissions import (
     IsClientAdmin,
     IsProfileOwner,
-    IsOwnerOrAdmin,
-    IsCardOwner)
+    IsOwnerOrAdmin)
 from authentication.renderer import UserJSONRenderer, ClientJSONRenderer
 from authentication.serializers import (
     GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
     ProfileSerializer, TwitterAuthAPISerializer, RegistrationSerializer,
     LoginSerializer, ClientSerializer, ChangePasswordSerializer,
     ClientReviewSerializer, ReviewReplySerializer,
-    BlackListSerializer, CardInfoSerializer)
+    BlackListSerializer)
 from property.validators import validate_image
 from utils import BaseUtils
 from utils.media_handlers import CloudinaryResourceHandler
@@ -792,65 +791,3 @@ class LogoutView(generics.CreateAPIView):
             status=status.HTTP_200_OK
         )
 
-
-class SavedCardsListView(generics.GenericAPIView):
-    """get all a  cards for authenticated user"""
-
-    permission_classes = (IsAuthenticated,)
-    serializer_class = CardInfoSerializer
-    def get_queryset(self):
-
-        user = self.request.user
-        return CardInfo.objects.filter(user_id=user.id)
-
-    def get(self, request):
-        serializer = self.serializer_class(self.get_queryset(), many=True)
-        if not serializer.data:
-            response = {
-                "data": {
-                    "message": "You don't have any card saved"
-                }
-            }
-            status_code = status.HTTP_404_NOT_FOUND
-        else:
-            response = {
-                "data": {
-                    "saved_cards": serializer.data,
-                    "message": "Cards retrieved",
-                }
-            }
-            status_code = status.HTTP_200_OK
-        return Response(response, status=status_code)
-
-
-class DeleteSavedCardView(generics.GenericAPIView):
-    """ Remove existing card """
-
-    permission_classes = (IsAuthenticated, IsCardOwner)
-
-    def get_object(self, request, card_info_id):
-        """
-        Handles getting a specific card
-
-        :param request:
-        :param user_id:
-        :return: Object
-        """
-        try:
-            card = CardInfo.objects.get(id=card_info_id)
-            return card
-        except CardInfo.DoesNotExist:
-            raise NotFound(detail={"errors": "Card not found"},
-                           code=status.HTTP_404_NOT_FOUND)
-
-    def delete(self, request, **kwargs):
-        """
-        Handles removing a saved card
-        :param request:
-        :return:
-        """
-        card = self.get_object(request, self.kwargs['id'])
-        card.delete()
-        return Response({
-            "message": "Card Deleted Successfully"
-        }, status=status.HTTP_200_OK)

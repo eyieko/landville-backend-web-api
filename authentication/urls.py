@@ -7,8 +7,7 @@ from authentication.views import (
     LoginAPIView, PasswordResetView, ProfileView,
     AddReasonView, ClientReviewsView, ReviewDetailView,
     ReplyView, UserReviewsView, LogoutView,
-    RetrieveUpdateDeleteClientView, ClientListView, SavedCardsListView,
-    DeleteSavedCardView)
+    RetrieveUpdateDeleteClientView, ClientListView)
 
 app_name = 'authentication'
 
@@ -40,10 +39,5 @@ urlpatterns = [
     path('<int:pk>/reply/', ReplyView.as_view(), name='replies'),
     path('reviewer/<int:reviewer_id>/',
          UserReviewsView.as_view(), name='user-reviews'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path('saved-cards/',
-         SavedCardsListView.as_view(), name='saved-cards'),
-    path(
-         'saved-card/<int:id>',
-         DeleteSavedCardView.as_view(), name='saved-card'),
+    path('logout/', LogoutView.as_view(), name='logout')
 ]
