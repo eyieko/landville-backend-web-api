@@ -146,29 +146,6 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
     filter_class = PropertyFilter
     parser_classes = (MultiPartParser, FormParser)
 
-    @staticmethod
-    def validate_building_rooms(data):
-        if data.get('property_type') in ('B', None):
-            if data.get('bathrooms') in ('0', None):
-                return False
-            elif data.get('bedrooms') in ('0', None):
-                return False
-            else:
-                return True
-        else:
-            return True
-
-    @staticmethod
-    def validate_empty_plot_rooms(data):
-        if data.get('property_type') == 'E':
-            if data.get('bathrooms') or \
-                    data.get('bedrooms') or data.get('garages'):
-                return False
-            else:
-                return True
-        else:
-            return True
-
     def get_queryset(self):
         """Change the queryset to use depending
         on the user making the request"""
@@ -199,17 +176,6 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
         request.POST._mutable = True
         payload = request.data
         payload['client'] = request.user.employer.first().pk
-
-        if not self.validate_building_rooms(payload):
-            return Response(
-                {'error': 'A building must have at least one bathroom and '
-                          'bedroom'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not self.validate_empty_plot_rooms(payload):
-            return Response(
-                {'error': 'Empty plots must not have any bedrooms, bathrooms '
-                          'or garages'}, status=status.HTTP_400_BAD_REQUEST)
-
         # upload the main image
         main_image_url = Uploader.upload_image_from_request(request)
         payload['image_main'] = main_image_url
@@ -353,19 +319,6 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         payload = request.data
         payload.pop('client', None)
         obj = self.get_object()
-
-        if payload.get('bathrooms') or payload.get('bedrooms'):
-            if not CreateAndListPropertyView.validate_building_rooms(payload):
-                return Response({
-                    'error': 'A building must have at least one bathroom and '
-                             'bedroom'}, status=status.HTTP_400_BAD_REQUEST)
-
-            if not CreateAndListPropertyView.validate_empty_plot_rooms(payload):
-                return Response({
-                    'error': 'Empty plots must not have any bedrooms, '
-                             'bathrooms or garages'},
-                    status=status.HTTP_400_BAD_REQUEST)
-
         # update main image
         updated_main_image = Uploader.upload_image_from_request(request)
         if updated_main_image:
