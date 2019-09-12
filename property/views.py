@@ -15,7 +15,8 @@ from rest_framework.permissions import (
     IsAuthenticated
 )
 from rest_framework.response import Response
-
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 from property.filters import PropertyFilter
 from property.models import (
     BuyerPropertyList,
@@ -144,7 +145,13 @@ class CreateAndListPropertyView(generics.ListCreateAPIView):
     serializer_class = PropertySerializer
     permission_classes = (IsClientAdmin | ReadOnly,)
     renderer_classes = (PropertyJSONRenderer,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
     filter_class = PropertyFilter
+    search_fields = (
+        'title',
+        'description',
+        'address',
+        'slug')
     parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
