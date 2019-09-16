@@ -344,7 +344,7 @@ class ClientListView(generics.GenericAPIView):
     def get_queryset(self):
         """ Returns all active client companies  """
 
-        return Client.active_objects.all()
+        return Client.active_objects.all_approved()
 
     def get(self, request):
         """ Handles retrieving all existing client companies """
@@ -609,8 +609,8 @@ class ClientReviewsView(generics.ListCreateAPIView):
         queryset = ClientReview.active_objects.all_objects().filter(
             client=client)
         if queryset:
-            return queryset	
-        else:	
+            return queryset
+        else:
             raise Http404
 
     def create(self, request, *args, **kwargs):
