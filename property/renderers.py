@@ -32,7 +32,9 @@ class PropertyJSONRenderer(JSONRenderer):
                 'client_name': client.client_name,
                 'phone': client.phone,
                 'email': client.email,
-                'address': client.address
+                'address': client.address,
+                'admin_email': client.client_admin.email,
+                'admin_id': client.client_admin.id
             }
             data['client'] = client_data
 
