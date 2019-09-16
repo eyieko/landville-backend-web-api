@@ -252,13 +252,13 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('embed_token', models.CharField(max_length=300, unique=True)),
-                ('card_number', models.CharField(max_length=20, unique=True)),
+                ('card_number', models.CharField(max_length=20)),
                 ('card_expiry', models.CharField(max_length=6)),
                 ('card_brand', models.CharField(max_length=100)),
                 ('user',
-                 models.ForeignKey(null=True,
-                                   on_delete=django.db.models.deletion.CASCADE,
-                                   to=settings.AUTH_USER_MODEL)),
+                 models.ForeignKey(
+                     on_delete=django.db.models.deletion.CASCADE,
+                     to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['-created_at'],

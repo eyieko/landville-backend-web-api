@@ -214,39 +214,41 @@ class TransactionServices:
         card_brand = verify_resp['data']['card']['brand']
         card_expiry = f"{verify_resp['data']['card']['expirymonth']}/" \
             f"{verify_resp['data']['card']['expiryyear']}"
+        user = User.active_objects.filter(email=email).first()
         card_info = {
             'embed_token': embedtoken,
             'card_number': f'*********{card_number}',
             'card_expiry': card_expiry,
-            'card_brand': card_brand
+            'card_brand': card_brand,
+            'user': user.id
 
         }
 
         if verify_resp['data']['status'] == 'successful' \
                 and int(save_card) == 1:
             try:
-                user = User.active_objects.filter(email=email).first()
-                card_count = CardInfo.active_objects.all_objects().filter(user=user).count()
+                card_count = CardInfo.active_objects.all_objects().filter(
+                    user=user).count()
                 if card_count >= 3:
                     message = ' could not save more than 3 cards .'
                 else:
                     message = TransactionServices.save_new_card(
-                        card_info, card_number, user
+                        card_info, card_number
                     )
             except Exception as e:  # noqa
                 message = '. Card details could not be saved. Try latter.'
             return message
 
-    def save_new_card(card_info, card_number, user):
+    @staticmethod
+    def save_new_card(card_info, card_number):
         card = CardInfo.active_objects.all_objects().filter(
             card_number=f'*********{card_number}')
         if card:
             return '. Card already saved.'
         else:
-            serializer = CardInfoSerializer
-            serialized_data = serializer(data=card_info)
-            serialized_data.is_valid(raise_exception=True)
-            serialized_data.save(user=user)
+            serializer = CardInfoSerializer(data=card_info)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return '. Card details have been saved.'
 
     @classmethod
@@ -255,6 +257,7 @@ class TransactionServices:
         A service method for payment with card tokens
         :param user: The user making the payment
         :param amount: The amount to pay.
+        :param card: A saved card to be used.
         :return: A JSON response
         """
         data = {

@@ -790,4 +790,3 @@ class LogoutView(generics.CreateAPIView):
             },
             status=status.HTTP_200_OK
         )
-

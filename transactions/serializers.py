@@ -5,6 +5,7 @@ from transactions.models import ClientAccount, Deposit, Transaction, Savings
 from rest_framework.exceptions import ValidationError
 from property.models import Property
 from property.serializers import PropertySerializer
+from authentication.serializers import RegistrationSerializer
 from authentication.models import User, CardInfo
 
 
@@ -239,6 +240,8 @@ class CardInfoSerializer(serializers.ModelSerializer):
     """
     Handle serializing and deserializing  of card info
     """
+
+    user_detail = RegistrationSerializer(source='user', read_only=True)
 
     class Meta:
         model = CardInfo

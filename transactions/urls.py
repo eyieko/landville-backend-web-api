@@ -31,12 +31,11 @@ urlpatterns = [
     path('rave-response/', foreign_card_validation_response,
          name='validation_response'),
     path(
-         'tokenized-card/<int:saved_card_id>',
-         tokenized_card_payment, name='tokenized_card'),
+        'tokenized-card/<int:saved_card_id>',
+        tokenized_card_payment, name='tokenized_card'),
     path('my-deposit/', RetrieveDepositsApiView.as_view(), name='my_deposit'),
-        path('saved-cards/',
-         SavedCardsListView.as_view(), name='saved-cards'),
+    path('saved-cards/', SavedCardsListView.as_view(), name='saved-cards'),
     path(
-         'saved-card/<int:id>',
-         DeleteSavedCardView.as_view(), name='saved-card'),
+        'saved-card/<int:id>',
+        DeleteSavedCardView.as_view(), name='saved-card'),
 ]

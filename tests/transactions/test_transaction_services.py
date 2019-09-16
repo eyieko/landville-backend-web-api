@@ -15,6 +15,7 @@ class TestTransactionServices(TestCase):
 
     def setUp(self):
         self.faker = Factory.create()
+        self.test_user2 = UserFactory.create(email='email@email.com')
         self.test_data = {
             'cardno': self.faker.credit_card_number(card_type=None),
             'cvv': self.faker.credit_card_security_code(card_type=None),
@@ -116,7 +117,7 @@ class TestTransactionServices(TestCase):
         resp = TransactionServices.save_card(payload)
         self.assertEqual(resp, '. Card details have been saved.')
 
-    @patch('transactions.transaction_services.User.active_objects.filter')
+    @patch('transactions.transaction_services.User.active_objects')
     def test_save_card_with_exception(self, mock_filter):
         """
         A unit test for what happened if the user requests that

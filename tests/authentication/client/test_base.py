@@ -308,5 +308,3 @@ class BaseTest(APITestCase):
             embed_token='sometoken',
             card_number=12345
         )
-
-

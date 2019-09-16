@@ -47,7 +47,9 @@ class SavedCardsTest(TestUtils):
         self.assertEqual('Card Deleted Successfully', res.data['message'])
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    @patch('transactions.transaction_services.CardInfo.active_objects.all_objects')
+    @patch(
+        'transactions.transaction_services.CardInfo.active_objects.all_objects'
+    )
     def test_cannot_delete_others_saved_card(self, mock_filter):
         """ can delete others saved card """
 

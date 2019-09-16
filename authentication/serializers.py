@@ -616,4 +616,3 @@ class BlackListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlackList
         fields = ('__all__')
-

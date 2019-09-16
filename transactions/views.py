@@ -438,7 +438,8 @@ def tokenized_card_payment(request, **kwargs):
         except CardInfo.DoesNotExist:
             return Response(
                 {'errors':
-                 'The card you specified does not exist, try a different card'},
+                 'The card you specified does not exist, \
+                     try a different card'},
                 status=status.HTTP_404_NOT_FOUND)
         amount = serializer.validated_data.get('amount')
         resp = TransactionServices.pay_with_saved_card(user, amount, card)
@@ -524,7 +525,7 @@ class DeleteSavedCardView(generics.GenericAPIView):
         Handles getting a specific card
 
         :param request:
-        :param user_id:
+        :param card_info_id:
         :return: Object
         """
         try:
@@ -541,6 +542,7 @@ class DeleteSavedCardView(generics.GenericAPIView):
         :return:
         """
         card = self.get_object(request, self.kwargs['id'])
+        self.check_object_permissions(request, card)
         card.soft_delete()
         return Response({
             "message": "Card Deleted Successfully"
