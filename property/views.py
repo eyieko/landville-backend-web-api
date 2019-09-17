@@ -519,9 +519,8 @@ class TrendingPropertyView(generics.ListAPIView):
 
         city = self.request.query_params.get('city')
 
-        query_results = Property.active_objects.filter(
+        query_results = Property.active_objects.is_published().filter(
             last_viewed__date__gte=date,
-            is_published=True,
             is_sold=False,
             view_count__gte=1).order_by('-view_count', 'last_viewed')
         if city:
