@@ -18,7 +18,10 @@ class PropertySerializerTest(BaseTest):
             "price": self.property2.price,
             "lot_size": self.property2.lot_size,
             "image_main": self.property2.image_main,
-            "purchase_plan": self.property2.purchase_plan
+            "purchase_plan": self.property2.purchase_plan,
+            "bedrooms": self.property2.bedrooms,
+            "bathrooms": self.property2.bathrooms,
+            "property_type": self.property2.property_type
         }
         serializer = PropertySerializer(data=data)
         self.assertTrue(serializer.is_valid())

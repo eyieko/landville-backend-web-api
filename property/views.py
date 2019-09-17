@@ -2,7 +2,6 @@ import datetime
 from datetime import datetime as dt
 from django.utils.timezone import now
 
-from django.utils.datastructures import MultiValueDictKeyError
 from rest_framework import (
     generics,
     status,

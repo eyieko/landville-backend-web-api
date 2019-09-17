@@ -35,6 +35,9 @@ class PropertyFactory(factory.DjangoModelFactory):
     purchase_plan = 'I'
     last_viewed = now()
     is_sold = False
+    bedrooms = 3
+    bathrooms = 1
+    property_type = 'B'
 
 
 class PropertyEnquiryFactory(factory.DjangoModelFactory):

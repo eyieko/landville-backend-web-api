@@ -23,6 +23,27 @@ class PropertySerializer(serializers.ModelSerializer):
         required=False, validators=[validate_image_list])
     address = serializers.JSONField(validators=[validate_address])
     coordinates = serializers.JSONField(validators=[validate_coordinates])
+    bedrooms = serializers.IntegerField(required=False)
+    bathrooms = serializers.IntegerField(required=False)
+    garages = serializers.IntegerField(required=False)
+    property_type = serializers.ChoiceField(choices=('E', 'B'))
+
+    def validate(self, data):
+        """
+        check if property rooms are valid for the property type
+        """
+        if data.get('property_type') == 'B':
+            if not data.get('bathrooms') or not data.get('bedrooms'):
+                raise serializers.ValidationError(
+                    'A building must have at least one bathroom and bedroom')
+        elif data.get('property_type') == 'E':
+            if data.get('bathrooms') or \
+                    data.get('bedrooms') or data.get('garages'):
+                raise serializers.ValidationError(
+                    'Empty plots must not have any bedrooms, bathrooms '
+                    'or garages'
+                )
+        return data
 
     class Meta:
         model = Property
