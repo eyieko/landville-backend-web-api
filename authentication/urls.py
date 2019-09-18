@@ -39,5 +39,5 @@ urlpatterns = [
     path('<int:pk>/reply/', ReplyView.as_view(), name='replies'),
     path('reviewer/<int:reviewer_id>/',
          UserReviewsView.as_view(), name='user-reviews'),
-    path('logout/', LogoutView.as_view(), name='logout'),
+    path('logout/', LogoutView.as_view(), name='logout')
 ]

@@ -7,7 +7,7 @@ from rest_framework import serializers
 from authentication.models import (
     User, Client, UserProfile,
     ClientReview, ReplyReview,
-    PasswordResetToken, BlackList,
+    PasswordResetToken, BlackList
 )
 from authentication.signals import SocialAuthProfileUpdate
 from authentication.socialvalidators import SocialValidation

@@ -9,7 +9,9 @@ from transactions.views import (
     RetreiveTransactionsAPIView,
     foreign_card_validation_response,
     tokenized_card_payment,
-    RetrieveDepositsApiView
+    RetrieveDepositsApiView,
+    SavedCardsListView,
+    DeleteSavedCardView
 )
 
 app_name = 'transactions'
@@ -28,6 +30,12 @@ urlpatterns = [
     path('', RetreiveTransactionsAPIView.as_view(), name='transactions'),
     path('rave-response/', foreign_card_validation_response,
          name='validation_response'),
-    path('tokenized-card/', tokenized_card_payment, name='tokenized_card'),
-    path('my-deposit/', RetrieveDepositsApiView.as_view(), name='my_deposit')
+    path(
+        'tokenized-card/<int:saved_card_id>',
+        tokenized_card_payment, name='tokenized_card'),
+    path('my-deposit/', RetrieveDepositsApiView.as_view(), name='my_deposit'),
+    path('saved-cards/', SavedCardsListView.as_view(), name='saved-cards'),
+    path(
+        'saved-card/<int:id>',
+        DeleteSavedCardView.as_view(), name='saved-card'),
 ]

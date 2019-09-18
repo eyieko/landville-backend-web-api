@@ -32,12 +32,14 @@ from authentication.serializers import (
     GoogleAuthSerializer, FacebookAuthAPISerializer, PasswordResetSerializer,
     ProfileSerializer, TwitterAuthAPISerializer, RegistrationSerializer,
     LoginSerializer, ClientSerializer, ChangePasswordSerializer,
-    ClientReviewSerializer, ReviewReplySerializer, BlackListSerializer)
+    ClientReviewSerializer, ReviewReplySerializer,
+    BlackListSerializer)
 from property.validators import validate_image
 from utils import BaseUtils
 from utils.media_handlers import CloudinaryResourceHandler
 from utils.permissions import IsBuyerOrReadOnly, IsReviewer, IsAdmin
 from utils.tasks import send_email_notification
+
 
 Uploader = CloudinaryResourceHandler()
 

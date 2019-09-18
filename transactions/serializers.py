@@ -5,7 +5,8 @@ from transactions.models import ClientAccount, Deposit, Transaction, Savings
 from rest_framework.exceptions import ValidationError
 from property.models import Property
 from property.serializers import PropertySerializer
-from authentication.models import User
+from authentication.serializers import RegistrationSerializer
+from authentication.models import User, CardInfo
 
 
 class ClientAccountSerializer(serializers.ModelSerializer):
@@ -233,3 +234,15 @@ class DepositSerializer(serializers.ModelSerializer):
             "saving_account",
             "transaction"
         ]
+
+
+class CardInfoSerializer(serializers.ModelSerializer):
+    """
+    Handle serializing and deserializing  of card info
+    """
+
+    user_detail = RegistrationSerializer(source='user', read_only=True)
+
+    class Meta:
+        model = CardInfo
+        fields = '__all__'
