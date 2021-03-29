@@ -107,7 +107,7 @@ pycparser==2.19
 pycryptodomex==3.8.2
 pydocstyle==3.0.0
 pyflakes==2.1.1
-Pygments==2.4.2
+Pygments==2.7.4
 PyJWT==1.7.1
 pylint==2.3.1
 pylint-celery==0.3
